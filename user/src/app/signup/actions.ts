@@ -22,9 +22,9 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
-    return redirect('/signup?error=' + error.message)
+    redirect('/signup?error=' + error.message)
   }
 
   revalidatePath('/', 'layout')
-  return redirect('/login?message=Welcome to MusicFlow! Please check your email for confirmation link.')
+  redirect('/login?message=Welcome to MusicFlow! Please check your email for confirmation link.')
 }
