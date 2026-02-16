@@ -3,14 +3,14 @@
 import { useFormStatus } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
+import { ButtonHTMLAttributes } from 'react'
 
-interface SubmitButtonProps {
+interface SubmitButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode
-  className?: string
   loadingText?: string
 }
 
-export function SubmitButton({ children, className, loadingText = 'Please wait...' }: SubmitButtonProps) {
+export function SubmitButton({ children, loadingText = 'Please wait...', className, ...props }: SubmitButtonProps) {
   const { pending } = useFormStatus()
 
   return (
@@ -18,6 +18,7 @@ export function SubmitButton({ children, className, loadingText = 'Please wait..
       type="submit" 
       disabled={pending}
       className={className}
+      {...props}
     >
       {pending ? (
         <>
