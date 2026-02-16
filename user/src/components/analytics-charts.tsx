@@ -18,6 +18,7 @@ import {
   Radar,
   Tooltip as RechartsTooltip,
 } from "recharts";
+import { Disc, Music } from "lucide-react";
 
 interface AnalyticsChartsProps {
   statusData: { name: string; value: number; color: string }[];
@@ -25,13 +26,15 @@ interface AnalyticsChartsProps {
 }
 
 export function AnalyticsCharts({
-  statusData,
+  statusData = [],
   genreData = [],
 }: AnalyticsChartsProps) {
-  const totalStatus = statusData.reduce((acc, curr) => acc + curr.value, 0);
+  const totalStatus = statusData.reduce((acc, curr) => acc + (curr?.value || 0), 0);
+  const hasStatusData = statusData.length > 0 && totalStatus > 0;
+  const hasGenreData = genreData.length > 0 && genreData.some(g => g?.count > 0);
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
       {/* SVG Definitions for Gradients and Glows */}
       <svg width="0" height="0" className="absolute">
         <defs>
@@ -86,6 +89,19 @@ export function AnalyticsCharts({
           </div>
         </CardHeader>
         <CardContent className="relative z-10">
+          {!hasStatusData ? (
+            <div className="h-[320px] flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto">
+                  <Disc className="w-8 h-8 text-zinc-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-zinc-400">No Distribution Data</p>
+                  <p className="text-xs text-zinc-600 mt-2">Upload tracks to see status analytics</p>
+                </div>
+              </div>
+            </div>
+          ) : (
           <div className="relative h-[320px] mt-2">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -159,7 +175,9 @@ export function AnalyticsCharts({
               </div>
             </div>
           </div>
+          )}
 
+          {hasStatusData && (
           <div className="mt-8 grid grid-cols-2 gap-4 pb-4 px-2">
             {statusData.map((item, index) => (
               <div key={index} className="flex items-center gap-4 p-3 rounded-2xl bg-white/[0.02] border border-white/5 transition-all duration-500 hover:bg-white/[0.05] hover:scale-[1.02] hover:border-white/10 group/item">
@@ -177,6 +195,7 @@ export function AnalyticsCharts({
               </div>
             ))}
           </div>
+          )}
         </CardContent>
         <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-emerald-500/5 blur-[100px] pointer-events-none" />
       </Card>
@@ -200,6 +219,19 @@ export function AnalyticsCharts({
           </div>
         </CardHeader>
         <CardContent className="p-4 relative z-10 mt-2">
+          {!hasGenreData ? (
+            <div className="h-[300px] flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto">
+                  <Music className="w-8 h-8 text-zinc-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-zinc-400">No Genre Data</p>
+                  <p className="text-xs text-zinc-600 mt-2">Upload tracks with genre tags to see analytics</p>
+                </div>
+              </div>
+            </div>
+          ) : (
           <div className="h-[300px] w-full mt-2 min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={(genreData?.length || 0) > 2 ? genreData : [...(genreData || []), { genre: '', count: 0 }, { genre: '', count: 0 }]}>
@@ -247,7 +279,9 @@ export function AnalyticsCharts({
               </RadarChart>
             </ResponsiveContainer>
           </div>
+          )}
 
+          {hasGenreData && (
           <div className="mt-6 flex flex-wrap justify-center gap-4">
              {genreData.slice(0, 3).map((item, i) => (
                 <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/5 px-3 py-1.5 rounded-full transition-all hover:bg-white/10 hover:border-white/20">
@@ -257,6 +291,7 @@ export function AnalyticsCharts({
                 </div>
              ))}
           </div>
+          )}
         </CardContent>
         <div className="absolute -top-10 -left-10 w-40 h-40 bg-indigo-500/5 blur-[80px] pointer-events-none" />
       </Card>

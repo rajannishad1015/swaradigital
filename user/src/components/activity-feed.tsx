@@ -40,8 +40,14 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
       </CardHeader>
       <CardContent>
         {activities.length === 0 ? (
-          <div className="text-center py-8 text-zinc-500 text-sm">
-            No recent activity
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-8 h-8 text-zinc-600" />
+            </div>
+            <p className="text-sm font-bold text-zinc-400 mb-2">No Activity Yet</p>
+            <p className="text-xs text-zinc-600 max-w-xs mx-auto">
+              Start uploading tracks, requesting payouts, or creating support tickets to see your activity here.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">

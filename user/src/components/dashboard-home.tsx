@@ -9,12 +9,14 @@ import RevenueCard from "@/components/revenue-card"
 import Link from "next/link"
 import { AnalyticsCharts } from "./analytics-charts"
 import { ActivityFeed } from "./activity-feed"
+import ProfileCompletionBanner from "./profile-completion-banner"
 
 export default function DashboardHome({ 
     user, 
     tracks, 
     stats,
-    bankDetails
+    bankDetails,
+    profile
 }: { 
     user: any, 
     tracks: any[], 
@@ -27,7 +29,8 @@ export default function DashboardHome({
         genres: any[],
         activities: any[]
     },
-    bankDetails: any
+    bankDetails: any,
+    profile: any
 }) {
     
     // Config for Charts (Cinematic Neon Palette)
@@ -63,8 +66,11 @@ export default function DashboardHome({
 
     return (
         <div className="space-y-12">
+            {/* Profile Completion Banner */}
+            <ProfileCompletionBanner profile={profile} bankDetails={bankDetails} />
+            
             {/* 1. Cinematic KPI Row */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 relative overflow-hidden p-1">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 relative overflow-hidden p-1">
                 {/* Background Glows */}
                 <div className="absolute -inset-20 bg-indigo-500/5 blur-[120px] pointer-events-none rounded-full" />
                 

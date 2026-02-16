@@ -51,28 +51,44 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       ticketQuery = ticketQuery.eq('user_id', user.id)
   }
 
-  const { data: payouts } = await supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+  // Wrap database queries in try-catch for safety
+  let payouts: any[] = []
+  let tracks: any[] = []
+  let ticketCount = 0
+  let tickets: any[] = []
 
-  const { data: tracks } = await trackQuery.order('created_at', { ascending: false })
-  const { count: ticketCount, data: tickets } = await ticketQuery
+  try {
+    const { data: payoutData } = await supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+    payouts = payoutData || []
+
+    const { data: trackData } = await trackQuery.order('created_at', { ascending: false })
+    tracks = trackData || []
+
+    const { count, data: ticketData } = await ticketQuery
+    ticketCount = count || 0
+    tickets = ticketData || []
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error)
+    // Continue with empty arrays - dashboard will show empty states
+  }
 
   // 3. Aggregate Stats
   const allTracks = tracks || []
   const totalReleases = allTracks.length
-  const approvedCount = allTracks.filter(t => t.status === 'approved').length
+  const approvedCount = allTracks.filter(t => t?.status === 'approved').length
   
-  // Status Counts
+  // Status Counts (with null safety)
   const statusCounts = [
       { status: 'approved', count: approvedCount },
-      { status: 'rejected', count: allTracks.filter(t => t.status === 'rejected').length },
-      { status: 'pending', count: allTracks.filter(t => t.status === 'pending').length },
-      { status: 'draft', count: allTracks.filter(t => t.status === 'draft').length },
+      { status: 'rejected', count: allTracks.filter(t => t?.status === 'rejected').length },
+      { status: 'pending', count: allTracks.filter(t => t?.status === 'pending').length },
+      { status: 'draft', count: allTracks.filter(t => t?.status === 'draft').length },
   ]
 
-  // Genre Counts (Top 5)
+  // Genre Counts (Top 5) with null safety
   const genreMap = new Map<string, number>()
   allTracks.forEach(t => {
-      if (t.genre) {
+      if (t?.genre && typeof t.genre === 'string') {
           genreMap.set(t.genre, (genreMap.get(t.genre) || 0) + 1)
       }
   })
@@ -82,30 +98,60 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
     .sort((a, b) => b.count - a.count)
     .slice(0, 5)
 
-  // Fallback if no genres
+  // Fallback if no genres - provide placeholder data for charts
   if (genres.length === 0) {
-      genres.push({ genre: 'No Data', count: 0 })
+      genres.push({ genre: 'Upload tracks to see genre analytics', count: 0 })
   }
 
 
-  // Generate Activity Feed
+  // Generate Activity Feed with null safety
   const activities = [
-      ...(allTracks?.map(t => ({ id: t.id, type: 'upload', title: `Uploaded ${t.title}`, status: t.status, date: t.created_at, description: t.artist })) || []),
-      ...(payouts?.map(p => ({ id: p.id, type: 'payout', title: `Payout Request ($${p.amount})`, status: p.status, date: p.created_at })) || []),
-      ...(tickets?.map(t => ({ id: t.id, type: 'ticket', title: `Support Ticket: ${t.subject}`, status: t.status, date: t.created_at })) || [])
+      ...(allTracks?.filter(t => t?.id && t?.title).map(t => ({ 
+        id: t.id, 
+        type: 'upload' as const, 
+        title: `Uploaded ${t.title}`, 
+        status: t.status || 'draft', 
+        date: t.created_at, 
+        description: t.artist 
+      })) || []),
+      ...(payouts?.filter(p => p?.id && p?.amount).map(p => ({ 
+        id: p.id, 
+        type: 'payout' as const, 
+        title: `Payout Request ($${p.amount})`, 
+        status: p.status || 'pending', 
+        date: p.created_at 
+      })) || []),
+      ...(tickets?.filter(t => t?.id && t?.subject).map(t => ({ 
+        id: t.id, 
+        type: 'ticket' as const, 
+        title: `Support Ticket: ${t.subject}`, 
+        status: t.status || 'open', 
+        date: t.created_at 
+      })) || [])
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
 
-  // Calculate Aggregate Revenue
+  // Calculate Aggregate Revenue with safety checks
   let totalRevenue = 0
-  if (!artistId && isLabel) {
-      // Sum up balances of all managed artists PLUS label's own balance
-      const artistsBalance = managedArtists.reduce((acc, curr) => acc + curr.balance, 0)
-      totalRevenue = Number(profile?.balance || 0) + artistsBalance
-  } else if (artistId) {
-      const { data: artistProfile } = await supabase.from('profiles').select('balance').eq('id', artistId).single()
-      totalRevenue = Number(artistProfile?.balance || 0)
-  } else {
-      totalRevenue = Number(profile?.balance || 0)
+  try {
+    if (!artistId && isLabel) {
+        // Sum up balances of all managed artists PLUS label's own balance
+        const artistsBalance = managedArtists.reduce((acc, curr) => {
+          const balance = Number(curr?.balance || 0)
+          return acc + (isNaN(balance) ? 0 : balance)
+        }, 0)
+        const labelBalance = Number(profile?.balance || 0)
+        totalRevenue = (isNaN(labelBalance) ? 0 : labelBalance) + artistsBalance
+    } else if (artistId) {
+        const { data: artistProfile } = await supabase.from('profiles').select('balance').eq('id', artistId).single()
+        const balance = Number(artistProfile?.balance || 0)
+        totalRevenue = isNaN(balance) ? 0 : balance
+    } else {
+        const balance = Number(profile?.balance || 0)
+        totalRevenue = isNaN(balance) ? 0 : balance
+    }
+  } catch (error) {
+    console.error('Error calculating revenue:', error)
+    totalRevenue = 0
   }
 
   const stats = {
@@ -115,7 +161,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       tickets: ticketCount || 0,
       statusCounts,
       genres,
-      activities
+      activities,
+      // Safe success rate calculation - prevent division by zero
+      successRate: totalReleases > 0 ? Math.round((approvedCount / totalReleases) * 100) : 0
   }
 
     const currentDate = new Date().toLocaleDateString('en-US', { 
@@ -156,6 +204,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                     paypalEmail: profile?.paypal_email,
                     upiId: profile?.upi_id
                 }}
+                profile={profile}
             />
         </div>
     )

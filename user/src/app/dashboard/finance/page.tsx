@@ -63,9 +63,24 @@ export default async function FinancePage({ searchParams }: { searchParams: { ar
       payoutQuery = payoutQuery.eq('user_id', user.id)
   }
 
-  const { data: revenueLogs } = await revenueQuery.order('period', { ascending: true })
-  const { data: transactions } = await transQuery
-  const { data: payoutRequests } = await payoutQuery
+  // Fetch data with error handling
+  let revenueLogs: any[] = []
+  let transactions: any[] = []
+  let payoutRequests: any[] = []
+
+  try {
+    const { data: revenueData } = await revenueQuery.order('period', { ascending: true })
+    revenueLogs = revenueData || []
+
+    const { data: transData } = await transQuery
+    transactions = transData || []
+
+    const { data: payoutData } = await payoutQuery
+    payoutRequests = payoutData || []
+  } catch (error) {
+    console.error('Error fetching finance data:', error)
+    // Continue with empty arrays
+  }
 
   // Process data for charts
   const platformMap = new Map<string, number>()
@@ -74,21 +89,30 @@ export default async function FinancePage({ searchParams }: { searchParams: { ar
   const countryMap = new Map<string, number>()
 
   revenueLogs?.forEach(log => {
-      const amount = Number(log.amount)
+      const amount = Number(log?.amount || 0)
+      if (isNaN(amount) || amount === 0) return
       
       // Platform logic
-      platformMap.set(log.platform, (platformMap.get(log.platform) || 0) + amount)
+      if (log?.platform) {
+        platformMap.set(log.platform, (platformMap.get(log.platform) || 0) + amount)
+      }
       
       // Track logic
-      const trackTitle = (log.tracks as any)?.title || 'Unknown Track'
+      const trackTitle = (log?.tracks as any)?.title || 'Unknown Track'
       trackMap.set(trackTitle, (trackMap.get(trackTitle) || 0) + amount)
       
       // Monthly logic
-      const monthStr = format(new Date(log.period), 'MMM yyyy')
-      monthlyMap.set(monthStr, (monthlyMap.get(monthStr) || 0) + amount)
+      if (log?.period) {
+        try {
+          const monthStr = format(new Date(log.period), 'MMM yyyy')
+          monthlyMap.set(monthStr, (monthlyMap.get(monthStr) || 0) + amount)
+        } catch (e) {
+          // Skip invalid dates
+        }
+      }
 
       // Country logic
-      const country = log.country_code || 'US'
+      const country = log?.country_code || 'US'
       countryMap.set(country, (countryMap.get(country) || 0) + amount)
   })
 
