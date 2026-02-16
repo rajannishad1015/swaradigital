@@ -4,6 +4,8 @@ import { SubmitButton } from '@/components/ui/submit-button'
 import Link from 'next/link'
 import { Disc, Music, Radio, Headphones, Mic2, PlayCircle } from 'lucide-react'
 import { AuthMessages } from '@/components/auth/auth-messages'
+import { SignupSuccessDialog } from '@/components/auth/signup-success-dialog'
+import { Suspense } from 'react'
 
 export default function LoginPage() {
   return (
@@ -94,6 +96,9 @@ export default function LoginPage() {
                   Enter your credentials to access the platform
                 </p>
                 <AuthMessages />
+                <Suspense fallback={null}>
+                  <SignupSuccessDialog />
+                </Suspense>
               </div>
 
               {/* Login Form */}
