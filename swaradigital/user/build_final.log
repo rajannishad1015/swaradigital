@@ -1,0 +1,11 @@
+
+> user@0.1.0 build
+> next build
+
+ΓÜá Found lockfile missing swc dependencies, patching...
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+ΓÜá Lockfile was successfully patched, please run "npm install" to ensure @next/swc dependencies are downloaded
