@@ -48,10 +48,22 @@ export default function EditProfileDialog({ profile, trigger }: { profile: any, 
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-6 py-4">
-             {/* Hidden Fields for required updates */}
-             <input type="hidden" name="fullName" value={profile?.full_name || ''} />
-             <input type="hidden" name="artistName" value={profile?.artist_name || ''} />
-             <input type="hidden" name="bio" value={profile?.bio || ''} />
+            <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                        <Label htmlFor="fullName" className="text-zinc-300">Full Name</Label>
+                        <Input id="fullName" name="fullName" defaultValue={profile?.full_name || ''} placeholder="John Doe" className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="artistName" className="text-zinc-300">Artist Name</Label>
+                        <Input id="artistName" name="artistName" defaultValue={profile?.artist_name || ''} placeholder="Stage Name" className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600" />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="bio" className="text-zinc-300">Bio</Label>
+                    <Textarea id="bio" name="bio" defaultValue={profile?.bio || ''} placeholder="Tell us about yourself..." className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600 h-24" />
+                </div>
+            </div>
 
             <div className="grid gap-4 py-4">
                 <div className="space-y-2">
@@ -159,6 +171,14 @@ export default function EditProfileDialog({ profile, trigger }: { profile: any, 
                     <div className="space-y-2">
                         <Label htmlFor="websiteUrl" className="text-zinc-300">Website</Label>
                         <Input id="websiteUrl" name="websiteUrl" defaultValue={profile?.website_url || ''} placeholder="https://yourwebsite.com" className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="facebookUrl" className="text-zinc-300">Facebook URL</Label>
+                        <Input id="facebookUrl" name="facebookUrl" defaultValue={profile?.facebook_url || ''} placeholder="https://facebook.com/..." className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="soundcloudUrl" className="text-zinc-300">SoundCloud URL</Label>
+                        <Input id="soundcloudUrl" name="soundcloudUrl" defaultValue={profile?.soundcloud_url || ''} placeholder="https://soundcloud.com/..." className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600" />
                     </div>
                     <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="tiktokUrl" className="text-zinc-300">TikTok URL</Label>
