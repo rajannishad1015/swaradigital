@@ -1,38 +1,28 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-    Upload, 
     Music, 
     Image as ImageIcon, 
     X, 
     CheckCircle2, 
     AlertCircle, 
-    ArrowRight,
     Settings,
     Layers,
     Download,
     Monitor,
-    RefreshCw,
     Info,
-    Scissors,
-    Volume2,
     Tags,
-    Play,
     Pause,
-    Plus,
     Trash2,
     Sparkles,
     Smartphone,
-    Cloud,
-    Layout,
-    ImagePlus
+    Cloud
 } from 'lucide-react'
-import { useFFmpeg, AudioProcessingSettings } from '@/hooks/useFFmpeg'
+import { useFFmpeg } from '@/hooks/useFFmpeg'
 import { processImage } from '@/lib/imageProcessor'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import { Card } from '@/components/ui/card'
 import { 
     Select,
@@ -51,6 +41,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { LucideIcon } from 'lucide-react'
 
 interface FileItem {
     id: string
@@ -72,6 +63,7 @@ interface FileItem {
             artist: string
             album: string
         }
+        coverArtId?: string
     }
 }
 
@@ -92,7 +84,11 @@ export default function AudioConverterPage() {
 
     const { convert, cancel, loading: ffmpegLoading, loaded: ffmpegLoaded, load: loadFFmpeg } = useFFmpeg(addLog)
     const [activeTab, setActiveTab] = useState<TabType>('audio')
+    
+    // Use state for rendering, ref for immediate value access in loops
+    const [isProcessing, setIsProcessing] = useState(false)
     const processingRef = useRef(false)
+    
     const [audioQueue, setAudioQueue] = useState<FileItem[]>([])
     const [imageQueue, setImageQueue] = useState<FileItem[]>([])
     
@@ -148,8 +144,13 @@ export default function AudioConverterPage() {
         toast.success(`Applied ${preset.name} settings to all audio files`)
     }
 
+    const setProcessingState = (processing: boolean) => {
+        processingRef.current = processing
+        setIsProcessing(processing)
+    }
+
     const stopProcessing = () => {
-        processingRef.current = false;
+        setProcessingState(false)
         cancel();
         addLog('⏹ Processing cancelled by user');
         toast.info('Processing Stopped');
@@ -175,12 +176,13 @@ export default function AudioConverterPage() {
              try {
                 await loadFFmpeg()
              } catch (e) {
+                console.error(e)
                 toast.error("Failed to start Audio Engine. Check console.")
                 return;
              }
         }
         
-        processingRef.current = true;
+        setProcessingState(true)
         
         for (const item of pending) {
             if (!processingRef.current) break;
@@ -189,7 +191,7 @@ export default function AudioConverterPage() {
             try {
                 // Find manual or automatic cover art
                 let coverBlob: Blob | undefined = undefined
-                const manualCoverId = (item.settings as any).coverArtId
+                const manualCoverId = item.settings.coverArtId
                 
                 if (manualCoverId) {
                     coverBlob = imageQueue.find(f => f.id === manualCoverId)?.resultBlob
@@ -201,7 +203,7 @@ export default function AudioConverterPage() {
                 const result = await convert(item.file, {
                     ...item.settings,
                     coverArt: coverBlob
-                }, (p) => updateStatus(item.id, 'audio', { progress: Math.round(p * 100) }))
+                }, (p: number) => updateStatus(item.id, 'audio', { progress: Math.round(p * 100) }))
                 
                 if (!processingRef.current) {
                     updateStatus(item.id, 'audio', { status: 'pending', progress: 0 })
@@ -210,20 +212,21 @@ export default function AudioConverterPage() {
 
                 updateStatus(item.id, 'audio', { status: 'completed', progress: 100, resultBlob: result })
                 addLog(`✓ Successfully processed: ${item.file.name}`)
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const errorMessage = err instanceof Error ? err.message : 'Unknown error';
                 if (!processingRef.current) {
                     updateStatus(item.id, 'audio', { status: 'pending', progress: 0 })
                 } else {
-                    updateStatus(item.id, 'audio', { status: 'error', error: err.message })
-                    addLog(`✖ Error processing ${item.file.name}: ${err.message}`)
+                    updateStatus(item.id, 'audio', { status: 'error', error: errorMessage })
+                    addLog(`✖ Error processing ${item.file.name}: ${errorMessage}`)
                 }
             }
         }
-        processingRef.current = false;
+        setProcessingState(false)
     }
 
     const processImages = async () => {
-        if (processingRef.current) {
+        if (isProcessing) {
             stopProcessing()
             return
         }
@@ -231,7 +234,7 @@ export default function AudioConverterPage() {
         const pending = imageQueue.filter(f => f.status === 'pending')
         if (pending.length === 0) return
 
-        processingRef.current = true
+        setProcessingState(true)
         
         for (const item of pending) {
             if (!processingRef.current) break
@@ -243,7 +246,7 @@ export default function AudioConverterPage() {
                 const result = await processImage(item.file, {
                     width: size,
                     height: size,
-                    format: imageSettings.imageFormat as any,
+                    format: imageSettings.imageFormat as "image/jpeg" | "image/png" | "image/webp",
                     cropToSquare: imageSettings.cropToSquare === 'true',
                     quality: imageSettings.quality
                 })
@@ -255,16 +258,17 @@ export default function AudioConverterPage() {
 
                 updateStatus(item.id, 'image', { status: 'completed', progress: 100, resultBlob: result })
                 addLog(`✓ Studio task complete: ${item.file.name}`)
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const errorMessage = err instanceof Error ? err.message : 'Unknown error';
                 if (!processingRef.current) {
                     updateStatus(item.id, 'image', { status: 'pending', progress: 0 })
                 } else {
-                    updateStatus(item.id, 'image', { status: 'error', error: err.message })
-                    addLog(`✖ Studio error: ${err.message}`)
+                    updateStatus(item.id, 'image', { status: 'error', error: errorMessage })
+                    addLog(`✖ Studio error: ${errorMessage}`)
                 }
             }
         }
-        processingRef.current = false
+        setProcessingState(false)
     }
 
     const updateStatus = useCallback((id: string, type: TabType, updates: Partial<FileItem>) => {
@@ -272,7 +276,7 @@ export default function AudioConverterPage() {
         setter(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f))
     }, [])
 
-    const updateAudioSettings = useCallback((id: string, s: any) => {
+    const updateAudioSettings = useCallback((id: string, s: Partial<FileItem['settings']>) => {
         setAudioQueue(prev => prev.map(f => f.id === id ? { 
             ...f, 
             settings: { ...f.settings, ...s } 
@@ -401,12 +405,12 @@ export default function AudioConverterPage() {
                                         <h3 className="text-[11px] font-black text-zinc-600 uppercase tracking-widest">Image Queue ({imageQueue.length})</h3>
                                         <Button 
                                             size="sm" 
-                                            className={`${processingRef.current ? 'bg-zinc-600 hover:bg-zinc-500' : 'bg-rose-500 hover:bg-rose-400'} text-white font-bold rounded-xl transition-colors`}
+                                            className={`${isProcessing ? 'bg-zinc-600 hover:bg-zinc-500' : 'bg-rose-500 hover:bg-rose-400'} text-white font-bold rounded-xl transition-colors`}
                                             onClick={processImages}
-                                            disabled={imageQueue.filter(f => f.status === 'pending').length === 0 && !processingRef.current}
+                                            disabled={imageQueue.filter(f => f.status === 'pending').length === 0 && !isProcessing}
                                         >
-                                            {processingRef.current ? <X className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                                            {processingRef.current ? 'Cancel Processing' : 'Process Images'}
+                                            {isProcessing ? <X className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                                            {isProcessing ? 'Cancel Processing' : 'Process Images'}
                                         </Button>
                                     </div>
                                     <QueueList 
@@ -557,7 +561,14 @@ export default function AudioConverterPage() {
     )
 }
 
-function TabButton({ active, icon: Icon, label, onClick }: any) {
+interface TabButtonProps {
+    active: boolean
+    icon: LucideIcon
+    label: string
+    onClick: () => void
+}
+
+function TabButton({ active, icon: Icon, label, onClick }: TabButtonProps) {
     return (
         <button 
             onClick={onClick}
@@ -569,7 +580,12 @@ function TabButton({ active, icon: Icon, label, onClick }: any) {
     )
 }
 
-function PresetButton({ preset, onClick }: any) {
+interface PresetButtonProps {
+    preset: typeof PRESETS[0]
+    onClick: () => void
+}
+
+function PresetButton({ preset, onClick }: PresetButtonProps) {
     return (
         <button onClick={onClick} className="flex items-center gap-3 p-4 bg-zinc-900/30 border border-zinc-900 rounded-2xl hover:border-indigo-500/50 hover:bg-zinc-900/50 transition-all group group">
             <div className="w-10 h-10 bg-zinc-950 rounded-lg flex items-center justify-center border border-zinc-800 group-hover:bg-indigo-500/10 transition-colors">
@@ -583,11 +599,19 @@ function PresetButton({ preset, onClick }: any) {
     )
 }
 
-function Dropzone({ label, sub, icon: Icon, onDrop, color = 'indigo' }: any) {
+interface DropzoneProps {
+    label: string
+    sub: string
+    icon: LucideIcon
+    onDrop: (files: File[]) => void
+    color?: 'indigo' | 'rose'
+}
+
+function Dropzone({ label, sub, icon: Icon, onDrop, color = 'indigo' }: DropzoneProps) {
     const colorClasses = {
         indigo: 'hover:border-indigo-500/50 ring-indigo-500 text-indigo-400',
         rose: 'hover:border-rose-500/50 ring-rose-500 text-rose-400'
-    }[color as 'indigo' | 'rose'] || 'hover:border-indigo-500/50 ring-indigo-500 text-indigo-400'
+    }[color]
 
     return (
         <div 
@@ -595,12 +619,17 @@ function Dropzone({ label, sub, icon: Icon, onDrop, color = 'indigo' }: any) {
             onDrop={e => { e.preventDefault(); onDrop(Array.from(e.dataTransfer.files)); }}
             onClick={() => {
                 const input = document.createElement('input'); input.type = 'file'; input.multiple = true;
-                input.onchange = (e: any) => onDrop(Array.from(e.target.files)); input.click();
+                input.onchange = (e: any) => {
+                    if (e.target.files) {
+                        onDrop(Array.from(e.target.files))
+                    }
+                };
+                input.click();
             }}
-            className={`group relative h-48 rounded-3xl border-2 border-dashed border-zinc-800 bg-zinc-900/10 hover:bg-zinc-900/20 transition-all flex flex-col items-center justify-center cursor-pointer p-8 overflow-hidden ${colorClasses.split(' ')[0]}`}
+            className={`group relative h-48 rounded-3xl border-2 border-dashed border-zinc-800 bg-zinc-900/10 hover:bg-zinc-900/20 transition-all flex flex-col items-center justify-center cursor-pointer p-8 overflow-hidden ${colorClasses?.split(' ')[0]}`}
         >
-            <div className={`w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-4 ring-1 ring-zinc-800 group-hover:${colorClasses.split(' ')[1]} transition-all duration-500`}>
-                <Icon className={`w-6 h-6 text-zinc-500 group-hover:${colorClasses.split(' ')[2]}`} />
+            <div className={`w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-4 ring-1 ring-zinc-800 group-hover:${colorClasses?.split(' ')[1]} transition-all duration-500`}>
+                <Icon className={`w-6 h-6 text-zinc-500 group-hover:${colorClasses?.split(' ')[2]}`} />
             </div>
             <h3 className="text-lg font-bold text-zinc-200">{label}</h3>
             <p className="text-xs text-zinc-500 mt-1">{sub}</p>
@@ -608,16 +637,18 @@ function Dropzone({ label, sub, icon: Icon, onDrop, color = 'indigo' }: any) {
     )
 }
 
-function QueueList({ items, type, imageQueue, playingId, onTogglePreview, onRemove, onDownload, onUpdateSettings }: {
-    items: FileItem[],
-    type: TabType,
-    imageQueue?: FileItem[],
-    playingId?: string | null,
-    onTogglePreview?: (file: File, id: string) => void,
-    onRemove: (id: string) => void,
-    onDownload: (item: FileItem) => void,
-    onUpdateSettings?: (id: string, settings: any) => void
-}) {
+interface QueueListProps {
+    items: FileItem[]
+    type: TabType
+    imageQueue?: FileItem[]
+    playingId?: string | null
+    onTogglePreview?: (file: File, id: string) => void
+    onRemove: (id: string) => void
+    onDownload: (item: FileItem) => void
+    onUpdateSettings?: (id: string, settings: Partial<FileItem['settings']>) => void
+}
+
+function QueueList({ items, type, imageQueue, playingId, onTogglePreview, onRemove, onDownload, onUpdateSettings }: QueueListProps) {
     return (
         <AnimatePresence mode="popLayout">
             {items.map((item) => (
@@ -652,7 +683,7 @@ function QueueList({ items, type, imageQueue, playingId, onTogglePreview, onRemo
                                                     <MetadataEditor 
                                                         item={item} 
                                                         imageQueue={imageQueue || []}
-                                                        onUpdate={(u: any) => onUpdateSettings?.(item.id, u)} 
+                                                        onUpdate={(u) => onUpdateSettings?.(item.id, u)} 
                                                     />
                                                 )}
                                                 <button onClick={() => onRemove(item.id)} className="p-1.5 text-zinc-600 hover:text-rose-400 transition-colors">
@@ -682,12 +713,18 @@ function QueueList({ items, type, imageQueue, playingId, onTogglePreview, onRemo
     )
 }
 
-function MetadataEditor({ item, imageQueue, onUpdate }: { item: FileItem, imageQueue: FileItem[], onUpdate: (updates: any) => void }) {
+interface MetadataEditorProps {
+    item: FileItem
+    imageQueue: FileItem[]
+    onUpdate: (updates: Partial<FileItem['settings']>) => void
+}
+
+function MetadataEditor({ item, imageQueue, onUpdate }: MetadataEditorProps) {
     const [staged, setStaged] = useState({
         ...item.settings.metadata,
         trimStart: item.settings.trimStart,
         trimEnd: item.settings.trimEnd,
-        coverArtId: (item.settings as any).coverArtId || ''
+        coverArtId: item.settings.coverArtId || ''
     })
 
     return (

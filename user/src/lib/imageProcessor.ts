@@ -1,6 +1,11 @@
 import pica from 'pica';
 
-let picaInstance: any = null;
+interface PicaInstance {
+  resize: (from: HTMLCanvasElement, to: HTMLCanvasElement) => Promise<HTMLCanvasElement>;
+  toBlob: (canvas: HTMLCanvasElement, mimeType: string, quality: number) => Promise<Blob>;
+}
+
+let picaInstance: PicaInstance | null = null;
 
 export interface ImageResizeOptions {
   width: number;
@@ -61,7 +66,7 @@ export async function processImage(file: File, options: ImageResizeOptions): Pro
       // 4. Resize Logic
       // Try Pica for high quality, fallback to canvas for reliability
       try {
-        const picaPromise = picaInstance.resize(offscreenCanvas, canvas);
+        const picaPromise = picaInstance!.resize(offscreenCanvas, canvas);
         
         // Timeout for Pica (3 seconds)
         const timeoutPromise = new Promise((_, reject) => 
@@ -72,7 +77,7 @@ export async function processImage(file: File, options: ImageResizeOptions): Pro
         
         // Quality mapping: 0-100 -> 0-1
         const quality = options.quality ? Math.max(0, Math.min(1, options.quality / 100)) : 0.9;
-        const blob = await picaInstance.toBlob(canvas, options.format || 'image/jpeg', quality);
+        const blob = await picaInstance!.toBlob(canvas, options.format || 'image/jpeg', quality);
         resolve(blob);
 
       } catch (err) {

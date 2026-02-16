@@ -11,11 +11,47 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { UploadCloud, Loader2, Music, Image as ImageIcon, X, Calendar, Disc, Check, ChevronRight, ChevronLeft, Save } from 'lucide-react'
+import { UploadCloud, Loader2, Music, Image as ImageIcon, X, Calendar, Disc, Check, ChevronRight, ChevronLeft, Save, Plus, Trash2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import AudioPlayer from '@/components/audio-player'
+import UploadSuccessDialog from '@/components/upload/upload-success-dialog'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
+
+
+interface TrackItem {
+    id: string;
+    title: string;
+    audioFile: File | null;
+    audioUrl?: string;
+    duration: number;
+    audioAnalysis: any;
+    trackVersion: string;
+    versionSubtitle: string;
+    isInstrumental: string;
+    primaryArtist: string;
+    primaryArtistSpotify: string;
+    primaryArtistApple: string;
+    featuringArtist: string;
+    featuringArtistSpotify: string;
+    featuringArtistApple: string;
+    genre: string;
+    subGenre: string;
+    pLine: string;
+    titleLanguage: string;
+    lyricsLanguage: string;
+    lyrics: string;
+    lyricists: {firstName: string, lastName: string}[];
+    composers: {firstName: string, lastName: string}[];
+    producer: string;
+    productionYear: string;
+    publisher: string;
+    hasISRC: string;
+    isrc: string;
+    priceTier: string;
+    explicitType: string;
+    callerTuneTiming: string;
+    distributeVideo: string;
+}
 
 const ALL_PLATFORMS = [
     { id: 'spotify', name: 'Spotify', icon: '' },
@@ -28,7 +64,7 @@ const ALL_PLATFORMS = [
     { id: 'gaana', name: 'Gaana', icon: '' },
 ]
 
-export default function UploadForm({ initialData }: { initialData?: any }) {
+export default function UploadForm({ initialData, isFirstUpload }: { initialData?: Record<string, any>, isFirstUpload?: boolean }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
@@ -44,14 +80,16 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
   const [title, setTitle] = useState(initialData?.title || '')
   const [labelName, setLabelName] = useState(initialData?.albums?.label_name || '')
   const [primaryArtist, setPrimaryArtist] = useState(initialData?.albums?.primary_artist || '')
+  const [primaryArtistSpotify, setPrimaryArtistSpotify] = useState(initialData?.albums?.primary_artist_spotify_id || '')
+  const [primaryArtistApple, setPrimaryArtistApple] = useState(initialData?.albums?.primary_artist_apple_id || '')
   const [featuringArtist, setFeaturingArtist] = useState(initialData?.albums?.featuring_artist || '')
+  const [featuringArtistSpotify, setFeaturingArtistSpotify] = useState(initialData?.albums?.featuring_artist_spotify_id || '')
+  const [featuringArtistApple, setFeaturingArtistApple] = useState(initialData?.albums?.featuring_artist_apple_id || '')
   const [genre, setGenre] = useState(initialData?.genre || '')
   const [subGenre, setSubGenre] = useState(initialData?.albums?.sub_genre || '')
-  
   const [courtesyLine, setCourtesyLine] = useState(initialData?.albums?.courtesy_line || '')
   const [description, setDescription] = useState(initialData?.description || '')
   const [language, setLanguage] = useState(initialData?.albums?.language || 'english')
-  const [lyrics, setLyrics] = useState(initialData?.lyrics || '')
   
   // Dates
   const [releaseDate, setReleaseDate] = useState(initialData?.albums?.release_date ? new Date(initialData.albums.release_date).toISOString().split('T')[0] : '')
@@ -61,37 +99,136 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
   const currentYear = new Date().getFullYear().toString()
   const [upc, setUpc] = useState(initialData?.albums?.upc || '') 
   
-  // Track Details State
-  const [trackVersion, setTrackVersion] = useState('original')
-  const [isInstrumental, setIsInstrumental] = useState('no')
-  const [trackTitle, setTrackTitle] = useState(initialData?.title || '') // Defaults to release title
-  const [versionSubtitle, setVersionSubtitle] = useState('')
-  const [trackPrimaryArtist, setTrackPrimaryArtist] = useState('')
-  const [trackFeaturingArtist, setTrackFeaturingArtist] = useState('')
-  const [trackGenre, setTrackGenre] = useState('')
-  const [trackSubGenre, setTrackSubGenre] = useState('')
-  const [trackPLine, setTrackPLine] = useState('')
-  const [trackTitleLanguage, setTrackTitleLanguage] = useState('english')
-  const [trackLyricsLanguage, setTrackLyricsLanguage] = useState('english')
+  // Track Details State (Refactored for Multi-track)
+  const [tracks, setTracks] = useState<TrackItem[]>(() => {
+    if (initialData?.tracks?.length > 0) {
+        return initialData?.tracks?.map((t: Record<string, any>) => ({
+            id: t.id,
+            title: t.title,
+            audioUrl: t.file_url,
+            duration: t.duration || 0,
+            audioAnalysis: t.audio_analysis || null,
+            trackVersion: t.version_type || 'original',
+            versionSubtitle: t.version_subtitle || '',
+            primaryArtist: t.primary_artist || '',
+            primaryArtistSpotify: t.primary_artist_spotify_id || '',
+            primaryArtistApple: t.primary_artist_apple_id || '',
+            featuringArtist: t.featuring_artist || '',
+            featuringArtistSpotify: t.featuring_artist_spotify_id || '',
+            featuringArtistApple: t.featuring_artist_apple_id || '',
+            genre: t.genre || '',
+            subGenre: t.sub_genre || '',
+            pLine: t.track_p_line || '',
+            titleLanguage: t.title_language || 'english',
+            lyricsLanguage: t.lyrics_language || 'english',
+            lyrics: t.lyrics || '',
+            lyricists: t.lyricists || [],
+            composers: t.composers || [],
+            producer: t.producers || '',
+            productionYear: t.production_year || currentYear,
+            publisher: t.publisher || '',
+            hasISRC: t.isrc ? 'yes' : 'no',
+            isrc: t.isrc || '',
+            priceTier: t.price_tier || 'mid',
+            explicitType: t.explicit_type || 'no',
+            callerTuneTiming: t.caller_tune_timing || '',
+            distributeVideo: t.distribute_video ? 'yes' : 'no'
+        }))
+    }
+    return [{
+        id: 'initial',
+        title: initialData?.title || '',
+        audioFile: null,
+        duration: 0,
+        audioAnalysis: null,
+        trackVersion: 'original',
+        versionSubtitle: '',
+        primaryArtist: '',
+        primaryArtistSpotify: '',
+        primaryArtistApple: '',
+        featuringArtist: '',
+        featuringArtistSpotify: '',
+        featuringArtistApple: '',
+        genre: '',
+        subGenre: '',
+        pLine: '',
+        titleLanguage: 'english',
+        lyricsLanguage: 'english',
+        lyrics: '',
+        lyricists: [],
+        composers: [],
+        producer: '',
+        productionYear: currentYear,
+        publisher: '',
+        hasISRC: 'no',
+        isrc: '',
+        priceTier: 'mid',
+        explicitType: 'no',
+        callerTuneTiming: '',
+        distributeVideo: 'no',
+        isInstrumental: 'no'
+    }]
+  })
   
-  const [lyricists, setLyricists] = useState<{firstName: string, lastName: string}[]>([])
-  const [newLyricistFirst, setNewLyricistFirst] = useState('')
-  const [newLyricistLast, setNewLyricistLast] = useState('')
+  const [activeTrackId, setActiveTrackId] = useState<string>('initial')
+  const currentTrack = tracks.find(t => t.id === activeTrackId) || tracks[0]
 
-  const [composers, setComposers] = useState<{firstName: string, lastName: string}[]>([])
-  const [newComposerFirst, setNewComposerFirst] = useState('')
-  const [newComposerLast, setNewComposerLast] = useState('')
-  
-  const [producer, setProducer] = useState('')
-  const [productionYear, setProductionYear] = useState(currentYear)
-  const [publisher, setPublisher] = useState('')
-  const [hasISRC, setHasISRC] = useState('no')
-  const [isrc, setIsrc] = useState('')
-  const [priceTier, setPriceTier] = useState('mid')
-  const [explicitType, setExplicitType] = useState('no')
-  const [callerTuneTiming, setCallerTuneTiming] = useState('')
-  const [distributeVideo, setDistributeVideo] = useState('no')
-  
+  const updateCurrentTrack = (updates: Partial<TrackItem>) => {
+    setTracks(prev => prev.map(t => t.id === activeTrackId ? { ...t, ...updates } : t))
+  }
+
+  const addTrack = () => {
+    const newId = Math.random().toString(36).substr(2, 9)
+    setTracks([...tracks, {
+        id: newId,
+        title: `Untitled Track ${tracks.length + 1}`,
+        audioFile: null,
+        duration: 0,
+        audioAnalysis: null,
+        trackVersion: 'original',
+        versionSubtitle: '',
+        primaryArtist: '',
+        primaryArtistSpotify: '',
+        primaryArtistApple: '',
+        featuringArtist: '',
+        featuringArtistSpotify: '',
+        featuringArtistApple: '',
+        genre: '',
+        subGenre: '',
+        pLine: '',
+        titleLanguage: 'english',
+        lyricsLanguage: 'english',
+        lyrics: '',
+        lyricists: [],
+        composers: [],
+        producer: '',
+        productionYear: currentYear,
+        publisher: '',
+        hasISRC: 'no',
+        isrc: '',
+        priceTier: 'mid',
+        explicitType: 'no',
+        callerTuneTiming: '',
+        distributeVideo: 'no',
+        isInstrumental: 'no'
+    }])
+    setActiveTrackId(newId)
+  }
+
+  const removeTrack = (id: string) => {
+    if (tracks.length === 1) {
+        toast.error("At least one track is required.")
+        return
+    }
+    setTracks(tracks.filter(t => t.id !== id))
+    if (activeTrackId === id) {
+        setActiveTrackId(tracks.find(t => t.id !== id)?.id || '')
+    }
+  }
+
+  // Success Dialog State
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false)
+
   // Artist Dialog State
   const [isArtistDialogOpen, setIsArtistDialogOpen] = useState(false)
   const [artistDialogMode, setArtistDialogMode] = useState<'release' | 'track' | 'release-featuring' | 'track-featuring'>('release')
@@ -99,18 +236,11 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
   const [artistDialogSpotify, setArtistDialogSpotify] = useState('')
   const [artistDialogApple, setArtistDialogApple] = useState('')
 
-  // Platform IDs State
-  const [primaryArtistSpotify, setPrimaryArtistSpotify] = useState('')
-  const [primaryArtistApple, setPrimaryArtistApple] = useState('')
-  const [featuringArtistSpotify, setFeaturingArtistSpotify] = useState('')
-  const [featuringArtistApple, setFeaturingArtistApple] = useState('')
-  
-  const [trackPrimaryArtistSpotify, setTrackPrimaryArtistSpotify] = useState('')
-  const [trackPrimaryArtistApple, setTrackPrimaryArtistApple] = useState('')
-  const [trackFeaturingArtistSpotify, setTrackFeaturingArtistSpotify] = useState('')
-  const [trackFeaturingArtistApple, setTrackFeaturingArtistApple] = useState('')
-
-  // ... (previous state definitions)
+  // Lyricists/Composers Input State (Temporary for current track)
+  const [newLyricistFirst, setNewLyricistFirst] = useState('')
+  const [newLyricistLast, setNewLyricistLast] = useState('')
+  const [newComposerFirst, setNewComposerFirst] = useState('')
+  const [newComposerLast, setNewComposerLast] = useState('')
 
   const openArtistDialog = (mode: 'release' | 'track' | 'release-featuring' | 'track-featuring') => {
       setArtistDialogMode(mode)
@@ -123,13 +253,13 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
           setArtistDialogSpotify(featuringArtistSpotify)
           setArtistDialogApple(featuringArtistApple)
       } else if (mode === 'track') {
-          setArtistDialogName(trackPrimaryArtist)
-          setArtistDialogSpotify(trackPrimaryArtistSpotify)
-          setArtistDialogApple(trackPrimaryArtistApple)
+          setArtistDialogName(currentTrack.primaryArtist)
+          setArtistDialogSpotify(currentTrack.primaryArtistSpotify)
+          setArtistDialogApple(currentTrack.primaryArtistApple)
        } else if (mode === 'track-featuring') {
-          setArtistDialogName(trackFeaturingArtist)
-          setArtistDialogSpotify(trackFeaturingArtistSpotify)
-          setArtistDialogApple(trackFeaturingArtistApple)
+          setArtistDialogName(currentTrack.featuringArtist)
+          setArtistDialogSpotify(currentTrack.featuringArtistSpotify)
+          setArtistDialogApple(currentTrack.featuringArtistApple)
       }
       setIsArtistDialogOpen(true)
   }
@@ -146,13 +276,17 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
           setFeaturingArtistSpotify(artistDialogSpotify)
           setFeaturingArtistApple(artistDialogApple)
       } else if (artistDialogMode === 'track') {
-          setTrackPrimaryArtist(artistDialogName)
-          setTrackPrimaryArtistSpotify(artistDialogSpotify)
-          setTrackPrimaryArtistApple(artistDialogApple)
+          updateCurrentTrack({
+              primaryArtist: artistDialogName,
+              primaryArtistSpotify: artistDialogSpotify,
+              primaryArtistApple: artistDialogApple
+          })
       } else if (artistDialogMode === 'track-featuring') {
-          setTrackFeaturingArtist(artistDialogName)
-          setTrackFeaturingArtistSpotify(artistDialogSpotify)
-          setTrackFeaturingArtistApple(artistDialogApple)
+          updateCurrentTrack({
+              featuringArtist: artistDialogName,
+              featuringArtistSpotify: artistDialogSpotify,
+              featuringArtistApple: artistDialogApple
+          })
       }
       setIsArtistDialogOpen(false)
   }
@@ -188,21 +322,33 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
   // Helpers
   const addLyricist = () => {
     if(newLyricistFirst && newLyricistLast) {
-        setLyricists([...lyricists, { firstName: newLyricistFirst, lastName: newLyricistLast }])
+        updateCurrentTrack({
+            lyricists: [...currentTrack.lyricists, { firstName: newLyricistFirst, lastName: newLyricistLast }]
+        })
         setNewLyricistFirst('')
         setNewLyricistLast('')
     }
   }
-  const removeLyricist = (i: number) => setLyricists(lyricists.filter((_, idx) => idx !== i))
+  const removeLyricist = (i: number) => {
+      updateCurrentTrack({
+          lyricists: currentTrack.lyricists.filter((_, idx) => idx !== i)
+      })
+  }
 
   const addComposer = () => {
     if(newComposerFirst && newComposerLast) {
-        setComposers([...composers, { firstName: newComposerFirst, lastName: newComposerLast }])
+        updateCurrentTrack({
+            composers: [...currentTrack.composers, { firstName: newComposerFirst, lastName: newComposerLast }]
+        })
         setNewComposerFirst('')
         setNewComposerLast('')
     }
   }
-  const removeComposer = (i: number) => setComposers(composers.filter((_, idx) => idx !== i))
+  const removeComposer = (i: number) => {
+      updateCurrentTrack({
+          composers: currentTrack.composers.filter((_, idx) => idx !== i)
+      })
+  }
   
   const togglePlatform = (id: string) => {
       if (selectedPlatforms.includes(id)) {
@@ -311,15 +457,17 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
            }
 
            // If all good
-           setAudioFile(file)
-           setDuration(Math.round(duration))
-           setAudioAnalysis({
-               bitrate,
-               sampleRate,
-               channels,
-               format: ext.toUpperCase(),
-               duration,
-               ...deepAnalysis
+           updateCurrentTrack({
+               audioFile: file,
+               duration: Math.round(duration),
+               audioAnalysis: {
+                   bitrate,
+                   sampleRate,
+                   channels,
+                   format: ext.toUpperCase(),
+                   duration,
+                   ...deepAnalysis
+               }
            })
            
            if (!Object.keys(deepAnalysis).length) {
@@ -339,22 +487,83 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
   }
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setCoverFile(e.target.files[0])
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate File Size & Type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please upload a valid image file.")
+        return
+      }
+
+      const img = new Image()
+      img.src = URL.createObjectURL(file)
+      img.onload = () => {
+        if (img.width < 3000 || img.height < 3000) {
+          toast.error(`Artwork is too small (${img.width}x${img.height}px). Minimum 3000x3000px required.`, {
+             description: "High-quality artwork is required for platforms like Apple Music and Spotify."
+          })
+          e.target.value = '' // Clear input
+          setCoverFile(null)
+        } else if (img.width !== img.height) {
+          toast.warning(`Artwork is not square (${img.width}x${img.height}px). Square artwork is highly recommended.`)
+          setCoverFile(file)
+        } else {
+          setCoverFile(file)
+          toast.success("Artwork validated!")
+        }
+        URL.revokeObjectURL(img.src)
+      }
+      img.onerror = () => {
+        toast.error("Failed to load image. Please try another file.")
+        URL.revokeObjectURL(img.src)
+      }
     }
   }
   
   const validateStep = (step: number) => {
       if (step === 1) {
-          if (!releaseType || !title || !labelName || !primaryArtist || !releaseDate || !genre || (!coverFile && !initialData?.albums?.cover_art_url)) {
-              toast.error("Please fill in all required fields in Step 1, including Cover Art.")
-              return false
+          if (!releaseType) { toast.error("Please select a release type."); return false; }
+          if (!title.trim()) { toast.error("Release title is required."); return false; }
+          if (title.length > 100) { toast.error("Title is too long (max 100 chars)."); return false; }
+          if (!labelName.trim()) { toast.error("Label name is required."); return false; }
+          if (!primaryArtist.trim()) { toast.error("Primary artist is required."); return false; }
+          if (!releaseDate) { toast.error("Release date is required."); return false; }
+          
+          const selectedDate = new Date(releaseDate);
+          const today = new Date();
+          today.setHours(0,0,0,0);
+          if (selectedDate < today) {
+              toast.warning("Note: The release date is in the past. This may be rejected by some platforms.");
+          }
+
+          if (!coverFile && !initialData?.albums?.cover_art_url) {
+              toast.error("Cover art is mandatory.");
+              return false;
           }
       }
       if (step === 2) {
-          if ((!audioFile && !initialData?.file_url) || !trackTitle || !productionYear || !publisher) {
-              toast.error("Please upload audio and fill in required track details.")
-              return false
+          // Validate all tracks
+          for (const track of tracks) {
+              if (!track.audioFile && !track.audioUrl) {
+                  toast.error(`Audio file missing for track: ${track.title || 'Untitled'}`);
+                  setActiveTrackId(track.id);
+                  return false;
+              }
+              if (!track.title.trim()) {
+                  toast.error("Track title is required.");
+                  setActiveTrackId(track.id);
+                  return false;
+              }
+              if (!track.genre) {
+                  toast.error(`Genre is required for track: ${track.title}`);
+                  setActiveTrackId(track.id);
+                  return false;
+              }
+              if (track.hasISRC === 'yes' && !/^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$/.test(track.isrc)) {
+                  toast.error(`Invalid ISRC format for track: ${track.title}`);
+                  setActiveTrackId(track.id);
+                  return false;
+              }
           }
       }
       return true
@@ -380,18 +589,8 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
     const timestamp = Date.now()
 
     try {
-        if (status !== 'draft' && !audioFile && !initialData?.file_url) throw new Error("Audio file is required")
-        let audioUrl = initialData?.file_url
+        // 1. Upload Cover Art if changed
         let coverArtUrl = initialData?.albums?.cover_art_url
-
-        if (audioFile) {
-             const audioPath = `tracks/${timestamp}_${audioFile.name}`
-             const { error: audioError } = await supabase.storage.from('music-files').upload(audioPath, audioFile)
-             if (audioError) throw audioError
-             const { data: audioData } = supabase.storage.from('music-files').getPublicUrl(audioPath)
-             audioUrl = audioData.publicUrl
-        }
-
         if (coverFile) {
             const coverPath = `covers/${timestamp}_${coverFile.name}`
             const { error: coverError } = await supabase.storage.from('cover-art').upload(coverPath, coverFile)
@@ -400,82 +599,71 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
             coverArtUrl = coverData.publicUrl
         }
 
+        // 2. Process all tracks
+        const processedTracks = await Promise.all(tracks.map(async (track, index) => {
+            let audioUrl = track.audioUrl
+            
+            // Upload audio if a new file is provided
+            if (track.audioFile) {
+                const audioPath = `tracks/${timestamp}_${index}_${track.audioFile.name}`
+                const { error: audioError } = await supabase.storage.from('music-files').upload(audioPath, track.audioFile)
+                if (audioError) throw audioError
+                const { data: audioData } = supabase.storage.from('music-files').getPublicUrl(audioPath)
+                audioUrl = audioData.publicUrl
+            }
+
+            return {
+                ...track,
+                audioUrl,
+                // Clean up for database
+                isrc: track.hasISRC === 'yes' ? track.isrc : '',
+                explicit: track.explicitType === 'yes'
+            }
+        }))
+
         const formData = {
             id: initialData?.id,
             title,
-            genre,
-            subGenre,
             releaseType,
             labelName,
             primaryArtist,
+            primaryArtistSpotify,
+            primaryArtistApple,
             featuringArtist,
+            featuringArtistSpotify,
+            featuringArtistApple,
+            releaseDate,
             originalReleaseDate,
             pLine: `℗ ${pLineYear} ${pLineText}`,
             cLine: `© ${cLineYear} ${cLineText}`,
             courtesyLine,
             description,
             language,
-            duration,
-            explicit: explicitType === 'yes', 
-            lyrics,
-            
-            // Detailed Audio Details
-            trackVersion, 
-            isInstrumental: isInstrumental === 'yes',
-            trackTitle: trackTitle || title,
-            versionSubtitle,
-            trackPrimaryArtist,
-            trackFeaturingArtist,
-            trackGenre,
-            trackSubGenre,
-            trackPLine,
-            trackTitleLanguage,
-            trackLyricsLanguage,
-            
-            // Artist Platform IDs
-            primaryArtistSpotify,
-            primaryArtistApple,
-            featuringArtistSpotify,
-            featuringArtistApple,
-            trackPrimaryArtistSpotify,
-            trackPrimaryArtistApple,
-            trackFeaturingArtistSpotify,
-            trackFeaturingArtistApple,
-
-            lyricists,
-            composers,
-            producer,
-            productionYear,
-            publisher,
-            isrc: hasISRC === 'yes' ? isrc : '',
-            priceTier,
-            explicitType,
-            callerTuneTiming,
-            distributeVideo: distributeVideo === 'yes',
-            
-            selectedPlatforms,
-            
-            audioUrl,
             coverArtUrl,
-            releaseDate,
+            selectedPlatforms,
             status: status,
-            audioAnalysis // Pass entire object
+            tracks: processedTracks
         }
 
         const result = await submitTrack(formData)
         if (result.success) {
             localStorage.removeItem('upload_draft')
             toast.success(initialData ? "Release updated successfully!" : "Release submitted successfully!")
-            router.push('/dashboard/catalog')
+            
+            if (!initialData) {
+                setIsSuccessDialogOpen(true)
+            } else {
+                router.push('/dashboard/catalog')
+            }
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
-        toast.error(error.message || "Failed to submit release")
+        const errorMessage = error instanceof Error ? error.message : "Failed to submit release";
+        toast.error(errorMessage)
     } finally {
         setLoading(false)
     }
   }
-
   return (
     <div className="pb-20">
         
@@ -529,6 +717,22 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
 
         <form className="max-w-6xl mx-auto px-4">
             
+            {/* Onboarding Banner for First Upload */}
+            {isFirstUpload && currentStep === 1 && (
+                <div className="mb-10 p-6 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex gap-5 items-center animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                        <Save className="text-indigo-400" size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-white font-bold text-lg">Welcome to your first release!</h3>
+                        <p className="text-zinc-400 text-sm max-w-2xl mt-1">
+                            We've simplified the process to get your music on Spotify, Apple Music, and more. 
+                            Fill in your release details below to get started. Don't worry, you can always save as a draft!
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* STEP 1: Release Info */}
             <div className={currentStep === 1 ? 'block space-y-8 animate-in fade-in slide-in-from-right-4 duration-300' : 'hidden'}>
                 
@@ -678,7 +882,7 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
                                 <div className={`relative transition-all aspect-square w-full rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer group hover:border-indigo-500/50 hover:bg-indigo-500/5 ${coverFile || initialData?.albums?.cover_art_url ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/10 bg-black/20'}`}>
                                     <input type="file" accept="image/*" onChange={handleCoverChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                                     {coverFile || initialData?.albums?.cover_art_url ? (
-                                        <img src={coverFile ? URL.createObjectURL(coverFile) : initialData.albums.cover_art_url} alt="Preview" className="h-full w-full object-cover rounded-lg" />
+                                        <img src={coverFile ? URL.createObjectURL(coverFile) : initialData?.albums?.cover_art_url} alt="Preview" className="h-full w-full object-cover rounded-lg" />
                                     ) : (
                                         <>
                                             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -696,32 +900,94 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
             </div>
 
 
-            {/* STEP 2: Song Info - Replicated from Mockup */}
+            {/* STEP 2: Song Info - Multi-track Layout */}
             <div className={currentStep === 2 ? 'block space-y-8 animate-in fade-in slide-in-from-right-4 duration-300' : 'hidden'}>
                  
-                 {/* Audio File Upload Header */}
-                 <Card className="bg-white/[0.03] border-white/10 backdrop-blur-xl overflow-hidden mb-8">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-black uppercase text-zinc-400 tracking-widest flex items-center gap-2">
-                            <Music size={16} /> Audio Source <span className="text-red-500">*</span>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className={`relative transition-all h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer group hover:border-indigo-500/50 hover:bg-indigo-500/5 ${audioFile || initialData?.file_url ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/10 bg-black/20'}`}>
-                            <input type="file" accept="audio/*" onChange={handleAudioChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                            {audioFile || initialData?.file_url ? (
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                                        <Music className="text-emerald-500" size={16} />
-                                    </div>
-                                    <p className="text-xs text-emerald-400 font-bold max-w-[300px] truncate">{audioFile?.name || 'Existing File'}</p>
+                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                     
+                     {/* Track Selection Sidebar */}
+                     <div className="lg:col-span-1 space-y-4">
+                         <div className="flex items-center justify-between px-1">
+                             <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500">Tracklist</h3>
+                             <Button 
+                                type="button" 
+                                onClick={addTrack}
+                                size="sm" 
+                                className="h-7 px-2 text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20"
+                             >
+                                <Plus size={12} className="mr-1" /> Add
+                             </Button>
+                         </div>
+                         <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                             {tracks.map((track, index) => (
+                                 <div 
+                                    key={track.id}
+                                    onClick={() => setActiveTrackId(track.id)}
+                                    className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                                        activeTrackId === track.id 
+                                        ? 'bg-indigo-500/10 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.1)]' 
+                                        : 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]'
+                                    }`}
+                                 >
+                                     <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-black ${
+                                         activeTrackId === track.id ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-500'
+                                     }`}>
+                                         {index + 1}
+                                     </div>
+                                     <div className="flex-1 min-w-0">
+                                         <p className={`text-xs font-bold truncate ${activeTrackId === track.id ? 'text-white' : 'text-zinc-400'}`}>
+                                             {track.title || "Untitled Track"}
+                                         </p>
+                                         <p className="text-[10px] text-zinc-500 truncate">
+                                             {track.audioFile?.name || track.audioUrl ? "Audio Ready" : "No Audio"}
+                                         </p>
+                                     </div>
+                                     {tracks.length > 1 && (
+                                         <button 
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); removeTrack(track.id); }}
+                                            className="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-500 hover:text-red-400 transition-all"
+                                         >
+                                             <Trash2 size={12} />
+                                         </button>
+                                     )}
+                                 </div>
+                             ))}
+                         </div>
+                     </div>
+
+                     {/* Track Details Form */}
+                     <div className="lg:col-span-3 space-y-8">
+                         {/* Audio File Upload */}
+                         <Card className="bg-white/[0.03] border-white/10 backdrop-blur-xl overflow-hidden">
+                            <CardHeader className="py-4">
+                                <CardTitle className="text-sm font-black uppercase text-zinc-400 tracking-widest flex items-center gap-2">
+                                    <Music size={16} /> Audio Source <span className="text-red-500">*</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pb-4">
+                                <div className={`relative transition-all h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer group hover:border-indigo-500/50 hover:bg-indigo-500/5 ${currentTrack.audioFile || currentTrack.audioUrl ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/10 bg-black/20'}`}>
+                                    <input type="file" accept="audio/*" onChange={handleAudioChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                    {currentTrack.audioFile || currentTrack.audioUrl ? (
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                                <Music className="text-emerald-500" size={16} />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <p className="text-xs text-emerald-400 font-bold max-w-[300px] truncate">{currentTrack.audioFile?.name || 'Existing File'}</p>
+                                                {currentTrack.duration > 0 && (
+                                                    <p className="text-[10px] text-zinc-500">
+                                                        {Math.floor(currentTrack.duration / 60)}:{(currentTrack.duration % 60).toString().padStart(2, '0')} · {currentTrack.audioAnalysis?.format || 'Audio'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-2"><UploadCloud size={16} /> Upload WAV/FLAC</p>
+                                    )}
                                 </div>
-                            ) : (
-                                <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-2"><UploadCloud size={16} /> Upload WAV/FLAC</p>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
+                            </CardContent>
+                        </Card>
 
                  {/* Detailed Info Grid */}
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8">
@@ -735,10 +1001,10 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
                              <div className="flex gap-4 flex-wrap">
                                  {['original', 'karaoke', 'medley', 'cover'].map((ver) => (
                                      <label key={ver} className="flex items-center gap-2 cursor-pointer group">
-                                         <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${trackVersion === ver ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
-                                             {trackVersion === ver && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                                         <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${currentTrack.trackVersion === ver ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
+                                             {currentTrack.trackVersion === ver && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
                                          </div>
-                                         <input type="radio" className="hidden" name="trackVersion" value={ver} checked={trackVersion === ver} onChange={() => setTrackVersion(ver)} />
+                                         <input type="radio" className="hidden" name="trackVersion" value={ver} checked={currentTrack.trackVersion === ver} onChange={() => updateCurrentTrack({ trackVersion: ver })} />
                                          <span className="text-sm text-zinc-300 capitalize">{ver}</span>
                                      </label>
                                  ))}
@@ -751,10 +1017,10 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
                              <div className="flex gap-4 flex-wrap">
                                  {['yes', 'no'].map((opt) => (
                                      <label key={opt} className="flex items-center gap-2 cursor-pointer group">
-                                         <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${isInstrumental === opt ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
-                                             {isInstrumental === opt && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                                         <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${currentTrack.isInstrumental === opt ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
+                                             {currentTrack.isInstrumental === opt && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
                                          </div>
-                                         <input type="radio" className="hidden" name="isInstrumental" value={opt} checked={isInstrumental === opt} onChange={() => setIsInstrumental(opt)} />
+                                         <input type="radio" className="hidden" name="isInstrumental" value={opt} checked={currentTrack.isInstrumental === opt} onChange={() => updateCurrentTrack({ isInstrumental: opt })} />
                                          <span className="text-sm text-zinc-300 capitalize">{opt}</span>
                                      </label>
                                  ))}
@@ -763,18 +1029,18 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
                          
                          <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-zinc-400">Title <span className="text-red-500">*</span></Label>
-                            <Input value={trackTitle} onChange={(e) => setTrackTitle(e.target.value)} placeholder="Title" className="bg-white/5 border-white/10 text-white h-12" />
+                            <Input value={currentTrack.title} onChange={(e) => updateCurrentTrack({ title: e.target.value })} placeholder="Song Title" className="bg-white/5 border-white/10 text-white h-12" />
                         </div>
                         
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-zinc-400">Version/Subtitle</Label>
-                            <Input value={versionSubtitle} onChange={(e) => setVersionSubtitle(e.target.value)} placeholder="Version Subtitle" className="bg-white/5 border-white/10 text-white h-12" />
+                            <Input value={currentTrack.versionSubtitle} onChange={(e) => updateCurrentTrack({ versionSubtitle: e.target.value })} placeholder="Remix, Edit, etc." className="bg-white/5 border-white/10 text-white h-12" />
                         </div>
                         
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-zinc-400">Primary Artist <span className="text-red-500">*</span></Label>
                             <div className="flex gap-2">
-                                <Input value={trackPrimaryArtist} onChange={(e) => setTrackPrimaryArtist(e.target.value)} placeholder="Select Primary Artist" className="bg-white/5 border-white/10 text-white h-12" />
+                                <Input value={currentTrack.primaryArtist} onChange={(e) => updateCurrentTrack({ primaryArtist: e.target.value })} placeholder="Lead Artist Name" className="bg-white/5 border-white/10 text-white h-12" />
                                 <Button type="button" onClick={() => openArtistDialog('track')} size="icon" className="h-12 w-12 bg-indigo-500 hover:bg-indigo-600 rounded-lg shrink-0">+</Button>
                             </div>
                         </div>
@@ -782,208 +1048,197 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-zinc-400">Featuring Artist</Label>
                             <div className="flex gap-2">
-                                <Input value={trackFeaturingArtist} onChange={(e) => setTrackFeaturingArtist(e.target.value)} placeholder="Select Featuring Artist" className="bg-white/5 border-white/10 text-white h-12" />
+                                <Input value={currentTrack.featuringArtist} onChange={(e) => updateCurrentTrack({ featuringArtist: e.target.value })} placeholder="Guest Artist Name" className="bg-white/5 border-white/10 text-white h-12" />
                                 <Button type="button" onClick={() => openArtistDialog('track-featuring')} size="icon" className="h-12 w-12 bg-indigo-500 hover:bg-indigo-600 rounded-lg shrink-0">+</Button>
                             </div>
                         </div>
                         
-                        <div className="space-y-3">
-                             <Label className="text-xs uppercase font-bold text-zinc-400">Lyricist <span className="text-red-500">*</span></Label>
-                             <div className="flex gap-2">
-                                <Input value={newLyricistFirst} onChange={(e) => setNewLyricistFirst(e.target.value)} placeholder="First Name" className="bg-white/5 border-white/10 text-white h-12" />
-                                <Input value={newLyricistLast} onChange={(e) => setNewLyricistLast(e.target.value)} placeholder="Last Name" className="bg-white/5 border-white/10 text-white h-12" />
-                             </div>
-                             <Button type="button" onClick={addLyricist} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10">+ Add</Button>
-                             {/* Display Lists */}
-                             {lyricists.length > 0 && (
-                                 <div className="space-y-1 mt-2">
-                                     {lyricists.map((l, i) => (
-                                         <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded text-sm text-zinc-300">
-                                             <span>{l.firstName} {l.lastName}</span>
-                                             <X size={14} className="cursor-pointer hover:text-red-500" onClick={() => removeLyricist(i)}/>
+                                <div className="space-y-3">
+                                     <Label className="text-xs uppercase font-bold text-zinc-400">Lyricist <span className="text-red-500">*</span></Label>
+                                     <div className="flex gap-2">
+                                        <Input value={newLyricistFirst} onChange={(e) => setNewLyricistFirst(e.target.value)} placeholder="First Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                        <Input value={newLyricistLast} onChange={(e) => setNewLyricistLast(e.target.value)} placeholder="Last Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                     </div>
+                                     <Button type="button" onClick={addLyricist} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10">+ Add Lyricist</Button>
+                                     {/* Display Lists */}
+                                     {currentTrack.lyricists.length > 0 && (
+                                         <div className="space-y-1 mt-2">
+                                             {currentTrack.lyricists.map((l, i) => (
+                                                 <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded text-sm text-zinc-300">
+                                                     <span>{l.firstName} {l.lastName}</span>
+                                                     <X size={14} className="cursor-pointer hover:text-red-500" onClick={() => removeLyricist(i)}/>
+                                                 </div>
+                                             ))}
                                          </div>
-                                     ))}
-                                 </div>
-                             )}
-                        </div>
-
-                        <div className="space-y-3">
-                             <Label className="text-xs uppercase font-bold text-zinc-400">Composer <span className="text-red-500">*</span></Label>
-                             <div className="flex gap-2">
-                                <Input value={newComposerFirst} onChange={(e) => setNewComposerFirst(e.target.value)} placeholder="First Name" className="bg-white/5 border-white/10 text-white h-12" />
-                                <Input value={newComposerLast} onChange={(e) => setNewComposerLast(e.target.value)} placeholder="Last Name" className="bg-white/5 border-white/10 text-white h-12" />
-                             </div>
-                             <Button type="button" onClick={addComposer} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10">+ Add</Button>
-                              {composers.length > 0 && (
-                                 <div className="space-y-1 mt-2">
-                                     {composers.map((c, i) => (
-                                         <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded text-sm text-zinc-300">
-                                             <span>{c.firstName} {c.lastName}</span>
-                                             <X size={14} className="cursor-pointer hover:text-red-500" onClick={() => removeComposer(i)}/>
-                                         </div>
-                                     ))}
-                                 </div>
-                             )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Music Producer <span className="text-red-500">*</span></Label>
-                            <Input value={producer} onChange={(e) => setProducer(e.target.value)} placeholder="Music Producer" className="bg-white/5 border-white/10 text-white h-12" />
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Lyrics</Label>
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2">
-                                    <Input 
-                                        type="file" 
-                                        accept=".lrc,.txt" 
-                                        className="bg-white/5 border-white/10 text-white text-xs h-9 w-full file:bg-zinc-800 file:text-zinc-300 file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-4 file:text-xs"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0]
-                                            if (file) {
-                                                if (!file.name.endsWith('.lrc') && !file.name.endsWith('.txt')) {
-                                                    toast.error("Please upload a valid .lrc or .txt file")
-                                                    return
-                                                }
-                                                const reader = new FileReader()
-                                                reader.onload = (ev) => {
-                                                    const text = ev.target?.result as string
-                                                    // Basic LRC validation (check for timestamp)
-                                                    if (text.match(/\[\d{2}:\d{2}\.\d{2}\]/)) {
-                                                        setLyrics(text)
-                                                        toast.success("Lyrics imported from file!")
-                                                    } else {
-                                                        setLyrics(text)
-                                                        toast.info("Lyrics imported. Note: No LRC timestamps detected.")
-                                                    }
-                                                }
-                                                reader.readAsText(file)
-                                            }
-                                        }}
-                                    />
-                                    <span className="text-[10px] text-zinc-500 whitespace-nowrap uppercase tracking-wider font-bold">Upload .LRC</span>
+                                     )}
                                 </div>
-                                <Textarea value={lyrics} onChange={(e) => setLyrics(e.target.value)} placeholder="Paste lyrics here or upload .lrc file..." className="bg-white/5 border-white/10 text-white min-h-[120px]" />
-                            </div>
-                        </div>
 
-                     </div>
-
-                     {/* RIGHT COLUMN */}
-                     <div className="space-y-6">
-                         
-                          <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">P Line <span className="text-red-500">*</span></Label>
-                            <Input value={trackPLine} onChange={(e) => setTrackPLine(e.target.value)} placeholder="Phonographic Copyright Line" className="bg-white/5 border-white/10 text-white h-12" />
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Production Year <span className="text-red-500">*</span></Label>
-                            <Input value={productionYear} onChange={(e) => setProductionYear(e.target.value)} placeholder="2026" className="bg-white/5 border-white/10 text-white h-12" />
-                        </div>
-                        
-                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Publisher</Label>
-                            <Input value={publisher} onChange={(e) => setPublisher(e.target.value)} placeholder="Publisher" className="bg-white/5 border-white/10 text-white h-12" />
-                        </div>
-                        
-                         <div className="space-y-3">
-                             <Label className="text-xs uppercase font-bold text-zinc-400">Have Your Own ISRC? <span className="text-red-500">*</span></Label>
-                             <div className="flex gap-4">
-                                 {['yes', 'no'].map((opt) => (
-                                     <label key={opt} className="flex items-center gap-2 cursor-pointer group">
-                                         <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${hasISRC === opt ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
-                                             {hasISRC === opt && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                                <div className="space-y-3">
+                                     <Label className="text-xs uppercase font-bold text-zinc-400">Composer <span className="text-red-500">*</span></Label>
+                                     <div className="flex gap-2">
+                                        <Input value={newComposerFirst} onChange={(e) => setNewComposerFirst(e.target.value)} placeholder="First Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                        <Input value={newComposerLast} onChange={(e) => setNewComposerLast(e.target.value)} placeholder="Last Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                     </div>
+                                     <Button type="button" onClick={addComposer} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10">+ Add Composer</Button>
+                                      {currentTrack.composers.length > 0 && (
+                                         <div className="space-y-1 mt-2">
+                                             {currentTrack.composers.map((c, i) => (
+                                                 <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded text-sm text-zinc-300">
+                                                     <span>{c.firstName} {c.lastName}</span>
+                                                     <X size={14} className="cursor-pointer hover:text-red-500" onClick={() => removeComposer(i)}/>
+                                                 </div>
+                                             ))}
                                          </div>
-                                         <input type="radio" className="hidden" name="hasISRC" value={opt} checked={hasISRC === opt} onChange={() => setHasISRC(opt)} />
-                                         <span className="text-sm text-zinc-300 capitalize">{opt}</span>
-                                     </label>
-                                 ))}
+                                     )}
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-zinc-400">Music Producer <span className="text-red-500">*</span></Label>
+                                    <Input value={currentTrack.producer} onChange={(e) => updateCurrentTrack({ producer: e.target.value })} placeholder="Music Producer" className="bg-white/5 border-white/10 text-white h-12" />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-zinc-400">Lyrics</Label>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <Input 
+                                                type="file" 
+                                                accept=".lrc,.txt" 
+                                                className="bg-white/5 border-white/10 text-white text-xs h-9 w-full file:bg-zinc-800 file:text-zinc-300 file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-4 file:text-xs"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0]
+                                                    if (file) {
+                                                        const reader = new FileReader()
+                                                        reader.onload = (ev) => {
+                                                            const text = ev.target?.result as string
+                                                            updateCurrentTrack({ lyrics: text })
+                                                            toast.success("Lyrics imported!")
+                                                        }
+                                                        reader.readAsText(file)
+                                                    }
+                                                }}
+                                            />
+                                            <span className="text-[10px] text-zinc-500 whitespace-nowrap uppercase tracking-wider font-bold">Upload .LRC</span>
+                                        </div>
+                                        <Textarea value={currentTrack.lyrics} onChange={(e) => updateCurrentTrack({ lyrics: e.target.value })} placeholder="Lyrics text..." className="bg-white/5 border-white/10 text-white min-h-[120px]" />
+                                    </div>
+                                </div>
                              </div>
-                             {hasISRC === 'yes' && (
-                                <Input value={isrc} onChange={(e) => setIsrc(e.target.value)} placeholder="Enter ISRC" className="bg-white/5 border-white/10 text-white h-12 mt-2" />
-                             )}
-                         </div>
 
-                        <div className="space-y-2">
-                             <Label className="text-xs uppercase font-bold text-zinc-400">Genre <span className="text-red-500">*</span></Label>
-                             <Select value={trackGenre} onValueChange={setTrackGenre}>
-                                <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Select Genre" /></SelectTrigger>
-                                <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                    <SelectItem value="pop">Pop</SelectItem>
-                                    <SelectItem value="hiphop">Hip Hop</SelectItem>
-                                    <SelectItem value="rnb">R&B</SelectItem>
-                                    <SelectItem value="rock">Rock</SelectItem>
-                                    <SelectItem value="electronic">Electronic</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Sub Genre <span className="text-red-500">*</span></Label>
-                            <Input value={trackSubGenre} onChange={(e) => setTrackSubGenre(e.target.value)} placeholder="Sub Genre" className="bg-white/5 border-white/10 text-white h-12" />
-                        </div>
-                        
-                         <div className="space-y-2">
-                             <Label className="text-xs uppercase font-bold text-zinc-400">Price Tier <span className="text-red-500">*</span></Label>
-                             <Select value={priceTier} onValueChange={setPriceTier}>
-                                <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Select Price Tier" /></SelectTrigger>
-                                <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                    <SelectItem value="low">Low</SelectItem>
-                                    <SelectItem value="mid">Mid</SelectItem>
-                                    <SelectItem value="high">High</SelectItem>
-                                    <SelectItem value="premium">Premium</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        
-                         <div className="space-y-3">
-                             <Label className="text-xs uppercase font-bold text-zinc-400">Explicit Version <span className="text-red-500">*</span></Label>
-                             <div className="flex gap-4">
-                                 {['yes', 'no', 'cleaned'].map((opt) => (
-                                     <label key={opt} className="flex items-center gap-2 cursor-pointer group">
-                                         <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${explicitType === opt ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
-                                             {explicitType === opt && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
-                                         </div>
-                                         <input type="radio" className="hidden" name="explicitType" value={opt} checked={explicitType === opt} onChange={() => setExplicitType(opt)} />
-                                         <span className="text-sm text-zinc-300 capitalize">{opt}</span>
-                                     </label>
-                                 ))}
+                             {/* RIGHT COLUMN */}
+                             <div className="space-y-6">
+                                 
+                                  <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-zinc-400">P Line <span className="text-red-500">*</span></Label>
+                                    <Input value={currentTrack.pLine} onChange={(e) => updateCurrentTrack({ pLine: e.target.value })} placeholder="Phonographic Copyright Line" className="bg-white/5 border-white/10 text-white h-12" />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-zinc-400">Production Year <span className="text-red-500">*</span></Label>
+                                    <Input value={currentTrack.productionYear} onChange={(e) => updateCurrentTrack({ productionYear: e.target.value })} placeholder="2026" className="bg-white/5 border-white/10 text-white h-12" />
+                                </div>
+                                
+                                 <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-zinc-400">Publisher</Label>
+                                    <Input value={currentTrack.publisher} onChange={(e) => updateCurrentTrack({ publisher: e.target.value })} placeholder="Publisher" className="bg-white/5 border-white/10 text-white h-12" />
+                                </div>
+                                
+                                 <div className="space-y-3">
+                                     <Label className="text-xs uppercase font-bold text-zinc-400">Have Your Own ISRC? <span className="text-red-500">*</span></Label>
+                                     <div className="flex gap-4">
+                                         {['yes', 'no'].map((opt) => (
+                                             <label key={opt} className="flex items-center gap-2 cursor-pointer group">
+                                                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${currentTrack.hasISRC === opt ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
+                                                     {currentTrack.hasISRC === opt && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                                                 </div>
+                                                 <input type="radio" className="hidden" name="hasISRC" value={opt} checked={currentTrack.hasISRC === opt} onChange={() => updateCurrentTrack({ hasISRC: opt })} />
+                                                 <span className="text-sm text-zinc-300 capitalize">{opt}</span>
+                                             </label>
+                                         ))}
+                                     </div>
+                                     {currentTrack.hasISRC === 'yes' && (
+                                        <Input value={currentTrack.isrc} onChange={(e) => updateCurrentTrack({ isrc: e.target.value })} placeholder="Enter ISRC" className="bg-white/5 border-white/10 text-white h-12 mt-2" />
+                                     )}
+                                 </div>
+
+                                <div className="space-y-2">
+                                     <Label className="text-xs uppercase font-bold text-zinc-400">Genre <span className="text-red-500">*</span></Label>
+                                     <Select value={currentTrack.genre} onValueChange={(val) => updateCurrentTrack({ genre: val })}>
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Select Genre" /></SelectTrigger>
+                                        <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                                            <SelectItem value="pop">Pop</SelectItem>
+                                            <SelectItem value="hiphop">Hip Hop</SelectItem>
+                                            <SelectItem value="rnb">R&B</SelectItem>
+                                            <SelectItem value="rock">Rock</SelectItem>
+                                            <SelectItem value="electronic">Electronic</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-zinc-400">Sub Genre <span className="text-red-500">*</span></Label>
+                                    <Input value={currentTrack.subGenre} onChange={(e) => updateCurrentTrack({ subGenre: e.target.value })} placeholder="Sub Genre" className="bg-white/5 border-white/10 text-white h-12" />
+                                </div>
+                                
+                                 <div className="space-y-2">
+                                     <Label className="text-xs uppercase font-bold text-zinc-400">Price Tier <span className="text-red-500">*</span></Label>
+                                     <Select value={currentTrack.priceTier} onValueChange={(val) => updateCurrentTrack({ priceTier: val })}>
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Select Price Tier" /></SelectTrigger>
+                                        <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                                            <SelectItem value="low">Low</SelectItem>
+                                            <SelectItem value="mid">Mid</SelectItem>
+                                            <SelectItem value="high">High</SelectItem>
+                                            <SelectItem value="premium">Premium</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                
+                                 <div className="space-y-3">
+                                     <Label className="text-xs uppercase font-bold text-zinc-400">Explicit Version <span className="text-red-500">*</span></Label>
+                                     <div className="flex gap-4">
+                                         {['yes', 'no', 'cleaned'].map((opt) => (
+                                             <label key={opt} className="flex items-center gap-2 cursor-pointer group">
+                                                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${currentTrack.explicitType === opt ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
+                                                     {currentTrack.explicitType === opt && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                                                 </div>
+                                                 <input type="radio" className="hidden" name="explicitType" value={opt} checked={currentTrack.explicitType === opt} onChange={() => updateCurrentTrack({ explicitType: opt })} />
+                                                 <span className="text-sm text-zinc-300 capitalize">{opt}</span>
+                                             </label>
+                                         ))}
+                                     </div>
+                                 </div>
+                                 
+                                 <div className="space-y-2">
+                                     <Label className="text-xs uppercase font-bold text-zinc-400">Track Title Language <span className="text-red-500">*</span></Label>
+                                     <Select value={currentTrack.titleLanguage} onValueChange={(val) => updateCurrentTrack({ titleLanguage: val })}>
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Track Title Language" /></SelectTrigger>
+                                        <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                                            <SelectItem value="english">English</SelectItem>
+                                            <SelectItem value="spanish">Spanish</SelectItem>
+                                            <SelectItem value="hindi">Hindi</SelectItem>
+                                            <SelectItem value="french">French</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                     <Label className="text-xs uppercase font-bold text-zinc-400">Lyrics Language <span className="text-red-500">*</span></Label>
+                                     <Select value={currentTrack.lyricsLanguage} onValueChange={(val) => updateCurrentTrack({ lyricsLanguage: val })}>
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Lyrics Language" /></SelectTrigger>
+                                        <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                                            <SelectItem value="english">English</SelectItem>
+                                            <SelectItem value="spanish">Spanish</SelectItem>
+                                            <SelectItem value="hindi">Hindi</SelectItem>
+                                            <SelectItem value="french">French</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-zinc-400">Caller Tune Timing <span className="text-red-500">*</span></Label>
+                                    <Input value={currentTrack.callerTuneTiming} onChange={(e) => updateCurrentTrack({ callerTuneTiming: e.target.value })} placeholder="HH:MM:SS" className="bg-white/5 border-white/10 text-white h-12" />
+                                </div>
                              </div>
                          </div>
-                         
-                         <div className="space-y-2">
-                             <Label className="text-xs uppercase font-bold text-zinc-400">Track Title Language <span className="text-red-500">*</span></Label>
-                             <Select value={trackTitleLanguage} onValueChange={setTrackTitleLanguage}>
-                                <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Track Title Language" /></SelectTrigger>
-                                <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                    <SelectItem value="english">English</SelectItem>
-                                    <SelectItem value="spanish">Spanish</SelectItem>
-                                    <SelectItem value="hindi">Hindi</SelectItem>
-                                    <SelectItem value="french">French</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                             <Label className="text-xs uppercase font-bold text-zinc-400">Lyrics Language <span className="text-red-500">*</span></Label>
-                             <Select value={trackLyricsLanguage} onValueChange={setTrackLyricsLanguage}>
-                                <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Lyrics Language" /></SelectTrigger>
-                                <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                    <SelectItem value="english">English</SelectItem>
-                                    <SelectItem value="spanish">Spanish</SelectItem>
-                                    <SelectItem value="hindi">Hindi</SelectItem>
-                                    <SelectItem value="french">French</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Caller Tune Timing <span className="text-red-500">*</span></Label>
-                            <Input value={callerTuneTiming} onChange={(e) => setCallerTuneTiming(e.target.value)} placeholder="HH:MM:SS" className="bg-white/5 border-white/10 text-white h-12" />
-                        </div>
-                        
-
                      </div>
                  </div>
             </div>
@@ -1036,7 +1291,7 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
                          <div className="flex gap-6 items-start">
                              <div className="w-32 h-32 rounded-lg bg-black/50 overflow-hidden shrink-0 border border-white/10">
                                  {(coverFile || initialData?.albums?.cover_art_url) && (
-                                     <img src={coverFile ? URL.createObjectURL(coverFile) : initialData.albums.cover_art_url} className="w-full h-full object-cover" />
+                                     <img src={coverFile ? URL.createObjectURL(coverFile) : initialData?.albums?.cover_art_url} className="w-full h-full object-cover" />
                                  )}
                              </div>
                              <div>
@@ -1047,34 +1302,40 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
                              </div>
                          </div>
                          
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                             <div>
-                                 <p className="text-xs uppercase font-bold text-zinc-600 mb-1">Track Details</p>
-                                 <p className="text-sm text-zinc-300 font-bold">{trackTitle} <span className="text-zinc-500 font-normal">({trackVersion})</span></p>
-                                 <p className="text-xs text-zinc-500 mt-1">{trackGenre} • {trackSubGenre}</p>
-                                 {trackFeaturingArtist && <p className="text-xs text-zinc-400 mt-1">Feat. {trackFeaturingArtist}</p>}
-                             </div>
-                             <div className="col-span-1 md:col-span-2">
-                                 <p className="text-xs uppercase font-bold text-zinc-600 mb-2">Audio Preview & Analysis</p>
-                                 {(audioFile || initialData?.file_url) && (
-                                     <AudioPlayer 
-                                        url={audioFile ? URL.createObjectURL(audioFile) : initialData.file_url} 
-                                        title={trackTitle}
-                                     />
-                                 )}
-                             </div>
-                             <div>
-                                 <p className="text-xs uppercase font-bold text-zinc-600 mb-1">Distribution</p>
-                                 <p className="text-sm text-zinc-300">{selectedPlatforms.length} Stores Selected</p>
-                                 <p className="text-xs text-zinc-500 mt-1">Price Tier: {priceTier}</p>
-                             </div>
-                             <div>
-                                 <p className="text-xs uppercase font-bold text-zinc-600 mb-1">Metadata</p>
-                                 <p className="text-sm text-zinc-300">{cLineText} / {pLineText}</p>
-                                 <p className="text-xs text-zinc-500 mt-1">ISRC: {hasISRC === 'yes' ? isrc : 'Auto-Generate'}</p>
-                             </div>
-                         </div>
-                     </div>
+                          <div className="space-y-4 pt-4 border-t border-white/5">
+                              <p className="text-xs uppercase font-bold text-zinc-600 mb-1">Track List ({tracks.length})</p>
+                              {tracks.map((track, idx) => (
+                                  <div key={track.id} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5">
+                                      <div>
+                                          <p className="text-sm text-zinc-300 font-bold">{idx + 1}. {track.title || 'Untitled'} <span className="text-zinc-500 font-normal">({track.trackVersion})</span></p>
+                                          <p className="text-[10px] text-zinc-500 uppercase tracking-wider mt-0.5">{track.genre} {track.subGenre && `• ${track.subGenre}`}</p>
+                                      </div>
+                                      <div className="text-right">
+                                          <p className="text-xs text-zinc-400 font-medium">{Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}</p>
+                                          <p className="text-[10px] text-zinc-600 uppercase font-bold mt-0.5">{track.isrc || 'No ISRC'}</p>
+                                      </div>
+                                  </div>
+                              ))}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                              <div className="col-span-1 md:col-span-2">
+                                  <p className="text-xs uppercase font-bold text-zinc-600 mb-2">Distribution Summary</p>
+                                  <div className="flex flex-wrap gap-2">
+                                      {selectedPlatforms.map(p => (
+                                          <span key={p} className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] uppercase font-bold rounded">
+                                              {ALL_PLATFORMS.find(ap => ap.id === p)?.name}
+                                          </span>
+                                      ))}
+                                      {selectedPlatforms.length === 0 && <span className="text-zinc-500 text-xs italic text-red-500">No platforms selected</span>}
+                                  </div>
+                              </div>
+                              <div>
+                                  <p className="text-xs uppercase font-bold text-zinc-600 mb-1">Global Metadata</p>
+                                  <p className="text-sm text-zinc-300">© {cLineYear} {cLineText} / ℗ {pLineYear} {pLineText}</p>
+                              </div>
+                          </div>
+                      </div>
                      
                      <div className="flex items-center gap-2 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-500 text-sm">
                          <div className="w-auto"><Check size={20} /></div>
@@ -1162,6 +1423,12 @@ export default function UploadForm({ initialData }: { initialData?: any }) {
             </Dialog>
 
         </form>
+
+        <UploadSuccessDialog 
+            isOpen={isSuccessDialogOpen} 
+            onOpenChange={setIsSuccessDialogOpen} 
+            isFirstUpload={isFirstUpload}
+        />
     </div>
   )
 }

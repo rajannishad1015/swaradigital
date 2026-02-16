@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import {
   Table,
   TableBody,
@@ -8,9 +9,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ArrowDownLeft, ArrowUpRight, Clock, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Clock, AlertCircle, CheckCircle2, ArrowUpDown } from 'lucide-react'
 
 export default function TransactionList({ transactions }: { transactions: any[] }) {
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
+
+  const sortedTransactions = useMemo(() => {
+    let sortable = [...transactions]
+    if (sortConfig !== null) {
+      sortable.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? -1 : 1
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? 1 : -1
+        }
+        return 0
+      })
+    }
+    return sortable
+  }, [transactions, sortConfig])
+
+  const requestSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc'
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc'
+    }
+    setSortConfig({ key, direction })
+  }
+
   if (!transactions || transactions.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center py-16 text-zinc-500 bg-white/[0.02] rounded-xl border border-white/5 border-dashed">
@@ -28,15 +55,25 @@ export default function TransactionList({ transactions }: { transactions: any[] 
             <Table>
                 <TableHeader>
                     <TableRow className="border-white/5 hover:bg-transparent bg-zinc-950/50">
-                    <TableHead className="text-zinc-500 text-xs font-bold uppercase tracking-wider py-4">Date</TableHead>
-                    <TableHead className="text-zinc-500 text-xs font-bold uppercase tracking-wider py-4">Description</TableHead>
-                    <TableHead className="text-zinc-500 text-xs font-bold uppercase tracking-wider py-4">Type</TableHead>
-                    <TableHead className="text-zinc-500 text-xs font-bold uppercase tracking-wider py-4 text-right">Amount</TableHead>
-                    <TableHead className="text-zinc-500 text-xs font-bold uppercase tracking-wider py-4 text-right">Status</TableHead>
+                    <TableHead 
+                        className="text-zinc-500 text-[10px] font-black uppercase tracking-widest py-4 cursor-pointer hover:text-white transition-colors"
+                        onClick={() => requestSort('created_at')}
+                    >
+                        <div className="flex items-center gap-1">Date <ArrowUpDown size={10} /></div>
+                    </TableHead>
+                    <TableHead className="text-zinc-500 text-[10px] font-black uppercase tracking-widest py-4">Description</TableHead>
+                    <TableHead className="text-zinc-500 text-[10px] font-black uppercase tracking-widest py-4">Type</TableHead>
+                    <TableHead 
+                        className="text-zinc-500 text-[10px] font-black uppercase tracking-widest py-4 text-right cursor-pointer hover:text-white transition-colors"
+                        onClick={() => requestSort('amount')}
+                    >
+                        <div className="flex items-center justify-end gap-1">Amount <ArrowUpDown size={10} /></div>
+                    </TableHead>
+                    <TableHead className="text-zinc-500 text-[10px] font-black uppercase tracking-widest py-4 text-right">Status</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {transactions.map((tx) => (
+                    {sortedTransactions.map((tx) => (
                     <TableRow key={tx.id} className="border-white/5 hover:bg-white/5 transition-colors group">
                         <TableCell className="font-mono text-zinc-400 text-xs">
                             {new Date(tx.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}

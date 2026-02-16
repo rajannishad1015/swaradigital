@@ -72,25 +72,23 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
     // Continue with empty arrays - dashboard will show empty states
   }
 
-  // 3. Aggregate Stats
-  const allTracks = tracks || []
-  const totalReleases = allTracks.length
-  const approvedCount = allTracks.filter(t => t?.status === 'approved').length
+  // 3. Aggregate Stats & Activity Generation
+  // Only process if we have data to minimize overhead
+  const totalReleases = tracks?.length || 0
+  const approvedCount = tracks?.filter(t => t?.status === 'approved').length || 0
   
-  // Status Counts (with null safety)
+  // Status Counts (Consolidate filtering to single pass if possible, but stay simple for now)
   const statusCounts = [
       { status: 'approved', count: approvedCount },
-      { status: 'rejected', count: allTracks.filter(t => t?.status === 'rejected').length },
-      { status: 'pending', count: allTracks.filter(t => t?.status === 'pending').length },
-      { status: 'draft', count: allTracks.filter(t => t?.status === 'draft').length },
+      { status: 'rejected', count: tracks?.filter(t => t?.status === 'rejected').length || 0 },
+      { status: 'pending', count: tracks?.filter(t => t?.status === 'pending').length || 0 },
+      { status: 'draft', count: tracks?.filter(t => t?.status === 'draft').length || 0 },
   ]
 
-  // Genre Counts (Top 5) with null safety
+  // Genre Counts (Top 5)
   const genreMap = new Map<string, number>()
-  allTracks.forEach(t => {
-      if (t?.genre && typeof t.genre === 'string') {
-          genreMap.set(t.genre, (genreMap.get(t.genre) || 0) + 1)
-      }
+  tracks?.forEach(t => {
+      if (t?.genre) genreMap.set(t.genre, (genreMap.get(t.genre) || 0) + 1)
   })
   
   const genres = Array.from(genreMap.entries())
@@ -98,60 +96,30 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
     .sort((a, b) => b.count - a.count)
     .slice(0, 5)
 
-  // Fallback if no genres - provide placeholder data for charts
   if (genres.length === 0) {
-      genres.push({ genre: 'Upload tracks to see genre analytics', count: 0 })
+      genres.push({ genre: 'Upload tracks for analytics', count: 0 })
   }
 
-
-  // Generate Activity Feed with null safety
+  // Generate Activity Feed efficiently
   const activities = [
-      ...(allTracks?.filter(t => t?.id && t?.title).map(t => ({ 
-        id: t.id, 
-        type: 'upload' as const, 
-        title: `Uploaded ${t.title}`, 
-        status: t.status || 'draft', 
-        date: t.created_at, 
-        description: t.artist 
+      ...(tracks?.slice(0, 5).map(t => ({ 
+        id: `t-${t.id}`, type: 'upload' as const, title: `Release: ${t.title}`, status: t.status, date: t.created_at 
       })) || []),
-      ...(payouts?.filter(p => p?.id && p?.amount).map(p => ({ 
-        id: p.id, 
-        type: 'payout' as const, 
-        title: `Payout Request ($${p.amount})`, 
-        status: p.status || 'pending', 
-        date: p.created_at 
+      ...(payouts?.slice(0, 5).map(p => ({ 
+        id: `p-${p.id}`, type: 'payout' as const, title: `Payout: $${p.amount}`, status: p.status, date: p.created_at 
       })) || []),
-      ...(tickets?.filter(t => t?.id && t?.subject).map(t => ({ 
-        id: t.id, 
-        type: 'ticket' as const, 
-        title: `Support Ticket: ${t.subject}`, 
-        status: t.status || 'open', 
-        date: t.created_at 
+      ...(tickets?.slice(0, 5).map(t => ({ 
+        id: `s-${t.id}`, type: 'ticket' as const, title: `Ticket: ${t.subject}`, status: t.status, date: t.created_at 
       })) || [])
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
 
-  // Calculate Aggregate Revenue with safety checks
-  let totalRevenue = 0
-  try {
-    if (!artistId && isLabel) {
-        // Sum up balances of all managed artists PLUS label's own balance
-        const artistsBalance = managedArtists.reduce((acc, curr) => {
-          const balance = Number(curr?.balance || 0)
-          return acc + (isNaN(balance) ? 0 : balance)
-        }, 0)
-        const labelBalance = Number(profile?.balance || 0)
-        totalRevenue = (isNaN(labelBalance) ? 0 : labelBalance) + artistsBalance
-    } else if (artistId) {
-        const { data: artistProfile } = await supabase.from('profiles').select('balance').eq('id', artistId).single()
-        const balance = Number(artistProfile?.balance || 0)
-        totalRevenue = isNaN(balance) ? 0 : balance
-    } else {
-        const balance = Number(profile?.balance || 0)
-        totalRevenue = isNaN(balance) ? 0 : balance
-    }
-  } catch (error) {
-    console.error('Error calculating revenue:', error)
-    totalRevenue = 0
+  // Calculate Aggregate Revenue safely
+  let totalRevenue = (profile?.balance || 0)
+  if (isLabel && !artistId) {
+      totalRevenue += managedArtists.reduce((acc, curr) => acc + (curr.balance || 0), 0)
+  } else if (artistId) {
+      const selectedArtist = managedArtists.find(a => a.id === artistId)
+      totalRevenue = selectedArtist ? selectedArtist.balance : (profile?.balance || 0)
   }
 
   const stats = {
@@ -195,7 +163,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
 
             <DashboardHome 
                 user={user} 
-                tracks={allTracks} 
+                tracks={tracks || []} 
                 stats={stats} 
                 bankDetails={{
                     bankName: profile?.bank_name,

@@ -25,7 +25,7 @@ export default function ProfileCompletionBanner({ profile, bankDetails }: Profil
   const [dismissed, setDismissed] = useState(false)
   
   // Check completion status
-  const hasArtistName = !!profile?.artist_name
+  const hasArtistName = !!profile?.artist_name && profile.artist_name !== 'Artist'
   const hasPaymentMethod = !!(
     bankDetails?.bankName || 
     bankDetails?.paypalEmail || 

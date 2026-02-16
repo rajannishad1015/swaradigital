@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Bell, Check, Trash2, Info, AlertTriangle, MessageSquare, X } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import {
@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import Link from 'next/link'
 
@@ -29,6 +28,23 @@ export default function NotificationsPopover() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const supabase = createClient()
+
+  const fetchNotifications = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    if (data) {
+      setNotifications(data as Notification[])
+      setUnreadCount(data.filter((n: Notification) => !n.is_read).length)
+    }
+  }, [supabase])
 
   useEffect(() => {
     fetchNotifications()
@@ -52,24 +68,7 @@ export default function NotificationsPopover() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
-
-  const fetchNotifications = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20)
-
-    if (data) {
-      setNotifications(data as Notification[])
-      setUnreadCount(data.filter((n: Notification) => !n.is_read).length)
-    }
-  }
+  }, [fetchNotifications, supabase])
 
   const markAsRead = async (id: string) => {
     await supabase

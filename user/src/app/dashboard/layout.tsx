@@ -6,6 +6,7 @@ import MobileSidebar from '@/components/mobile-sidebar'
 import NotificationCenter from '@/components/notification-center'
 import ArtistSwitcher from '@/components/artist-switcher'
 import PageTransition from '@/components/page-transition'
+import Breadcrumbs from '@/components/breadcrumbs'
 
 export default async function DashboardLayout({
   children,
@@ -23,9 +24,15 @@ export default async function DashboardLayout({
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('role, id')
+        .select('role, id, status')
         .eq('id', user.id)
         .single()
+
+    if (profile?.status === 'banned' || profile?.status === 'suspended') {
+        const supabase = await createClient()
+        await supabase.auth.signOut()
+        redirect('/login?error=Your account has been suspended. Please contact support.')
+    }
 
     const isLabel = profile?.role === 'label'
     let artists: any[] = []
@@ -82,7 +89,9 @@ export default async function DashboardLayout({
                    pendingTickets={pendingTickets || 0} 
                    hasActivity={hasActivity}
                />
-               {/* Search or Breadcrumbs could go here */}
+               <div className="hidden sm:block ml-2">
+                   <Breadcrumbs />
+               </div>
             </div>
             <div className="flex items-center gap-6">
                 {isLabel && <ArtistSwitcher artists={artists} />}

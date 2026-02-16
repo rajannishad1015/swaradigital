@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createWithdrawalRequest } from '../actions'
 import { toast } from "sonner"
-import { DollarSign, Loader2, CreditCard, Wallet, Landmark } from 'lucide-react'
+import { DollarSign, Loader2, CreditCard, Wallet, Landmark, Clock, Rocket } from 'lucide-react'
 import Link from 'next/link'
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
@@ -36,6 +36,7 @@ export default function WithdrawRequestForm({ currentBalance, bankDetails, trigg
   const [amount, setAmount] = useState('')
   const [paymentMode, setPaymentMode] = useState<string>('bank_transfer')
   const [loading, setLoading] = useState(false)
+  const [step, setStep] = useState<'input' | 'confirm'>('input')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,8 +47,31 @@ export default function WithdrawRequestForm({ currentBalance, bankDetails, trigg
         return
     }
 
-    if (value < 10) {
-        toast.error("Minimum withdrawal amount is $10.00")
+    if (step === 'input') {
+        if (value < 10) {
+            toast.error("Minimum withdrawal amount is $10.00")
+            return
+        }
+        if (value > currentBalance) {
+            toast.error("Insufficient balance")
+            return
+        }
+        
+        // Basic check for details
+        if (paymentMode === 'bank_transfer' && (!bankDetails.bankName || !bankDetails.accountNumber || !bankDetails.ifscCode)) {
+            toast.error("Incomplete bank details. Please update settings.")
+            return
+        }
+        if (paymentMode === 'paypal' && !bankDetails.paypalEmail) {
+            toast.error("PayPal email missing. Please update settings.")
+            return
+        }
+        if (paymentMode === 'upi' && !bankDetails.upiId) {
+            toast.error("UPI ID missing. Please update settings.")
+            return
+        }
+
+        setStep('confirm')
         return
     }
 
@@ -113,7 +137,8 @@ export default function WithdrawRequestForm({ currentBalance, bankDetails, trigg
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-            <div className="grid gap-6 py-4">
+            {step === 'input' ? (
+                <div className="grid gap-6 py-4">
                 <div className="space-y-4">
                     <Label className="text-xs uppercase text-zinc-500 font-bold tracking-wider">Payment Mode</Label>
                     <RadioGroup defaultValue="bank_transfer" onValueChange={setPaymentMode} className="grid grid-cols-3 gap-2">
@@ -178,31 +203,68 @@ export default function WithdrawRequestForm({ currentBalance, bankDetails, trigg
                      )}
                 </div>
 
-                <div className="space-y-2">
-                    <Label htmlFor="amount" className="text-zinc-300">Amount (USD)</Label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
-                        <Input
-                            id="amount"
-                            type="number"
-                            step="0.01"
-                            min="10"
-                            max={currentBalance}
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            className="pl-6 bg-white/5 border-white/10 text-white font-mono text-lg"
-                            placeholder="0.00"
-                        />
+                    <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-lg">
+                        <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider flex items-center gap-2">
+                            <Clock size={12} /> Processing Time: 5-7 Business Days
+                        </p>
                     </div>
+
                     <p className="text-xs text-zinc-500 text-right">Available: ${currentBalance.toFixed(2)}</p>
                 </div>
-            </div>
-            <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 hover:text-white">Cancel</Button>
-                <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-500 text-white">
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Submit Request
-                </Button>
+            ) : (
+                <div className="py-6 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="text-center space-y-2">
+                        <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.2em]">Confirm Withdrawal</p>
+                        <p className="text-4xl font-black text-white tabular-nums">${parseFloat(amount).toFixed(2)}</p>
+                    </div>
+
+                    <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-zinc-500">Method</span>
+                            <span className="text-white font-bold uppercase tracking-wider text-xs">
+                                {paymentMode.replace('_', ' ')}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-start text-sm pt-2 border-t border-white/5">
+                            <span className="text-zinc-500">Details</span>
+                            <div className="text-right text-white font-medium text-xs">
+                                {paymentMode === 'bank_transfer' && (
+                                    <>
+                                        <p>{bankDetails.bankName}</p>
+                                        <p className="font-mono text-[10px] text-zinc-400">****{bankDetails.accountNumber?.slice(-4)}</p>
+                                    </>
+                                )}
+                                {paymentMode === 'paypal' && <p>{bankDetails.paypalEmail}</p>}
+                                {paymentMode === 'upi' && <p>{bankDetails.upiId}</p>}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-lg">
+                        <p className="text-[10px] text-emerald-500 font-bold leading-relaxed">
+                            Upon submission, this amount will be deducted from your available balance. You will receive an email once the request is processed.
+                        </p>
+                    </div>
+                </div>
+            )}
+            
+            <DialogFooter className="gap-3 sm:gap-0">
+                {step === 'input' ? (
+                    <>
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 hover:text-white">Cancel</Button>
+                        <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
+                            Next Step
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <Button type="button" variant="ghost" onClick={() => setStep('input')} className="text-zinc-400 hover:text-white">Back</Button>
+                        <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold min-w-[140px]">
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
+                            Confirm Payout
+                        </Button>
+                    </>
+                )}
             </DialogFooter>
         </form>
       </DialogContent>

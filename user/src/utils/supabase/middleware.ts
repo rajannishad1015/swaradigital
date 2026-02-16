@@ -33,34 +33,22 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    request.nextUrl.pathname !== '/'
-  ) {
+  // 1. Skip middleware for static assets and public routes early
+  const isPublicPath = 
+    request.nextUrl.pathname.startsWith('/login') ||
+    request.nextUrl.pathname.startsWith('/signup') ||
+    request.nextUrl.pathname.startsWith('/auth') ||
+    request.nextUrl.pathname === '/' ||
+    request.nextUrl.pathname.includes('.') // Static files
+
+  if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Active User Check
-  if (user && !request.nextUrl.pathname.startsWith('/login')) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('status')
-        .eq('id', user.id)
-        .single()
-      
-      if (profile?.status === 'banned' || profile?.status === 'suspended') {
-           await supabase.auth.signOut()
-           const url = request.nextUrl.clone()
-           url.pathname = '/login'
-           url.searchParams.set('error', 'Your account has been suspended. Please contact support.')
-           return NextResponse.redirect(url)
-      }
-  }
+  // 2. Active User Check removed for performance - handled in Layout
+  // This prevents blocking every request with a DB query
 
   return supabaseResponse
 }

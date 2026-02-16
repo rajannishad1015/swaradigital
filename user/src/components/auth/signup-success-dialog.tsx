@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   Dialog,
@@ -15,13 +15,11 @@ import { Button } from '@/components/ui/button'
 export function SignupSuccessDialog() {
   const searchParams = useSearchParams()
   const message = searchParams.get('message')
-  const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    if (message && message.includes('Welcome to MusicFlow')) {
-      setOpen(true)
-    }
-  }, [message])
+  
+  // Initialize state based on the URL params directly to avoid useEffect
+  const [open, setOpen] = useState(() => {
+    return !!(message && message.includes('Welcome to MusicFlow'))
+  })
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

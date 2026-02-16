@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Bell, Check, Trash2, ExternalLink, Info, BellOff } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -17,18 +17,18 @@ export default function NotificationCenter() {
 
     const unreadCount = notifications.filter(n => !n.is_read).length
 
-    const loadNotifications = async () => {
+    const loadNotifications = useCallback(async () => {
         const data = await fetchNotifications()
         setNotifications(data)
         setLoading(false)
-    }
+    }, [])
 
     useEffect(() => {
         loadNotifications()
         // Poll every 1 minute for new notifications
         const interval = setInterval(loadNotifications, 60000)
         return () => clearInterval(interval)
-    }, [])
+    }, [loadNotifications])
 
     const handleMarkAsRead = async (id: string) => {
         const result = await markAsRead(id)

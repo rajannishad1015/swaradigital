@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import { User, Mail, Phone, MapPin, Lock, Edit2, CreditCard } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Lock, Edit2, CreditCard, Instagram, Twitter, Youtube, Globe, Music2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import EditProfileDialog from './edit-profile-dialog'
@@ -161,6 +161,64 @@ export default async function SettingsPage() {
                         <div className="relative z-10">
                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">UPI ID</div>
                             <div className="font-mono font-bold text-white text-lg">{profile?.upi_id || 'Not linked'}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Social Presence */}
+            <div className="space-y-4 pt-4">
+                <div className="flex items-center gap-3 mb-2 px-1">
+                    <div className="h-6 w-1 bg-purple-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
+                    <h3 className="text-lg font-bold text-white tracking-tight">Social Presence</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-zinc-900 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 group hover:border-purple-500/30 transition-all">
+                        <Instagram className="h-5 w-5 text-zinc-500 group-hover:text-purple-400 transition-colors" />
+                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">Instagram</div>
+                        <div className="text-xs font-medium text-white truncate max-w-full">{profile?.instagram_url ? 'Linked' : 'Not set'}</div>
+                    </div>
+                    <div className="bg-zinc-900 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 group hover:border-purple-500/30 transition-all">
+                        <Twitter className="h-5 w-5 text-zinc-500 group-hover:text-blue-400 transition-colors" />
+                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">Twitter</div>
+                        <div className="text-xs font-medium text-white truncate max-w-full">{profile?.twitter_url ? 'Linked' : 'Not set'}</div>
+                    </div>
+                    <div className="bg-zinc-900 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 group hover:border-purple-500/30 transition-all">
+                        <Youtube className="h-5 w-5 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">YouTube</div>
+                        <div className="text-xs font-medium text-white truncate max-w-full">{profile?.youtube_url ? 'Linked' : 'Not set'}</div>
+                    </div>
+                    <div className="bg-zinc-900 border border-white/5 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 group hover:border-purple-500/30 transition-all">
+                        <Globe className="h-5 w-5 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
+                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">Website</div>
+                        <div className="text-xs font-medium text-white truncate max-w-full">{profile?.website_url ? 'Linked' : 'Not set'}</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Artist IDs */}
+            <div className="space-y-4 pt-4">
+                <div className="flex items-center gap-3 mb-2 px-1">
+                    <div className="h-6 w-1 bg-pink-500 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.5)]"></div>
+                    <h3 className="text-lg font-bold text-white tracking-tight">Artist IDs</h3>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="bg-zinc-900 border border-white/5 rounded-2xl p-5 flex items-center gap-4 group hover:border-pink-500/30 transition-all">
+                        <div className="h-10 w-10 rounded-xl bg-black flex items-center justify-center border border-white/5">
+                            <Music2 className="h-5 w-5 text-pink-500" />
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Spotify Artist ID</div>
+                            <div className="text-sm font-bold text-white font-mono mt-0.5">{profile?.spotify_artist_id || 'Not set'}</div>
+                        </div>
+                    </div>
+                    <div className="bg-zinc-900 border border-white/5 rounded-2xl p-5 flex items-center gap-4 group hover:border-pink-500/30 transition-all">
+                        <div className="h-10 w-10 rounded-xl bg-black flex items-center justify-center border border-white/5">
+                            <Music2 className="h-5 w-5 text-indigo-400" />
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Apple Artist ID</div>
+                            <div className="text-sm font-bold text-white font-mono mt-0.5">{profile?.apple_artist_id || 'Not set'}</div>
                         </div>
                     </div>
                 </div>

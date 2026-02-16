@@ -169,8 +169,9 @@ function NavGroup({
     label: string, 
     items?: { href: string, label: string }[] 
 }) {
-    const [isOpen, setIsOpen] = useState(false)
     const pathname = usePathname()
+    const isAnyChildActive = items?.some(item => pathname === item.href)
+    const [isOpen, setIsOpen] = useState(isAnyChildActive)
 
     return (
         <div>
@@ -178,13 +179,13 @@ function NavGroup({
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     "w-full flex items-center justify-between px-4 py-2.5 transition-all duration-300 rounded-lg group",
-                    isOpen ? "text-white bg-white/5" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+                    (isOpen || isAnyChildActive) ? "text-white bg-white/5" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
                 )}
             >
                 <div className="flex items-center gap-3">
                     <Icon size={16} className={cn(
                         "transition-all duration-200",
-                        isOpen ? "text-indigo-400" : "text-zinc-600 group-hover:text-zinc-400"
+                        (isOpen || isAnyChildActive) ? "text-indigo-400" : "text-zinc-600 group-hover:text-zinc-400"
                     )} />
                     <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
                 </div>
@@ -196,13 +197,13 @@ function NavGroup({
                     {items ? items.map((item) => (
                         <Link key={item.href} href={item.href}>
                             <div className={cn(
-                                "px-4 py-2 text-xs font-medium transition-all duration-200 relative",
+                                "group relative flex items-center gap-3 px-4 py-2 text-xs font-medium transition-all duration-300 ease-out hover:scale-[1.02]",
                                 pathname === item.href 
-                                    ? "text-indigo-400" 
+                                    ? "text-indigo-400 bg-indigo-500/5 rounded-r-lg" 
                                     : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5 rounded-r-lg"
                             )}>
                                 {pathname === item.href && (
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-indigo-500 rounded-full" />
+                                    <div className="absolute left-[-1px] top-1/2 -translate-y-1/2 w-0.5 h-4 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
                                 )}
                                 {item.label}
                             </div>

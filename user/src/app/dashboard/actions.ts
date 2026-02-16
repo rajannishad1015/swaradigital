@@ -13,6 +13,30 @@ export async function createWithdrawalRequest(amount: number, paymentMode: strin
       throw new Error("Minimum withdrawal amount is $10.00")
   }
 
+  // Server-side validation for payment details
+  if (!paymentMode || !['bank_transfer', 'paypal', 'upi'].includes(paymentMode)) {
+    throw new Error("Invalid payment mode selected")
+  }
+
+  if (!paymentDetails || Object.keys(paymentDetails).length === 0) {
+    throw new Error("Payment details are required")
+  }
+
+  // Specific field validation based on mode
+  if (paymentMode === 'bank_transfer') {
+    if (!paymentDetails.bank_name || !paymentDetails.account_number || !paymentDetails.ifsc_code) {
+      throw new Error("Incomplete bank details provided")
+    }
+  } else if (paymentMode === 'paypal') {
+    if (!paymentDetails.email || !paymentDetails.email.includes('@')) {
+      throw new Error("Valid PayPal email is required")
+    }
+  } else if (paymentMode === 'upi') {
+    if (!paymentDetails.upi_id || !paymentDetails.upi_id.includes('@')) {
+      throw new Error("Valid UPI ID is required")
+    }
+  }
+
   // 1. Check Balance
   const { data: profile } = await supabase.from('profiles').select('balance').eq('id', user.id).single()
   

@@ -11,14 +11,19 @@ import TransactionList from './transaction-list'
 import PayoutList from './payout-list'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import RevenueAnalytics from './revenue-analytics'
-import { format } from 'date-fns'
+import { format, subDays } from 'date-fns'
+import FinanceFilters from '@/components/finance/finance-filters'
+import FinanceExportButton from '@/components/finance/finance-export-button'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function FinancePage({ searchParams }: { searchParams: { artistId?: string } }) {
+export default async function FinancePage({ searchParams }: { searchParams: { artistId?: string, range?: string, search?: string } }) {
   const awaitedParams = await searchParams
   const artistId = awaitedParams.artistId as string
+  const range = awaitedParams.range || 'all'
+  const search = awaitedParams.search || ''
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -46,8 +51,26 @@ export default async function FinancePage({ searchParams }: { searchParams: { ar
 
   // Setup queries
   let revenueQuery = supabase.from('revenue_logs').select('*, tracks(title)')
-  let transQuery = supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(20)
+  let transQuery = supabase.from('transactions').select('*').order('created_at', { ascending: false })
   let payoutQuery = supabase.from('payout_requests').select('*').order('created_at', { ascending: false })
+
+  // 1. Time Range Filter
+  if (range !== 'all') {
+      let days = 30
+      if (range === '7d') days = 7
+      if (range === '90d') days = 90
+      if (range === '12m') days = 365
+      
+      const dateLimit = subDays(new Date(), days).toISOString()
+      revenueQuery = revenueQuery.gte('period', dateLimit)
+      transQuery = transQuery.gte('created_at', dateLimit)
+      payoutQuery = payoutQuery.gte('created_at', dateLimit)
+  }
+
+  // 2. Search Filter (Transactions)
+  if (search) {
+      transQuery = transQuery.ilike('description', `%${search}%`)
+  }
 
   if (artistId) {
       revenueQuery = revenueQuery.eq('user_id', artistId)
@@ -161,6 +184,9 @@ export default async function FinancePage({ searchParams }: { searchParams: { ar
             </div>
         </div>
 
+        {/* Filters Section */}
+        <FinanceFilters />
+
         {/* Top Cards Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
              <div className="col-span-1 lg:col-span-1 h-full">
@@ -223,7 +249,7 @@ export default async function FinancePage({ searchParams }: { searchParams: { ar
                                 <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-white">Recent Activity</CardTitle>
                                 <CardDescription className="text-zinc-500 mt-1 text-xs">History of royalties and adjustments.</CardDescription>
                             </div>
-                            <Button variant="ghost" size="sm" className="hidden text-xs uppercase font-bold tracking-wider text-zinc-500 hover:text-white">Export CSV</Button>
+                            <FinanceExportButton data={transactions || []} />
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">

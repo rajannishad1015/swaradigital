@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 
 export const MusicPattern = () => {
   // Generate random data for sound waves to look organic but structured
-  const [waves, setWaves] = useState<number[][]>([]);
-
-  useEffect(() => {
+  const waves = useMemo(() => {
     const newWaves: number[][] = [];
     for (let i = 0; i < 5; i++) {
        const wave: number[] = [];
@@ -18,7 +16,7 @@ export const MusicPattern = () => {
        }
        newWaves.push(wave);
     }
-    setWaves(newWaves);
+    return newWaves;
   }, []);
 
   return (
