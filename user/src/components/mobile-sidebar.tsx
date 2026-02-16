@@ -12,10 +12,8 @@ export default function MobileSidebar({ user, signOut, pendingTickets, hasActivi
     const pathname = usePathname()
 
     useEffect(() => {
-        if (open) {
-            setOpen(false)
-        }
-    }, [pathname, open])
+        setOpen(false)
+    }, [pathname])
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>

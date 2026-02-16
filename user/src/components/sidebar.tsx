@@ -88,7 +88,7 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
                     <div className="h-px bg-zinc-800/50" />
                 </div>
 
-                <NavItem href="/dashboard/invite" icon={UserPlus} label="Invite Artist" active={pathname === '/dashboard/invite'} />
+                <NavItem href="#" icon={UserPlus} label="Invite Artist" badge="Soon" />
                 <NavItem href="/dashboard/faq" icon={HelpCircle} label="Documentation" active={pathname === '/dashboard/faq'} />
             </nav>
 
@@ -119,25 +119,26 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
     )
 }
 
-function NavItem({ href, icon: Icon, label, active }: { href: string, icon: any, label: string, active?: boolean }) {
+function NavItem({ href, icon: Icon, label, active, badge }: { href: string, icon: any, label: string, active?: boolean, badge?: string }) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
 
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault()
+        if (href === '#') return // Prevent navigation for disabled items
         startTransition(() => {
             router.push(href)
         })
     }
 
     return (
-        <Link href={href} onClick={handleClick}>
+        <Link href={href} onClick={handleClick} className={cn(href === '#' && "cursor-default")}>
             <div className={cn(
                 "group relative flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-300 ease-out",
-                "hover:scale-[1.02] active:scale-[0.98]",
+                href !== '#' && "hover:scale-[1.02] active:scale-[0.98]",
                 active 
                     ? "bg-white/10 text-white shadow-lg shadow-indigo-500/10" 
-                    : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5",
+                    : href === '#' ? "text-zinc-600" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5",
                 isPending && "opacity-60"
             )}>
                 {/* Active indicator */}
@@ -149,7 +150,10 @@ function NavItem({ href, icon: Icon, label, active }: { href: string, icon: any,
                     "transition-all duration-300 ease-out",
                     active ? "text-indigo-400 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]" : "text-zinc-600 group-hover:text-zinc-400 group-hover:scale-110"
                 )} />
-                <span className="text-xs font-medium tracking-wide">{label}</span>
+                <span className="text-xs font-medium tracking-wide flex-1">{label}</span>
+                {badge && (
+                    <span className="text-[9px] font-bold bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 uppercase tracking-wider">{badge}</span>
+                )}
                 
                 {/* Hover glow effect */}
                 {!active && (
