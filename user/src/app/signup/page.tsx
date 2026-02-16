@@ -1,6 +1,6 @@
 import { signup } from './actions'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SubmitButton } from '@/components/ui/submit-button'
 import Link from 'next/link'
 import { Disc, Music, Radio, Headphones, Mic2, PlayCircle } from 'lucide-react'
 import { AuthMessages } from '@/components/auth/auth-messages'
@@ -152,12 +152,12 @@ export default function SignupPage() {
                   </label>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <SubmitButton 
                   className="w-full h-12 sm:h-14 bg-black hover:bg-gray-800 text-white text-sm sm:text-base font-bold uppercase tracking-widest rounded-none shadow-xl transition-all"
+                  loadingText="Creating account..."
                 >
                   Create My Account
-                </Button>
+                </SubmitButton>
 
                 <div className="text-center pt-4">
                   <span className="text-gray-500 text-sm">
