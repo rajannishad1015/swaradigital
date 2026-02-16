@@ -21,10 +21,10 @@ export function SubmitButton({ children, loadingText = 'Please wait...', classNa
       {...props}
     >
       {pending ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {loadingText}
-        </>
+        <span className="flex items-center justify-center">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+          <span>{loadingText}</span>
+        </span>
       ) : (
         children
       )}
