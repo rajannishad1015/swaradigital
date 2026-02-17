@@ -139,6 +139,21 @@ export default function WithdrawRequestForm({ currentBalance, bankDetails, trigg
         <form onSubmit={handleSubmit}>
             {step === 'input' ? (
                 <div className="grid gap-6 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="amount" className="text-xs uppercase text-zinc-500 font-bold tracking-wider">Amount (USD)</Label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 font-bold">$</span>
+                            <Input 
+                                id="amount" 
+                                type="number" 
+                                placeholder="0.00" 
+                                value={amount} 
+                                onChange={(e) => setAmount(e.target.value)}
+                                className="pl-7 bg-zinc-900 border-zinc-800 text-white font-bold focus-visible:ring-indigo-500 placeholder:text-zinc-600"
+                            />
+                        </div>
+                    </div>
+
                 <div className="space-y-4">
                     <Label className="text-xs uppercase text-zinc-500 font-bold tracking-wider">Payment Mode</Label>
                     <RadioGroup defaultValue="bank_transfer" onValueChange={setPaymentMode} className="grid grid-cols-3 gap-2">
