@@ -48,10 +48,10 @@ export default function PayoutList({ requests }: { requests: any[] }) {
         <Table>
             <TableHeader>
                 <TableRow className="border-white/5 bg-white/[0.02] hover:bg-white/[0.02]">
-                    <TableHead className="w-[150px] text-[10px] uppercase font-black tracking-widest text-zinc-500">Date</TableHead>
+                    <TableHead className="hidden md:table-cell w-[150px] text-[10px] uppercase font-black tracking-widest text-zinc-500">Date</TableHead>
                     <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">User</TableHead>
                     <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Amount</TableHead>
-                    <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Method</TableHead>
+                    <TableHead className="hidden md:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Method</TableHead>
                     <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Status</TableHead>
                     <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-zinc-500">Actions</TableHead>
                 </TableRow>
@@ -59,7 +59,7 @@ export default function PayoutList({ requests }: { requests: any[] }) {
             <TableBody>
                 {requests.map((req) => (
                     <TableRow key={req.id} className="border-white/5 hover:bg-white/[0.02] transition-colors group">
-                        <TableCell className="text-xs text-zinc-500 font-mono tracking-wide">{new Date(req.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="hidden md:table-cell text-xs text-zinc-500 font-mono tracking-wide">{new Date(req.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
                             <div className="flex flex-col">
                                 <span className="font-bold text-white text-sm group-hover:text-indigo-400 transition-colors">{req.profiles?.full_name || 'Unknown'}</span>
@@ -71,7 +71,7 @@ export default function PayoutList({ requests }: { requests: any[] }) {
                                 ${req.amount.toFixed(2)}
                             </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                              <Dialog>
                                 <DialogTrigger asChild>
                                     <Button variant="ghost" size="sm" className="h-8 rounded-lg bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 border border-white/5 gap-2 px-3">

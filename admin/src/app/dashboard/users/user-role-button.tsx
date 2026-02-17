@@ -10,9 +10,10 @@ interface UserRoleButtonProps {
     userId: string
     currentRole: string
     currentUserId: string | undefined
+    fullWidth?: boolean
 }
 
-export default function UserRoleButton({ userId, currentRole, currentUserId }: UserRoleButtonProps) {
+export default function UserRoleButton({ userId, currentRole, currentUserId, fullWidth }: UserRoleButtonProps) {
     const [isPending, startTransition] = useTransition()
 
     const handleToggle = () => {
@@ -36,6 +37,7 @@ export default function UserRoleButton({ userId, currentRole, currentUserId }: U
             disabled={userId === currentUserId || isPending}
             className={`
                 h-8 text-xs font-bold uppercase tracking-wider border transition-all
+                ${fullWidth ? 'w-full' : ''}
                 ${currentRole === 'admin' 
                     ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500 hover:text-white' 
                     : 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-white hover:bg-zinc-800'}

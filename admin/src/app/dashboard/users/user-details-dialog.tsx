@@ -134,7 +134,7 @@ export default function UserDetailsDialog({ user }: { user: any }) {
              <Eye className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="!max-w-6xl w-full h-[600px] p-0 overflow-hidden bg-zinc-950/90 backdrop-blur-xl border-white/10 text-white rounded-2xl flex flex-col shadow-2xl">
+      <DialogContent className="!max-w-6xl w-full h-[90vh] md:h-[600px] p-0 overflow-hidden bg-zinc-950/90 backdrop-blur-xl border-white/10 text-white rounded-2xl flex flex-col shadow-2xl">
         <DialogHeader className="px-6 py-3 border-b border-white/5 flex-shrink-0 bg-white/[0.02]">
           <div className="flex items-center gap-3">
             <DialogTitle className="text-xl font-black uppercase tracking-tight">User Details</DialogTitle>
@@ -148,19 +148,19 @@ export default function UserDetailsDialog({ user }: { user: any }) {
         </DialogHeader>
         
         <Tabs defaultValue="overview" className="w-full h-full flex flex-col">
-            <div className="px-6 pt-4 flex-shrink-0">
+            <div className="px-4 md:px-6 pt-4 flex-shrink-0">
                     <TabsList className="grid w-full grid-cols-4 bg-zinc-900/50 p-1 rounded-xl border border-white/5">
-                    <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[10px] tracking-wider">Overview</TabsTrigger>
-                    <TabsTrigger value="tracks" onClick={fetchTracks} className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[10px] tracking-wider">Tracks</TabsTrigger>
-                    <TabsTrigger value="funds" onClick={fetchHistory} className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[10px] tracking-wider">Wallet</TabsTrigger>
-                    <TabsTrigger value="admin" className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-400 text-zinc-500 font-bold uppercase text-[10px] tracking-wider">Admin Zone</TabsTrigger>
+                    <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[9px] md:text-[10px] tracking-wider">Overview</TabsTrigger>
+                    <TabsTrigger value="tracks" onClick={fetchTracks} className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[9px] md:text-[10px] tracking-wider">Tracks</TabsTrigger>
+                    <TabsTrigger value="funds" onClick={fetchHistory} className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[9px] md:text-[10px] tracking-wider">Wallet</TabsTrigger>
+                    <TabsTrigger value="admin" className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-400 text-zinc-500 font-bold uppercase text-[9px] md:text-[10px] tracking-wider">Admin</TabsTrigger>
                 </TabsList>
             </div>
                 
                 <TabsContent value="overview" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-4 min-h-0 overflow-hidden">
-                    <div className="flex h-full rounded-2xl border border-white/10 overflow-hidden bg-zinc-900/50 shadow-2xl">
-                        {/* LEFT PANEL: Profile Sidebar (Fixed Width) */}
-                        <div className="w-72 flex-shrink-0 bg-zinc-950/80 p-4 flex flex-col border-r border-white/5 relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row h-full rounded-2xl border border-white/10 overflow-hidden bg-zinc-900/50 shadow-2xl overflow-y-auto md:overflow-y-hidden">
+                        {/* LEFT PANEL: Profile Sidebar (Fixed Width on Desktop) */}
+                        <div className="w-full md:w-72 flex-shrink-0 bg-zinc-950/80 p-4 flex flex-col border-b md:border-b-0 md:border-r border-white/5 relative overflow-hidden">
                             {/* Avatar & Name */}
                             <div className="text-center mb-3">
                                 <div className="h-16 w-16 mx-auto rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-2 ring-black/20 mb-2">
@@ -232,14 +232,14 @@ export default function UserDetailsDialog({ user }: { user: any }) {
                                 )}
                             </div>
                             
-                            <div className="mt-auto pt-2 border-t border-white/5 text-[8px] text-zinc-600 text-center font-medium uppercase tracking-widest flex justify-between items-center">
+                            <div className="mt-4 pt-2 border-t border-white/5 text-[8px] text-zinc-600 text-center font-medium uppercase tracking-widest flex justify-between items-center">
                                 <span>User ID</span>
                                 <span className="font-mono bg-black/40 px-1.5 py-0.5 rounded text-zinc-500">{user.id.slice(0, 8)}...</span>
                             </div>
                         </div>
 
                         {/* RIGHT PANEL: Financial Workspace (Flexible) */}
-                        <div className="flex-1 bg-zinc-900/30 p-5 flex flex-col relative min-w-0 overflow-hidden">
+                        <div className="flex-1 bg-zinc-900/30 p-5 flex flex-col relative min-w-0 md:overflow-hidden">
                             {/* Background Gradients */}
                              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[90px] -mr-40 -mt-40 pointer-events-none"></div>
                              
@@ -323,7 +323,7 @@ export default function UserDetailsDialog({ user }: { user: any }) {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="tracks" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-3 min-h-0 overflow-hidden">
+                <TabsContent value="tracks" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-3 min-h-0 overflow-y-auto md:overflow-hidden">
                     <div className="flex flex-col h-full">
                         <div className="flex justify-between items-center mb-3 px-1">
                             <h3 className="font-black text-base flex items-center gap-2 uppercase tracking-tight">
@@ -404,12 +404,12 @@ export default function UserDetailsDialog({ user }: { user: any }) {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="funds" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-3 min-h-0 overflow-hidden">
-                    <div className="grid grid-cols-[300px_1fr] gap-4 h-full">
-                        <div className="border-r border-white/5 pr-4">
+                <TabsContent value="funds" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-3 min-h-0 overflow-y-auto md:overflow-hidden">
+                    <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4 h-auto md:h-full">
+                        <div className="border-b md:border-b-0 md:border-r border-white/5 pb-4 md:pb-0 md:pr-4">
                             <FundsManager userId={user.id} currentBalance={user.balance || 0} onSuccess={fetchHistory} />
                         </div>
-                        <div className="flex flex-col min-h-0">
+                        <div className="flex flex-col min-h-[400px] md:min-h-0">
                             <div className="flex justify-between items-center mb-3 px-1">
                                 <h3 className="font-black text-base flex items-center gap-2 uppercase tracking-tight">
                                     <History className="h-3.5 w-3.5 text-emerald-400" /> 
@@ -482,8 +482,8 @@ export default function UserDetailsDialog({ user }: { user: any }) {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="admin" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-3 min-h-0 overflow-hidden">
-                    <div className="grid grid-cols-2 gap-6 h-full">
+                <TabsContent value="admin" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-3 min-h-0 overflow-y-auto md:overflow-hidden">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-auto md:h-full">
                         <div className="space-y-4">
                             <div className="space-y-1.5">
                                 <h3 className="font-black text-base flex items-center gap-2 text-red-400 uppercase tracking-tight">

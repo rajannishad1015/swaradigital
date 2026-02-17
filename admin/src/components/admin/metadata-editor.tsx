@@ -83,27 +83,31 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
 
     return (
         <div className="relative">
-             <div className="absolute top-0 right-0 z-10">
-                {isEditing ? (
-                    <div className="flex items-center gap-2">
-                        <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={loading}>
-                            <X size={14} className="mr-2" /> Cancel
-                        </Button>
-                        <Button size="sm" onClick={form.handleSubmit(onSubmit)} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700">
-                            {loading ? <Loader2 size={14} className="animate-spin mr-2" /> : <Check size={14} className="mr-2" />}
-                            Save
-                        </Button>
-                    </div>
-                ) : (
-                    <Button size="sm" variant="outline" onClick={() => setIsEditing(true)} className="border-white/10 hover:bg-white/5 text-zinc-400 hover:text-white">
-                        <Pencil size={14} className="mr-2" /> Edit Metadata
-                    </Button>
-                )}
-            </div>
 
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-0">
-                    <Section title="Track Details" icon={Mic}>
+                    <Section 
+                        title="Track Details" 
+                        icon={Mic}
+                        action={
+                            isEditing ? (
+                                <div className="flex items-center gap-2">
+                                    <Button size="sm" variant="ghost" type="button" onClick={cancelEdit} disabled={loading} className="h-7 px-2">
+                                        <X size={14} className="mr-1" /> Cancel
+                                    </Button>
+                                    <Button size="sm" type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 h-7 px-3">
+                                        {loading ? <Loader2 size={14} className="animate-spin mr-1" /> : <Check size={14} className="mr-1" />}
+                                        Save
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button size="sm" variant="outline" type="button" onClick={() => setIsEditing(true)} className="border-white/10 hover:bg-white/5 text-zinc-400 hover:text-white h-7 px-3 text-xs">
+                                    <Pencil size={12} className="mr-2" /> Edit Metadata
+                                </Button>
+                            )
+                        }
+                    >
+                        {/* ... form fields remain same ... */}
                         <GridItem label="Title">
                             {isEditing ? (
                                 <FormField
@@ -123,6 +127,7 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
                             )}
                         </GridItem>
                         
+                        {/* ... rest of GridItems ... */}
                         <GridItem label="Version">
                             {isEditing ? (
                                 <FormField
@@ -325,12 +330,15 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
     )
 }
 
-function Section({ title, icon: Icon, children, fullWidth }: { title: string, icon: any, children: React.ReactNode, fullWidth?: boolean }) {
+function Section({ title, icon: Icon, children, fullWidth, action }: { title: string, icon: any, children: React.ReactNode, fullWidth?: boolean, action?: React.ReactNode }) {
     return (
         <div>
-            <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Icon size={14} /> {title}
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                    <Icon size={14} /> {title}
+                </h3>
+                {action}
+            </div>
             <div className={`grid ${fullWidth ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3'} gap-6`}>
                 {children}
             </div>

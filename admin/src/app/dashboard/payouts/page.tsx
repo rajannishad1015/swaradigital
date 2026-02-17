@@ -50,7 +50,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
           {stats.map((s) => (
              <Link key={s.status} href={`/dashboard/payouts?status=${s.status}`}>
                 <div className={`p-4 rounded-xl border transition-all cursor-pointer ${status === s.status ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/10' : 'border-gray-100 bg-white hover:border-gray-300 shadow-sm'}`}>

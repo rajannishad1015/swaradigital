@@ -69,46 +69,109 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       </div>
 
       {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white/[0.03] backdrop-blur-xl p-4 rounded-2xl border border-white/5">
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white/[0.03] backdrop-blur-xl p-4 rounded-2xl border border-white/5 sticky top-0 z-30 md:static">
          <form className="flex gap-2 w-full md:max-w-md relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
             <Input 
                 name="query" 
-                placeholder="Search by name or email..." 
+                placeholder="Search users..." 
                 defaultValue={query} 
-                className="pl-9 bg-zinc-900/50 border-white/5 text-white placeholder:text-zinc-600 focus-visible:ring-indigo-500/50 h-10 rounded-xl" 
+                className="pl-9 bg-zinc-900/50 border-white/5 text-white placeholder:text-zinc-600 focus-visible:ring-indigo-500/50 h-10 rounded-xl w-full" 
             />
-            <Button type="submit" className="bg-white text-black hover:bg-zinc-200 border-0 rounded-xl font-bold">Search</Button>
+            <Button type="submit" className="bg-white text-black hover:bg-zinc-200 border-0 rounded-xl font-bold px-6">Search</Button>
          </form>
-         <div className="flex items-center gap-1 bg-zinc-900/50 p-1.5 rounded-xl border border-white/5">
-            <Link href="/dashboard/users?role=all">
-                <Button variant={role === 'all' ? 'secondary' : 'ghost'} size="sm" className={`h-8 rounded-lg text-xs font-bold ${role === 'all' ? 'bg-white text-black hover:bg-zinc-200' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
+         <div className="flex items-center gap-1 bg-zinc-900/50 p-1.5 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto no-scrollbar">
+            <Link href="/dashboard/users?role=all" className="flex-1 md:flex-none">
+                <Button variant={role === 'all' ? 'secondary' : 'ghost'} size="sm" className={`w-full md:w-auto h-8 rounded-lg text-xs font-bold ${role === 'all' ? 'bg-white text-black hover:bg-zinc-200' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
                     <UsersIcon className="h-3.5 w-3.5 mr-1.5" /> All
                 </Button>
             </Link>
-            <Link href="/dashboard/users?role=artist">
-                <Button variant={role === 'artist' ? 'secondary' : 'ghost'} size="sm" className={`h-8 rounded-lg text-xs font-bold ${role === 'artist' ? 'bg-indigo-500 text-white hover:bg-indigo-400' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
+            <Link href="/dashboard/users?role=artist" className="flex-1 md:flex-none">
+                <Button variant={role === 'artist' ? 'secondary' : 'ghost'} size="sm" className={`w-full md:w-auto h-8 rounded-lg text-xs font-bold ${role === 'artist' ? 'bg-indigo-500 text-white hover:bg-indigo-400' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
                     <Music className="h-3.5 w-3.5 mr-1.5" /> Artists
                 </Button>
             </Link>
-            <Link href="/dashboard/users?role=admin">
-                <Button variant={role === 'admin' ? 'secondary' : 'ghost'} size="sm" className={`h-8 rounded-lg text-xs font-bold ${role === 'admin' ? 'bg-amber-500 text-white hover:bg-amber-400' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
+            <Link href="/dashboard/users?role=admin" className="flex-1 md:flex-none">
+                <Button variant={role === 'admin' ? 'secondary' : 'ghost'} size="sm" className={`w-full md:w-auto h-8 rounded-lg text-xs font-bold ${role === 'admin' ? 'bg-amber-500 text-white hover:bg-amber-400' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
                     <ShieldCheck className="h-3.5 w-3.5 mr-1.5" /> Admins
                 </Button>
             </Link>
          </div>
       </div>
 
-      <div className="bg-white/[0.03] backdrop-blur-xl rounded-2xl border border-white/5 overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {profiles?.map((profile: any) => (
+            <div key={profile.id} className="bg-white/[0.03] backdrop-blur-xl p-4 rounded-xl border border-white/5 space-y-4">
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border border-white/10">
+                        <AvatarImage src={profile.avatar_url} />
+                        <AvatarFallback className="bg-indigo-900/50 text-indigo-200 font-bold border border-white/5">
+                            {profile.artist_name?.[0] || profile.full_name?.[0] || 'U'}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                             <h3 className="font-bold text-white truncate">{profile.artist_name || profile.full_name || 'N/A'}</h3>
+                             {profile.status && profile.status !== 'active' && (
+                                <Badge variant="outline" className={`text-[9px] uppercase font-black tracking-wider h-4 px-1.5 rounded border ${profile.status === 'banned' ? 'text-red-400 border-red-500/20 bg-red-500/10' : 'text-zinc-400 border-zinc-500/20 bg-zinc-500/10'}`}>
+                                    {profile.status}
+                                </Badge>
+                            )}
+                        </div>
+                        <p className="text-xs text-zinc-500 truncate">{profile.email}</p>
+                    </div>
+                     <Badge className={`text-[9px] uppercase font-black tracking-wider border px-2 py-0.5 rounded-full ${profile.role === 'admin' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]' : 'bg-white/5 text-zinc-400 border-white/10'}`}>
+                        {profile.role}
+                    </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 py-3 border-y border-white/5">
+                    <div className="bg-white/5 rounded-lg p-2 text-center">
+                        <span className="text-[9px] text-zinc-500 uppercase font-black tracking-widest block mb-1">Tracks</span>
+                        <span className="text-sm font-bold text-white">{trackCountMap?.[profile.id] || 0}</span>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-2 text-center">
+                         <span className="text-[9px] text-zinc-500 uppercase font-black tracking-widest block mb-1">Wallet</span>
+                         <span className="text-sm font-bold text-emerald-400">${(profile.balance || 0).toFixed(2)}</span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                        <UserRoleButton 
+                            userId={profile.id} 
+                            currentRole={profile.role} 
+                            currentUserId={currentUser?.id} 
+                            fullWidth
+                        />
+                    </div>
+                    <UserDetailsDialog user={profile} />
+                </div>
+            </div>
+        ))}
+
+        {(profiles?.length === 0) && (
+            <div className="text-center py-10 bg-white/[0.03] rounded-xl border border-white/5">
+                 <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
+                    <Search className="h-6 w-6 opacity-50 text-zinc-500" />
+                </div>
+                <p className="font-medium text-zinc-500">No users found.</p>
+            </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white/[0.03] backdrop-blur-xl rounded-2xl border border-white/5 overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="border-white/5 bg-white/[0.02] hover:bg-white/[0.02]">
               <TableHead className="w-[80px] text-[10px] uppercase font-black tracking-widest text-zinc-500">User</TableHead>
               <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Contact Info</TableHead>
               <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Role</TableHead>
-              <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Tracks</TableHead>
-              <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Wallet</TableHead>
-              <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Joined</TableHead>
+              <TableHead className="hidden md:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Tracks</TableHead>
+              <TableHead className="hidden lg:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Wallet</TableHead>
+              <TableHead className="hidden lg:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Joined</TableHead>
               <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-zinc-500">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -141,7 +204,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                         {profile.role}
                     </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                     <div className="flex items-center gap-1.5">
                         <div className="p-1 rounded bg-white/5">
                             <Music className="h-3 w-3 text-zinc-500" />
@@ -149,13 +212,13 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                         <span className="font-bold text-white tabular-nums">{trackCountMap?.[profile.id] || 0}</span>
                     </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden lg:table-cell">
                     <span className="font-bold text-emerald-400 tabular-nums flex items-center gap-1">
                         <span className="text-[10px] text-emerald-500/50">$</span>
                         {(profile.balance || 0).toFixed(2)}
                     </span>
                 </TableCell>
-                <TableCell className="text-xs text-zinc-500 tabular-nums">
+                <TableCell className="hidden lg:table-cell text-xs text-zinc-500 tabular-nums">
                     {new Date(profile.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">

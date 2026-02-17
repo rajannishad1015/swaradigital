@@ -144,7 +144,7 @@ export default function AudioPlayer({ url, title }: AudioPlayerProps) {
                     </Button>
                 </div>
 
-                <div className="flex items-center gap-3 bg-zinc-900/50 px-3 py-1.5 rounded-full border border-white/5">
+                <div className="hidden sm:flex items-center gap-3 bg-zinc-900/50 px-3 py-1.5 rounded-full border border-white/5">
                      <button onClick={toggleMute} className="text-zinc-400 hover:text-white transition-colors">
                          {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
                      </button>
@@ -159,10 +159,10 @@ export default function AudioPlayer({ url, title }: AudioPlayerProps) {
 
                 <Button 
                     variant="outline" size="sm" 
-                    className="h-9 rounded-full px-4 text-xs font-bold text-zinc-400 border-white/10 hover:bg-white/5 hover:text-white gap-2"
+                    className="h-9 rounded-full px-3 sm:px-4 text-xs font-bold text-zinc-400 border-white/10 hover:bg-white/5 hover:text-white gap-2 ml-auto sm:ml-0"
                     onClick={downloadAudio}
                 >
-                    <Download size={14} /> Download
+                    <Download size={14} /> <span className="hidden sm:inline">Download</span>
                 </Button>
             </div>
         </div>

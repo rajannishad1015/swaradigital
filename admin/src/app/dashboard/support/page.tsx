@@ -80,80 +80,80 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
         </div>
       </div>
 
-      <div className="flex gap-4 items-center">
-           <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-                <form>
-                    <Input 
-                        name="q" 
-                        placeholder="Search subjects..." 
-                        defaultValue={search}
-                        className="pl-10 bg-zinc-900/50 border-white/10 text-white placeholder:text-zinc-500 focus:bg-zinc-900" 
-                    />
-                </form>
-           </div>
-           <div className="flex gap-2">
-                <Link href="/dashboard/support?status=all">
-                    <Button variant={status === 'all' ? 'default' : 'ghost'} size="sm" className={status === 'all' ? "bg-white text-black hover:bg-zinc-200" : "text-zinc-400 hover:text-white hover:bg-white/5"}>All</Button>
-                </Link>
-                <Link href="/dashboard/support?status=open">
-                    <Button variant={status === 'open' ? 'default' : 'ghost'} size="sm" className={status === 'open' ? "bg-emerald-500 text-white hover:bg-emerald-600" : "text-zinc-400 hover:text-white hover:bg-white/5"}>Open</Button>
-                </Link>
-                <Link href="/dashboard/support?status=in_progress">
-                    <Button variant={status === 'in_progress' ? 'default' : 'ghost'} size="sm" className={status === 'in_progress' ? "bg-blue-500 text-white hover:bg-blue-600" : "text-zinc-400 hover:text-white hover:bg-white/5"}>In Progress</Button>
-                </Link>
-                <Link href="/dashboard/support?status=resolved">
-                    <Button variant={status === 'resolved' ? 'default' : 'ghost'} size="sm" className={status === 'resolved' ? "bg-indigo-500 text-white hover:bg-indigo-600" : "text-zinc-400 hover:text-white hover:bg-white/5"}>Resolved</Button>
-                </Link>
-           </div>
-      </div>
-
-      <div className="bg-zinc-900/30 border border-white/5 rounded-xl overflow-hidden backdrop-blur-sm">
-        <Table>
-            <TableHeader className="bg-white/5 border-b border-white/5">
-                <TableRow className="hover:bg-transparent border-white/5">
-                    <TableHead className="w-[100px] text-zinc-400 font-bold uppercase tracking-wider text-[10px]">ID</TableHead>
-                    <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Subject</TableHead>
-                    <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">User</TableHead>
-                    <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Priority</TableHead>
-                    <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Status</TableHead>
-                    <TableHead className="text-right text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Last Updated</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {tickets && tickets.length > 0 ? (
-                    tickets.map((ticket) => (
-                        <TableRow key={ticket.id} className="hover:bg-white/5 border-white/5 cursor-pointer group transition-colors">
-                            <TableCell className="font-mono text-xs text-zinc-500 group-hover:text-zinc-300">
-                                <Link href={`/dashboard/support/${ticket.id}`} className="hover:underline">
-                                    #{ticket.id.slice(0, 8)}
-                                </Link>
-                            </TableCell>
-                            <TableCell>
-                                <Link href={`/dashboard/support/${ticket.id}`} className="block">
-                                    <div className="font-bold text-zinc-200 group-hover:text-white transition-colors">{ticket.subject}</div>
-                                    <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{ticket.category}</div>
-                                </Link>
-                            </TableCell>
-                            <TableCell>
-                                <div className="text-sm text-zinc-300 font-medium">{ticket.profiles?.artist_name || 'Unknown'}</div>
-                                <div className="text-xs text-zinc-600">{ticket.profiles?.email}</div>
-                            </TableCell>
-                            <TableCell>
-                                <Badge variant="outline" className={`capitalize border shadow-[0_0_10px_rgba(0,0,0,0.2)] ${getPriorityColor(ticket.priority)}`}>
-                                    {ticket.priority}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>
-                                <Badge variant="outline" className={`capitalize border shadow-[0_0_10px_rgba(0,0,0,0.2)] ${getStatusColor(ticket.status)}`}>
-                                    {ticket.status.replace('_', ' ')}
-                                </Badge>
-                            </TableCell>
-                            <TableCell className="text-right text-xs text-zinc-500 font-mono">
-                                {new Date(ticket.updated_at).toLocaleDateString()}
-                            </TableCell>
-                             <TableCell className="text-right">
+       <div className="flex gap-4 items-center flex-col md:flex-row">
+            <div className="relative flex-1 w-full md:max-w-sm">
+                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
+                 <form>
+                     <Input 
+                         name="q" 
+                         placeholder="Search subjects..." 
+                         defaultValue={search}
+                         className="pl-10 bg-zinc-900/50 border-white/10 text-white placeholder:text-zinc-500 focus:bg-zinc-900 w-full" 
+                     />
+                 </form>
+            </div>
+            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-none text-nowrap">
+                 <Link href="/dashboard/support?status=all">
+                     <Button variant={status === 'all' ? 'default' : 'ghost'} size="sm" className={status === 'all' ? "bg-white text-black hover:bg-zinc-200" : "text-zinc-400 hover:text-white hover:bg-white/5"}>All</Button>
+                 </Link>
+                 <Link href="/dashboard/support?status=open">
+                     <Button variant={status === 'open' ? 'default' : 'ghost'} size="sm" className={status === 'open' ? "bg-emerald-500 text-white hover:bg-emerald-600" : "text-zinc-400 hover:text-white hover:bg-white/5"}>Open</Button>
+                 </Link>
+                 <Link href="/dashboard/support?status=in_progress">
+                     <Button variant={status === 'in_progress' ? 'default' : 'ghost'} size="sm" className={status === 'in_progress' ? "bg-blue-500 text-white hover:bg-blue-600" : "text-zinc-400 hover:text-white hover:bg-white/5"}>In Progress</Button>
+                 </Link>
+                 <Link href="/dashboard/support?status=resolved">
+                     <Button variant={status === 'resolved' ? 'default' : 'ghost'} size="sm" className={status === 'resolved' ? "bg-indigo-500 text-white hover:bg-indigo-600" : "text-zinc-400 hover:text-white hover:bg-white/5"}>Resolved</Button>
+                 </Link>
+            </div>
+       </div>
+ 
+       <div className="bg-zinc-900/30 border border-white/5 rounded-xl overflow-hidden backdrop-blur-sm">
+         <Table>
+             <TableHeader className="bg-white/5 border-b border-white/5">
+                 <TableRow className="hover:bg-transparent border-white/5">
+                     <TableHead className="hidden md:table-cell w-[100px] text-zinc-400 font-bold uppercase tracking-wider text-[10px]">ID</TableHead>
+                     <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Subject</TableHead>
+                     <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">User</TableHead>
+                     <TableHead className="hidden md:table-cell text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Priority</TableHead>
+                     <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Status</TableHead>
+                     <TableHead className="hidden lg:table-cell text-right text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Last Updated</TableHead>
+                     <TableHead className="w-[50px]"></TableHead>
+                 </TableRow>
+             </TableHeader>
+             <TableBody>
+                 {tickets && tickets.length > 0 ? (
+                     tickets.map((ticket) => (
+                         <TableRow key={ticket.id} className="hover:bg-white/5 border-white/5 cursor-pointer group transition-colors">
+                             <TableCell className="hidden md:table-cell font-mono text-xs text-zinc-500 group-hover:text-zinc-300">
+                                 <Link href={`/dashboard/support/${ticket.id}`} className="hover:underline">
+                                     #{ticket.id.slice(0, 8)}
+                                 </Link>
+                             </TableCell>
+                             <TableCell>
+                                 <Link href={`/dashboard/support/${ticket.id}`} className="block">
+                                     <div className="font-bold text-zinc-200 group-hover:text-white transition-colors">{ticket.subject}</div>
+                                     <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{ticket.category}</div>
+                                 </Link>
+                             </TableCell>
+                             <TableCell>
+                                 <div className="text-sm text-zinc-300 font-medium">{ticket.profiles?.artist_name || 'Unknown'}</div>
+                                 <div className="text-xs text-zinc-600">{ticket.profiles?.email}</div>
+                             </TableCell>
+                             <TableCell className="hidden md:table-cell">
+                                 <Badge variant="outline" className={`capitalize border shadow-[0_0_10px_rgba(0,0,0,0.2)] ${getPriorityColor(ticket.priority)}`}>
+                                     {ticket.priority}
+                                 </Badge>
+                             </TableCell>
+                             <TableCell>
+                                 <Badge variant="outline" className={`capitalize border shadow-[0_0_10px_rgba(0,0,0,0.2)] ${getStatusColor(ticket.status)}`}>
+                                     {ticket.status.replace('_', ' ')}
+                                 </Badge>
+                             </TableCell>
+                             <TableCell className="hidden lg:table-cell text-right text-xs text-zinc-500 font-mono">
+                                 {new Date(ticket.updated_at).toLocaleDateString()}
+                             </TableCell>
+                              <TableCell className="text-right">
                                 <Link href={`/dashboard/support/${ticket.id}`}>
                                     <Button variant="ghost" size="icon" className="text-zinc-600 hover:text-white hover:bg-white/10">
                                         <MessageSquare size={16} />

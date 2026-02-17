@@ -54,10 +54,10 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
         <ExportButton status={status} />
       </div>
 
-      <div className="flex space-x-1 p-1 bg-zinc-900/50 backdrop-blur-md rounded-xl border border-white/5 w-fit">
+      <div className="flex space-x-1 p-1 bg-zinc-900/50 backdrop-blur-md rounded-xl border border-white/5 w-full md:w-fit overflow-x-auto no-scrollbar scroll-smooth">
          {['pending', 'approved', 'rejected', 'draft'].map((tab) => (
              <Link key={tab} href={`/dashboard/content?status=${tab}`}>
-                 <div className={`px-5 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${status === tab ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
+                 <div className={`px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all whitespace-nowrap active:scale-95 ${status === tab ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
                      {tab}
                  </div>
              </Link>

@@ -55,7 +55,7 @@ export default async function DashboardPage() {
         </div>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
         {stats.map((stat) => (
           <div key={stat.label} className="group relative p-6 bg-white/[0.03] backdrop-blur-xl rounded-2xl border border-white/5 hover:bg-white/[0.05] transition-all hover:border-white/10 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10">
              {/* Gradient Glow */}
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
                 <Clock className="w-4 h-4 text-indigo-400" />
                 <h3 className="text-sm font-black text-white uppercase tracking-widest">Operational Actions</h3>
              </div>
-             <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <a href="/dashboard/content?status=pending" className="group rounded-xl bg-zinc-900/50 border border-white/5 p-4 hover:bg-white/5 transition-all text-center flex flex-col items-center justify-center gap-3 hover:border-indigo-500/30">
                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform group-hover:bg-indigo-500/20 group-hover:text-indigo-400">
                         <Music className="w-5 h-5 opacity-70 group-hover:opacity-100" />
