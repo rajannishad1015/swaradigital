@@ -7,7 +7,7 @@ import TrackList from './track-list'
 import RevenueCard from '@/components/revenue-card'
 import DashboardHome from '@/components/dashboard-home'
 
-export default async function DashboardPage({ searchParams }: { searchParams: { artistId?: string } }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ artistId?: string }> }) {
   const awaitedParams = await searchParams
   const artistId = awaitedParams.artistId as string
   const supabase = await createClient()

@@ -10,10 +10,8 @@ import Breadcrumbs from '@/components/breadcrumbs'
 
 export default async function DashboardLayout({
   children,
-  searchParams,
 }: {
   children: React.ReactNode
-  searchParams?: { artistId?: string }
 }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

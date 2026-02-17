@@ -18,7 +18,7 @@ import FinanceExportButton from '@/components/finance/finance-export-button'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function FinancePage({ searchParams }: { searchParams: { artistId?: string, range?: string, search?: string } }) {
+export default async function FinancePage({ searchParams }: { searchParams: Promise<{ artistId?: string, range?: string, search?: string }> }) {
   const awaitedParams = await searchParams
   const artistId = awaitedParams.artistId as string
   const range = awaitedParams.range || 'all'

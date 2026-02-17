@@ -612,12 +612,50 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                 audioUrl = audioData.publicUrl
             }
 
+            // detailed construction to avoid passing File objects to server action
             return {
-                ...track,
+                id: track.id,
+                title: track.title,
                 audioUrl,
-                // Clean up for database
+                duration: track.duration,
+                lyrics: track.lyrics,
+                
+                // Metadata
+                primaryArtist: track.primaryArtist,
+                featuringArtist: track.featuringArtist,
+                genre: track.genre,
+                subGenre: track.subGenre,
+                
+                // Credits
+                lyricists: track.lyricists,
+                composers: track.composers,
+                producer: track.producer,
+                publisher: track.publisher,
+                productionYear: track.productionYear,
+                
+                // Rights & IDs
+                pLine: track.pLine,
                 isrc: track.hasISRC === 'yes' ? track.isrc : '',
-                explicit: track.explicitType === 'yes'
+                priceTier: track.priceTier,
+                
+                // Tech/Flags
+                isInstrumental: track.isInstrumental,
+                explicit: track.explicitType === 'yes', // normalized boolean
+                explicitType: track.explicitType,
+                trackVersion: track.trackVersion,
+                versionSubtitle: track.versionSubtitle,
+                callerTuneTiming: track.callerTuneTiming,
+                distributeVideo: track.distributeVideo,
+                titleLanguage: track.titleLanguage,
+                lyricsLanguage: track.lyricsLanguage,
+                
+                // Artist IDs
+                primaryArtistSpotify: track.primaryArtistSpotify,
+                primaryArtistApple: track.primaryArtistApple,
+                featuringArtistSpotify: track.featuringArtistSpotify,
+                featuringArtistApple: track.featuringArtistApple,
+                
+                audioAnalysis: track.audioAnalysis
             }
         }))
 
@@ -646,6 +684,17 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
         }
 
         const result = await submitTrack(formData)
+        
+        if (!result.success) {
+            console.error("Submission failed:", result.error)
+            toast.error(result.error || "Failed to submit release", {
+                duration: 8000,
+                className: "bg-red-600 text-white border-red-700 font-bold shadow-2xl"
+            })
+            setLoading(false)
+            return
+        }
+
         if (result.success) {
             localStorage.removeItem('upload_draft')
             toast.success(initialData ? "Release updated successfully!" : "Release submitted successfully!")
@@ -719,11 +768,11 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
             
             {/* Onboarding Banner for First Upload */}
             {isFirstUpload && currentStep === 1 && (
-                <div className="mb-10 p-6 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex gap-5 items-center animate-in fade-in slide-in-from-top-4 duration-700">
+                <div className="mb-10 p-6 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex flex-col md:flex-row gap-5 items-center md:items-start animate-in fade-in slide-in-from-top-4 duration-700">
                     <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
                         <Save className="text-indigo-400" size={24} />
                     </div>
-                    <div>
+                    <div className="text-center md:text-left">
                         <h3 className="text-white font-bold text-lg">Welcome to your first release!</h3>
                         <p className="text-zinc-400 text-sm max-w-2xl mt-1">
                             We've simplified the process to get your music on Spotify, Apple Music, and more. 
@@ -1345,26 +1394,26 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
             </div>
 
             {/* Navigation Footer */}
-            <div className="flex justify-between items-center mt-12 pt-6 border-t border-white/10">
-                {currentStep === 1 ? <div /> : (
+            <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4 mt-12 pt-6 border-t border-white/10">
+                {currentStep === 1 ? <div className="hidden md:block" /> : (
                     <Button 
                         type="button" 
                         variant="ghost" 
                         onClick={prevStep} 
                         disabled={loading}
-                        className="text-zinc-400 hover:text-white hover:bg-white/5"
+                        className="w-full md:w-auto text-zinc-400 hover:text-white hover:bg-white/5"
                     >
                         <ChevronLeft className="mr-2" size={16} /> Back
                     </Button>
                 )}
                 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                     {/* Save Draft Button - Available at any step */}
                     <Button 
                         type="button" 
                         onClick={(e) => handleSubmit(e, 'draft')}
                         disabled={loading || !title} // Minimum requirement: Title
-                        className="bg-white text-black hover:bg-zinc-200 transition-all h-12 px-6 rounded-md font-bold"
+                        className="w-full md:w-auto bg-white text-black hover:bg-zinc-200 transition-all h-12 px-6 rounded-md font-bold"
                     >
                         {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
                         Save as Draft
@@ -1374,7 +1423,7 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                         <Button 
                             type="button" 
                             onClick={nextStep}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-12 px-8 rounded-md shadow-lg shadow-indigo-500/20"
+                            className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-12 px-8 rounded-md shadow-lg shadow-indigo-500/20"
                         >
                             Next Step <ChevronRight className="ml-2" size={16} />
                         </Button>
@@ -1383,7 +1432,7 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                             type="button"
                             onClick={(e) => handleSubmit(e, 'pending')} 
                             disabled={loading}
-                            className="bg-emerald-500 text-white hover:bg-emerald-400 font-black uppercase tracking-[0.2em] h-12 px-10 rounded-md shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(52,211,153,0.5)] transition-all text-sm"
+                            className="w-full md:w-auto bg-emerald-500 text-white hover:bg-emerald-400 font-black uppercase tracking-[0.2em] h-12 px-10 rounded-md shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(52,211,153,0.5)] transition-all text-sm"
                         >
                             {loading ? <Loader2 className="animate-spin mr-2" /> : <UploadCloud className="mr-2" size={18} />}
                             Confirm Submission

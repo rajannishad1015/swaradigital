@@ -6,7 +6,7 @@ import ActivityList from './activity-list'
 import RevenueAnalytics from '../finance/revenue-analytics'
 import { format } from 'date-fns'
 
-export default async function ReportsPage({ searchParams }: { searchParams: { artistId?: string } }) {
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ artistId?: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const awaitedParams = await searchParams
