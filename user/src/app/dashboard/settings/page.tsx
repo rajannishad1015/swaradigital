@@ -65,6 +65,16 @@ export default async function SettingsPage() {
         </div>
       </div>
 
+      {/* Edit Profile Button - always visible */}
+      <div className="flex justify-end -mt-4 mb-2 px-2">
+        <EditProfileDialog profile={profile} trigger={
+          <Button className="bg-white hover:bg-zinc-200 text-black border-0 font-bold shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all px-6 py-2">
+            <Edit2 size={16} className="mr-2" />
+            Edit Profile
+          </Button>
+        } />
+      </div>
+
       <div className="grid gap-8 md:grid-cols-12">
          {/* Left Column: Contact Info */}
          <div className="md:col-span-4 space-y-6">
