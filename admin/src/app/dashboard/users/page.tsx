@@ -44,11 +44,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   // Fetch track counts for these profiles
   const { data: tracks } = await supabase
     .from('tracks')
-    .select('user_id')
-    .in('user_id', profiles?.map(p => p.id) || [])
+    .select('artist_id')
+    .in('artist_id', profiles?.map(p => p.id) || [])
 
   const trackCountMap = tracks?.reduce((acc: any, curr: any) => {
-    acc[curr.user_id] = (acc[curr.user_id] || 0) + 1
+    acc[curr.artist_id] = (acc[curr.artist_id] || 0) + 1
     return acc
   }, {})
 
