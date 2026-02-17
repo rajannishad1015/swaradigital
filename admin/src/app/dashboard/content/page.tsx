@@ -5,7 +5,7 @@ import ExportButton from './export-button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from 'next/link'
 
-export default async function ContentPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function ContentPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const supabase = await createClient()
   const status = (await searchParams).status || 'pending'
 

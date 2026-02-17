@@ -13,4 +13,6 @@ const nextConfig: NextConfig = {
   },
 };
 
+
+// Force config reload to clear cache
 export default nextConfig;

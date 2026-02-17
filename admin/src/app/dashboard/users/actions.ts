@@ -120,49 +120,105 @@ export async function deleteUser(userId: string) {
   }
 
   try {
-    // 2. Cleanup Storage (List and Delete)
-    const buckets = [
-        'avatars', 
-        'cover-art', 
-        'cover-arts',
-        'cover-art-new', 
-        'music-files', 
-        'music-files-new', 
-        'agreements',
-        'support-attachments'
-    ]
+    const adminClient = getSupabaseAdmin()
 
-    for (const bucket of buckets) {
+    // 2. Cleanup Storage (Query DB for paths)
+    // Fetch user's tracks and albums to get file paths
+    const { data: userTracks } = await supabase
+        .from('tracks')
+        .select('file_url')
+        .eq('artist_id', userId)
+
+    const { data: userAlbums } = await supabase
+        .from('albums')
+        .select('cover_art_url')
+        .eq('artist_id', userId)
+    
+    const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', userId)
+        .single()
+
+
+    // Helper to extract path from Public URL
+    const getPathFromUrl = (url: string | null) => {
+        if (!url) return null;
         try {
-            // List files in the user's folder (userId/*)
-            const { data: files } = await getSupabaseAdmin()
-                .storage
-                .from(bucket)
-                .list(userId)
-            
-            if (files && files.length > 0) {
-                const filesToDelete = files.map(f => `${userId}/${f.name}`)
-                await getSupabaseAdmin().storage.from(bucket).remove(filesToDelete)
+            const urlObj = new URL(url);
+            const parts = urlObj.pathname.split('/public/');
+            if (parts.length > 1) {
+                // Returns "bucket/path/to/file.ext" -> split again to get just path
+                const bucketAndPath = parts[1].split('/');
+                const bucket = bucketAndPath[0]; // e.g., 'music-files'
+                const path = bucketAndPath.slice(1).join('/'); // e.g., 'tracks/...'
+                return { bucket, path };
             }
-
-            // Also check for root files named {userId}.*
-            if (bucket === 'avatars') {
-                 await getSupabaseAdmin().storage.from(bucket).remove([
-                    `${userId}`, 
-                    `${userId}.png`, 
-                    `${userId}.jpg`, 
-                    `${userId}.jpeg`, 
-                    `${userId}.webp`
-                ])
-            }
-        } catch (bucketError) {
-            console.error(`Failed to clean bucket ${bucket}:`, bucketError)
+            return null;
+        } catch (e) {
+            return null; // Handle relative paths or invalid URLs
         }
     }
 
+    const filesToDelete: { bucket: string, path: string }[] = [];
+
+    // Collect Track Files
+    userTracks?.forEach(track => {
+        const info = getPathFromUrl(track.file_url)
+        if (info) filesToDelete.push(info)
+    })
+
+    // Collect Album Covers
+    userAlbums?.forEach(album => {
+        const info = getPathFromUrl(album.cover_art_url)
+        if (info) filesToDelete.push(info)
+        // Note: New schema puts covers in 'cover-art' or 'cover-arts' usually.
+        // If the URL is just a path (legacy), we might need to handle that, 
+        // but the upload form constructs full Public URLs.
+    })
+
+    // Collect Avatar
+    if (userProfile?.avatar_url) {
+        // Avatars might be stored as just filenames or paths sometimes?
+        // Let's assume URL for now as standard Supabase pattern.
+        // If it's a relative path line 'avatars/userId.png', the helper returns null.
+        // Fallback for avatar:
+        if (!userProfile.avatar_url.startsWith('http')) {
+             filesToDelete.push({ bucket: 'avatars', path: userProfile.avatar_url })
+        } else {
+             const info = getPathFromUrl(userProfile.avatar_url)
+             if (info) filesToDelete.push(info)
+        }
+    }
+
+    // Execute Deletions Grouped by Bucket
+    const deletesByBucket: Record<string, string[]> = {}
+    filesToDelete.forEach(f => {
+        if (!deletesByBucket[f.bucket]) deletesByBucket[f.bucket] = []
+        deletesByBucket[f.bucket].push(f.path)
+    })
+
+    for (const bucket of Object.keys(deletesByBucket)) {
+         try {
+            if (deletesByBucket[bucket].length > 0) {
+                 await adminClient.storage.from(bucket).remove(deletesByBucket[bucket])
+                 console.log(`Cleaned up ${deletesByBucket[bucket].length} files from ${bucket}`)
+            }
+         } catch (e) {
+             console.error(`Failed to cleanup bucket ${bucket}:`, e)
+         }
+    }
+    
+    // Legacy Cleanup (Just in case there ARE userId folders or standard avatar names)
+    // This is cheap to keep as a backup
+    try {
+        const avatarFiles = [`${userId}`, `${userId}.png`, `${userId}.jpg`, `${userId}.jpeg`, `${userId}.webp`]
+        await adminClient.storage.from('avatars').remove(avatarFiles)
+    } catch (e) { console.error("Legacy avatar cleanup failed", e) }
+
 
     // 3. Delete from Auth (Cascades to Profiles -> Tracks/Albums/etc via DB constraints)
-    const { error: deleteError } = await getSupabaseAdmin().auth.admin.deleteUser(userId)
+    const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId)
     
     if (deleteError) {
       console.error('Error deleting user from auth:', deleteError)
@@ -170,12 +226,13 @@ export async function deleteUser(userId: string) {
     }
 
     // 4. Log the action (Audit Log)
+    // Note: We use the server client logged in as admin for this insertion so it tracks WHO did it
     await supabase.from('admin_activity_logs').insert({
         admin_id: user.id,
         action: 'DELETED_USER',
         target_type: 'USER',
         target_id: userId,
-        details: { reason: 'Permanent deletion via Admin Dashboard' }
+        details: { reason: 'Permanent deletion via Admin Dashboard', files_removed: filesToDelete.length }
     })
 
     return { success: true }

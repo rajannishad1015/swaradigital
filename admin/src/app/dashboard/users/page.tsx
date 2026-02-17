@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button"
 import Link from 'next/link'
 import { Search, UserPlus, Users as UsersIcon, ShieldCheck, Music } from 'lucide-react'
 
-export default async function UsersPage({ searchParams }: { searchParams: { query?: string, role?: string } }) {
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ query?: string, role?: string }> }) {
   const supabase = await createClient()
   const query = (await searchParams).query || ''
   const role = (await searchParams).role || 'all'

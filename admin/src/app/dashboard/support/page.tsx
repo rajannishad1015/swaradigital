@@ -20,7 +20,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-export default async function AdminSupportPage({ searchParams }: { searchParams: { status?: string, q?: string } }) {
+export default async function AdminSupportPage({ searchParams }: { searchParams: Promise<{ status?: string, q?: string }> }) {
+  // Force revalidation check
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -30,8 +31,9 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
       return <div>Unauthorized</div>
   }
 
-  const status = searchParams.status || 'all'
-  const search = searchParams.q || ''
+  const { status: statusParam, q: searchParam } = await searchParams
+  const status = statusParam || 'all'
+  const search = searchParam || ''
 
   let query = supabase
     .from('tickets')

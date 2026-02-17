@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { DollarSign, Clock, CheckCircle2, XCircle, Upload } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 
-export default async function PayoutsPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function PayoutsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const supabase = await createClient()
   const status = (await searchParams).status || 'pending'
   
