@@ -71,12 +71,19 @@ export default async function SettingsPage() {
              <Card className="bg-zinc-950/50 border-white/10 shadow-xl overflow-hidden relative h-full">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                 <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02]">
-                    <CardTitle className="text-lg font-bold text-white flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-zinc-900 border border-white/10 flex items-center justify-center text-indigo-400 shadow-inner">
-                            <User size={16} />
-                        </div>
-                        Contact Info
-                    </CardTitle>
+                    <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg font-bold text-white flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-zinc-900 border border-white/10 flex items-center justify-center text-indigo-400 shadow-inner">
+                                <User size={16} />
+                            </div>
+                            Contact Info
+                        </CardTitle>
+                        <EditProfileDialog profile={profile} trigger={
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-zinc-400 hover:text-white hover:bg-white/5">
+                                <Edit2 size={14} />
+                            </Button>
+                        } />
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6 relative z-10">
                     <div className="space-y-2 group">
