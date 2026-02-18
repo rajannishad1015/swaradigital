@@ -94,15 +94,15 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
 
             {/* Footer / User Profile */}
             <div className="p-6 border-t border-zinc-800">
-                <div className="flex items-center gap-3 mb-5 px-1">
-                     <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300 text-xs font-semibold">
+                <Link href="/dashboard/settings" className="flex items-center gap-3 mb-5 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group/profile">
+                     <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300 text-xs font-semibold group-hover/profile:border-indigo-500/50 transition-colors">
                         {user.email?.[0].toUpperCase()}
                      </div>
                      <div className="overflow-hidden flex-1">
-                        <p className="text-xs font-semibold text-zinc-100 truncate">{user.user_metadata?.full_name || 'Verified Artist'}</p>
-                        <p className="text-[10px] text-zinc-500 font-medium truncate tracking-tight">{user.email}</p>
+                        <p className="text-xs font-semibold text-zinc-100 truncate group-hover/profile:text-indigo-400 transition-colors">{user.user_metadata?.full_name || 'Verified Artist'}</p>
+                        <p className="text-[10px] text-zinc-500 font-medium truncate tracking-tight">Edit Profile</p>
                      </div>
-                </div>
+                </Link>
                 
                 <form action={signOut}>
                     <Button 
