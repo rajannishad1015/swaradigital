@@ -105,8 +105,8 @@ export async function submitTrack(formData: any) {
                 release_date: formData.releaseDate || null,
                 total_tracks: formData.tracks ? formData.tracks.length : 1,
                 label_name: formData.labelName,
-                primary_artist: formData.primaryArtist,
-                featuring_artist: formData.featuringArtist,
+                primary_artist: JSON.stringify(formData.primaryArtists),
+                featuring_artist: JSON.stringify(formData.featuringArtists),
                 genre: formData.genre,
                 sub_genre: formData.subGenre,
                 original_release_date: formData.originalReleaseDate || null,
@@ -115,10 +115,10 @@ export async function submitTrack(formData: any) {
                 courtesy_line: formData.courtesyLine,
                 description: formData.description,
                 target_platforms: formData.selectedPlatforms,
-                primary_artist_spotify_id: formData.primaryArtistSpotify,
-                primary_artist_apple_id: formData.primaryArtistApple,
-                featuring_artist_spotify_id: formData.featuringArtistSpotify,
-                featuring_artist_apple_id: formData.featuringArtistApple
+                primary_artist_spotify_id: formData.primaryArtists?.[0]?.spotifyId || '',
+                primary_artist_apple_id: formData.primaryArtists?.[0]?.appleId || '',
+                featuring_artist_spotify_id: formData.featuringArtists?.[0]?.spotifyId || '',
+                featuring_artist_apple_id: formData.featuringArtists?.[0]?.appleId || ''
             })
             .select()
             .single()
@@ -136,20 +136,27 @@ export async function submitTrack(formData: any) {
         }
 
         for (const track of tracksData) {
-            // Validate required fields
-            if (!track.audioUrl) {
+            // Validate required fields (skip audio check for drafts)
+            if (!track.audioUrl && formData.status !== 'draft') {
                 return { success: false, error: `Missing audio file for track: ${track.title}` };
             }
 
-            // Check Fingerprinting & Transcoding for each track
-            const { isMatched, fingerprintId } = await checkAudioFingerprint(track.audioUrl, track.title || '');
-            const { standardUrl, previewUrl } = await simulateTranscode(track.audioUrl);
+            // Check Fingerprinting & Transcoding for each track (skip for drafts without audio)
+            let isMatched = false, fingerprintId = null, standardUrl = null, previewUrl = null;
+            if (track.audioUrl) {
+                const fpResult = await checkAudioFingerprint(track.audioUrl, track.title || '');
+                isMatched = fpResult.isMatched;
+                fingerprintId = fpResult.fingerprintId;
+                const tcResult = await simulateTranscode(track.audioUrl);
+                standardUrl = tcResult.standardUrl;
+                previewUrl = tcResult.previewUrl;
+            }
 
             tracksToInsert.push({
                 artist_id: user.id,
                 album_id: album.id,
                 title: track.title, 
-                file_url: track.audioUrl,
+                file_url: track.audioUrl || null,
                 duration: track.duration || 0,
                 is_explicit: track.explicit,
                 lyrics: track.lyrics,
@@ -161,14 +168,14 @@ export async function submitTrack(formData: any) {
                 is_instrumental: track.isInstrumental || 'no',
                 version_subtitle: track.versionSubtitle,
                 // Track specific overrides
-                primary_artist: track.primaryArtist || formData.primaryArtist, 
-                featuring_artist: track.featuringArtist,
+                primary_artist: JSON.stringify(track.primaryArtists || formData.primaryArtists), 
+                featuring_artist: JSON.stringify(track.featuringArtists),
                 sub_genre: track.subGenre || formData.subGenre,
                 genre: track.genre || formData.genre, 
                 
                 lyricists: track.lyricists,
                 composers: track.composers,
-                producers: track.producer,
+                producers: track.producers,
                 production_year: track.productionYear || null,
                 publisher: track.publisher,
                 isrc: track.isrc,
@@ -179,11 +186,11 @@ export async function submitTrack(formData: any) {
                 title_language: track.titleLanguage,
                 lyrics_language: track.lyricsLanguage,
                 track_p_line: track.pLine,
-                 // Artist IDs
-                primary_artist_spotify_id: track.primaryArtistSpotify,
-                primary_artist_apple_id: track.primaryArtistApple,
-                featuring_artist_spotify_id: track.featuringArtistSpotify,
-                featuring_artist_apple_id: track.featuringArtistApple,
+                 // Artist IDs (first entry for backward compat)
+                primary_artist_spotify_id: track.primaryArtists?.[0]?.spotifyId || '',
+                primary_artist_apple_id: track.primaryArtists?.[0]?.appleId || '',
+                featuring_artist_spotify_id: track.featuringArtists?.[0]?.spotifyId || '',
+                featuring_artist_apple_id: track.featuringArtists?.[0]?.appleId || '',
 
                 // Tech Metadata
                 bitrate: track.audioAnalysis?.bitrate,

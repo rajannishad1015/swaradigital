@@ -11,8 +11,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { UploadCloud, Loader2, Music, Image as ImageIcon, X, Calendar, Disc, Check, ChevronRight, ChevronLeft, Save, Plus, Trash2 } from 'lucide-react'
+import { UploadCloud, Loader2, Music, Image as ImageIcon, X, Calendar, Disc, Check, ChevronRight, ChevronLeft, Save, Plus, Trash2, AlertTriangle, ExternalLink, ChevronsUpDown } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import AudioPlayer from '@/components/audio-player'
 import UploadSuccessDialog from '@/components/upload/upload-success-dialog'
 import { useRouter } from 'next/navigation'
@@ -28,12 +30,8 @@ interface TrackItem {
     trackVersion: string;
     versionSubtitle: string;
     isInstrumental: string;
-    primaryArtist: string;
-    primaryArtistSpotify: string;
-    primaryArtistApple: string;
-    featuringArtist: string;
-    featuringArtistSpotify: string;
-    featuringArtistApple: string;
+    primaryArtists: {name: string, spotifyId: string, appleId: string}[];
+    featuringArtists: {name: string, spotifyId: string, appleId: string}[];
     genre: string;
     subGenre: string;
     pLine: string;
@@ -42,7 +40,7 @@ interface TrackItem {
     lyrics: string;
     lyricists: {firstName: string, lastName: string}[];
     composers: {firstName: string, lastName: string}[];
-    producer: string;
+    producers: {name: string}[];
     productionYear: string;
     publisher: string;
     hasISRC: string;
@@ -64,6 +62,48 @@ const ALL_PLATFORMS = [
     { id: 'gaana', name: 'Gaana', icon: '' },
 ]
 
+const GENRE_OPTIONS = [
+    { value: 'alternative', label: 'Alternative' },
+    { value: 'blues', label: 'Blues' },
+    { value: 'childrens', label: "Children's" },
+    { value: 'christian', label: 'Christian' },
+    { value: 'classical', label: 'Classical' },
+    { value: 'country', label: 'Country' },
+    { value: 'educational', label: 'Educational' },
+    { value: 'electronic', label: 'Electronic' },
+    { value: 'folk', label: 'Folk' },
+    { value: 'hiphop', label: 'Hip-hop/Rap' },
+    { value: 'holiday', label: 'Holiday' },
+    { value: 'jazz', label: 'Jazz' },
+    { value: 'latin', label: 'Latin Music' },
+    { value: 'metal', label: 'Metal' },
+    { value: 'newage', label: 'New Age' },
+    { value: 'pop', label: 'Pop' },
+    { value: 'punk', label: 'Punk' },
+    { value: 'rnb', label: 'R&B' },
+    { value: 'reggae', label: 'Reggae' },
+    { value: 'rock', label: 'Rock' },
+    { value: 'soundtracks', label: 'Soundtracks' },
+    { value: 'spokenword', label: 'Spoken Word' },
+    { value: 'video', label: 'Video' },
+    { value: 'worldmusic', label: 'World Music' },
+]
+
+// Helper to parse artist entries from DB (handles both old string and new array formats)
+function parseArtistEntries(value: any, spotifyId?: string, appleId?: string): {name: string, spotifyId: string, appleId: string}[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    try { const parsed = JSON.parse(value); if (Array.isArray(parsed)) return parsed; } catch {}
+    return [{name: String(value), spotifyId: spotifyId || '', appleId: appleId || ''}];
+}
+
+function parseProducerEntries(value: any): {name: string}[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.map((v: any) => typeof v === 'string' ? {name: v} : v);
+    try { const parsed = JSON.parse(value); if (Array.isArray(parsed)) return parsed.map((v: any) => typeof v === 'string' ? {name: v} : v); } catch {}
+    return [{name: String(value)}];
+}
+
 export default function UploadForm({ initialData, isFirstUpload }: { initialData?: Record<string, any>, isFirstUpload?: boolean }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -75,16 +115,18 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [duration, setDuration] = useState(initialData?.duration || 0)
 
+  // Cover Art Warning Dialog
+  const [coverWarningOpen, setCoverWarningOpen] = useState(false)
+  const [coverWarningMessage, setCoverWarningMessage] = useState('')
+  const [coverWarningDims, setCoverWarningDims] = useState('')
+  const [genreOpen, setGenreOpen] = useState(false)
+
   // Core Metadata
   const [releaseType, setReleaseType] = useState(initialData?.albums?.type || 'single')
   const [title, setTitle] = useState(initialData?.title || '')
   const [labelName, setLabelName] = useState(initialData?.albums?.label_name || '')
-  const [primaryArtist, setPrimaryArtist] = useState(initialData?.albums?.primary_artist || '')
-  const [primaryArtistSpotify, setPrimaryArtistSpotify] = useState(initialData?.albums?.primary_artist_spotify_id || '')
-  const [primaryArtistApple, setPrimaryArtistApple] = useState(initialData?.albums?.primary_artist_apple_id || '')
-  const [featuringArtist, setFeaturingArtist] = useState(initialData?.albums?.featuring_artist || '')
-  const [featuringArtistSpotify, setFeaturingArtistSpotify] = useState(initialData?.albums?.featuring_artist_spotify_id || '')
-  const [featuringArtistApple, setFeaturingArtistApple] = useState(initialData?.albums?.featuring_artist_apple_id || '')
+  const [primaryArtists, setPrimaryArtists] = useState<{name: string, spotifyId: string, appleId: string}[]>(() => parseArtistEntries(initialData?.albums?.primary_artist, initialData?.albums?.primary_artist_spotify_id, initialData?.albums?.primary_artist_apple_id))
+  const [featuringArtists, setFeaturingArtists] = useState<{name: string, spotifyId: string, appleId: string}[]>(() => parseArtistEntries(initialData?.albums?.featuring_artist, initialData?.albums?.featuring_artist_spotify_id, initialData?.albums?.featuring_artist_apple_id))
   const [genre, setGenre] = useState(initialData?.genre || '')
   const [subGenre, setSubGenre] = useState(initialData?.albums?.sub_genre || '')
   const [courtesyLine, setCourtesyLine] = useState(initialData?.albums?.courtesy_line || '')
@@ -94,6 +136,13 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
   // Dates
   const [releaseDate, setReleaseDate] = useState(initialData?.albums?.release_date ? new Date(initialData.albums.release_date).toISOString().split('T')[0] : '')
   const [originalReleaseDate, setOriginalReleaseDate] = useState(initialData?.albums?.original_release_date ? new Date(initialData.albums.original_release_date).toISOString().split('T')[0] : '')
+
+  // Dropdown States
+  const [pLineYearOpen, setPLineYearOpen] = useState(false)
+  const [cLineYearOpen, setCLineYearOpen] = useState(false)
+  const [trackGenreOpen, setTrackGenreOpen] = useState(false)
+  
+
 
   // Identifiers & Legal
   const currentYear = new Date().getFullYear().toString()
@@ -110,12 +159,8 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
             audioAnalysis: t.audio_analysis || null,
             trackVersion: t.version_type || 'original',
             versionSubtitle: t.version_subtitle || '',
-            primaryArtist: t.primary_artist || '',
-            primaryArtistSpotify: t.primary_artist_spotify_id || '',
-            primaryArtistApple: t.primary_artist_apple_id || '',
-            featuringArtist: t.featuring_artist || '',
-            featuringArtistSpotify: t.featuring_artist_spotify_id || '',
-            featuringArtistApple: t.featuring_artist_apple_id || '',
+            primaryArtists: parseArtistEntries(t.primary_artist, t.primary_artist_spotify_id, t.primary_artist_apple_id),
+            featuringArtists: parseArtistEntries(t.featuring_artist, t.featuring_artist_spotify_id, t.featuring_artist_apple_id),
             genre: t.genre || '',
             subGenre: t.sub_genre || '',
             pLine: t.track_p_line || '',
@@ -124,7 +169,7 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
             lyrics: t.lyrics || '',
             lyricists: t.lyricists || [],
             composers: t.composers || [],
-            producer: t.producers || '',
+            producers: parseProducerEntries(t.producers),
             productionYear: t.production_year || currentYear,
             publisher: t.publisher || '',
             hasISRC: t.isrc ? 'yes' : 'no',
@@ -143,12 +188,8 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
         audioAnalysis: null,
         trackVersion: 'original',
         versionSubtitle: '',
-        primaryArtist: '',
-        primaryArtistSpotify: '',
-        primaryArtistApple: '',
-        featuringArtist: '',
-        featuringArtistSpotify: '',
-        featuringArtistApple: '',
+        primaryArtists: [],
+        featuringArtists: [],
         genre: '',
         subGenre: '',
         pLine: '',
@@ -157,7 +198,7 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
         lyrics: '',
         lyricists: [],
         composers: [],
-        producer: '',
+        producers: [],
         productionYear: currentYear,
         publisher: '',
         hasISRC: 'no',
@@ -187,12 +228,8 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
         audioAnalysis: null,
         trackVersion: 'original',
         versionSubtitle: '',
-        primaryArtist: '',
-        primaryArtistSpotify: '',
-        primaryArtistApple: '',
-        featuringArtist: '',
-        featuringArtistSpotify: '',
-        featuringArtistApple: '',
+        primaryArtists: [],
+        featuringArtists: [],
         genre: '',
         subGenre: '',
         pLine: '',
@@ -201,7 +238,7 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
         lyrics: '',
         lyricists: [],
         composers: [],
-        producer: '',
+        producers: [],
         productionYear: currentYear,
         publisher: '',
         hasISRC: 'no',
@@ -244,48 +281,27 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
 
   const openArtistDialog = (mode: 'release' | 'track' | 'release-featuring' | 'track-featuring') => {
       setArtistDialogMode(mode)
-      if (mode === 'release') {
-          setArtistDialogName(primaryArtist)
-          setArtistDialogSpotify(primaryArtistSpotify)
-          setArtistDialogApple(primaryArtistApple)
-      } else if (mode === 'release-featuring') {
-          setArtistDialogName(featuringArtist)
-          setArtistDialogSpotify(featuringArtistSpotify)
-          setArtistDialogApple(featuringArtistApple)
-      } else if (mode === 'track') {
-          setArtistDialogName(currentTrack.primaryArtist)
-          setArtistDialogSpotify(currentTrack.primaryArtistSpotify)
-          setArtistDialogApple(currentTrack.primaryArtistApple)
-       } else if (mode === 'track-featuring') {
-          setArtistDialogName(currentTrack.featuringArtist)
-          setArtistDialogSpotify(currentTrack.featuringArtistSpotify)
-          setArtistDialogApple(currentTrack.featuringArtistApple)
-      }
+      setArtistDialogName('')
+      setArtistDialogSpotify('')
+      setArtistDialogApple('')
       setIsArtistDialogOpen(true)
   }
 
   const saveArtistDetails = () => {
       if (!artistDialogName) return 
+      const newArtist = { name: artistDialogName, spotifyId: artistDialogSpotify, appleId: artistDialogApple }
       
       if (artistDialogMode === 'release') {
-          setPrimaryArtist(artistDialogName)
-          setPrimaryArtistSpotify(artistDialogSpotify)
-          setPrimaryArtistApple(artistDialogApple)
+          setPrimaryArtists(prev => [...prev, newArtist])
       } else if (artistDialogMode === 'release-featuring') {
-          setFeaturingArtist(artistDialogName)
-          setFeaturingArtistSpotify(artistDialogSpotify)
-          setFeaturingArtistApple(artistDialogApple)
+          setFeaturingArtists(prev => [...prev, newArtist])
       } else if (artistDialogMode === 'track') {
           updateCurrentTrack({
-              primaryArtist: artistDialogName,
-              primaryArtistSpotify: artistDialogSpotify,
-              primaryArtistApple: artistDialogApple
+              primaryArtists: [...currentTrack.primaryArtists, newArtist]
           })
       } else if (artistDialogMode === 'track-featuring') {
           updateCurrentTrack({
-              featuringArtist: artistDialogName,
-              featuringArtistSpotify: artistDialogSpotify,
-              featuringArtistApple: artistDialogApple
+              featuringArtists: [...currentTrack.featuringArtists, newArtist]
           })
       }
       setIsArtistDialogOpen(false)
@@ -348,6 +364,24 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
       updateCurrentTrack({
           composers: currentTrack.composers.filter((_, idx) => idx !== i)
       })
+  }
+
+  // Artist remove helpers
+  const removeReleasePrimaryArtist = (i: number) => setPrimaryArtists(prev => prev.filter((_, idx) => idx !== i))
+  const removeReleaseFeaturingArtist = (i: number) => setFeaturingArtists(prev => prev.filter((_, idx) => idx !== i))
+  const removeTrackPrimaryArtist = (i: number) => updateCurrentTrack({ primaryArtists: currentTrack.primaryArtists.filter((_: any, idx: number) => idx !== i) })
+  const removeTrackFeaturingArtist = (i: number) => updateCurrentTrack({ featuringArtists: currentTrack.featuringArtists.filter((_: any, idx: number) => idx !== i) })
+
+  // Producer helpers
+  const [newProducerName, setNewProducerName] = useState('')
+  const addProducer = () => {
+      if (newProducerName.trim()) {
+          updateCurrentTrack({ producers: [...currentTrack.producers, { name: newProducerName.trim() }] })
+          setNewProducerName('')
+      }
+  }
+  const removeProducer = (i: number) => {
+      updateCurrentTrack({ producers: currentTrack.producers.filter((_: any, idx: number) => idx !== i) })
   }
   
   const togglePlatform = (id: string) => {
@@ -495,17 +529,23 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
         return
       }
 
-      const img = new Image()
+      const img = new window.Image()
       img.src = URL.createObjectURL(file)
       img.onload = () => {
+        const dims = `${img.width}x${img.height}px`
         if (img.width < 3000 || img.height < 3000) {
-          toast.error(`Artwork is too small (${img.width}x${img.height}px). Minimum 3000x3000px required.`, {
-             description: "High-quality artwork is required for platforms like Apple Music and Spotify."
-          })
-          e.target.value = '' // Clear input
+          // Show warning dialog instead of rejecting
+          setCoverWarningDims(dims)
+          setCoverWarningMessage(`Your artwork is too small (${dims}). Minimum 3000×3000px is required by platforms like Apple Music and Spotify.`)
+          setCoverWarningOpen(true)
+          e.target.value = ''
           setCoverFile(null)
         } else if (img.width !== img.height) {
-          toast.warning(`Artwork is not square (${img.width}x${img.height}px). Square artwork is highly recommended.`)
+          // Show warning dialog for non-square
+          setCoverWarningDims(dims)
+          setCoverWarningMessage(`Your artwork is not square (${dims}). Square artwork (e.g. 3000×3000px) is required by most music platforms.`)
+          setCoverWarningOpen(true)
+          // Still set the file since it might be acceptable
           setCoverFile(file)
         } else {
           setCoverFile(file)
@@ -519,6 +559,23 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
       }
     }
   }
+
+  const handleSaveDraftAndRedirect = async () => {
+    setCoverWarningOpen(false)
+    toast.info('Saving your release as a draft...')
+    try {
+      // Trigger the existing save-as-draft logic
+      const draftBtn = document.querySelector('[data-draft-save]') as HTMLButtonElement
+      if (draftBtn) {
+        draftBtn.click()
+        // Wait briefly for save to process
+        await new Promise(resolve => setTimeout(resolve, 1500))
+      }
+      router.push('/dashboard/tools/audio-converter')
+    } catch {
+      toast.error('Failed to save draft. Please save manually and try again.')
+    }
+  }
   
   const validateStep = (step: number) => {
       if (step === 1) {
@@ -526,7 +583,7 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
           if (!title.trim()) { toast.error("Release title is required."); return false; }
           if (title.length > 100) { toast.error("Title is too long (max 100 chars)."); return false; }
           if (!labelName.trim()) { toast.error("Label name is required."); return false; }
-          if (!primaryArtist.trim()) { toast.error("Primary artist is required."); return false; }
+          if (primaryArtists.length === 0) { toast.error("At least one primary artist is required."); return false; }
           if (!releaseDate) { toast.error("Release date is required."); return false; }
           
           const selectedDate = new Date(releaseDate);
@@ -621,15 +678,15 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                 lyrics: track.lyrics,
                 
                 // Metadata
-                primaryArtist: track.primaryArtist,
-                featuringArtist: track.featuringArtist,
+                primaryArtists: track.primaryArtists,
+                featuringArtists: track.featuringArtists,
                 genre: track.genre,
                 subGenre: track.subGenre,
                 
                 // Credits
                 lyricists: track.lyricists,
                 composers: track.composers,
-                producer: track.producer,
+                producers: track.producers,
                 publisher: track.publisher,
                 productionYear: track.productionYear,
                 
@@ -649,12 +706,6 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                 titleLanguage: track.titleLanguage,
                 lyricsLanguage: track.lyricsLanguage,
                 
-                // Artist IDs
-                primaryArtistSpotify: track.primaryArtistSpotify,
-                primaryArtistApple: track.primaryArtistApple,
-                featuringArtistSpotify: track.featuringArtistSpotify,
-                featuringArtistApple: track.featuringArtistApple,
-                
                 audioAnalysis: track.audioAnalysis
             }
         }))
@@ -664,12 +715,8 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
             title,
             releaseType,
             labelName,
-            primaryArtist,
-            primaryArtistSpotify,
-            primaryArtistApple,
-            featuringArtist,
-            featuringArtistSpotify,
-            featuringArtistApple,
+            primaryArtists,
+            featuringArtists,
             releaseDate,
             originalReleaseDate,
             pLine: `℗ ${pLineYear} ${pLineText}`,
@@ -822,34 +869,67 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                         
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">Primary Artist <span className="text-red-500">*</span></Label>
-                                <div className="flex gap-2">
-                                    <Input value={primaryArtist} onChange={(e) => setPrimaryArtist(e.target.value)} placeholder="Select Primary Artist" className="bg-white/5 border-white/10 text-white h-12" />
-                                    <Button type="button" onClick={() => openArtistDialog('release')} size="icon" className="h-12 w-12 bg-indigo-500 hover:bg-indigo-600 rounded-lg shrink-0">+</Button>
-                                </div>
+                                <Label className="text-xs uppercase font-bold text-zinc-400">Primary Artist(s) <span className="text-red-500">*</span></Label>
+                                <Button type="button" onClick={() => openArtistDialog('release')} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10"><Plus size={14} className="mr-2" /> Add Primary Artist</Button>
+                                {primaryArtists.length > 0 && (
+                                    <div className="space-y-1 mt-2">
+                                        {primaryArtists.map((a, i) => (
+                                            <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded text-sm text-zinc-300">
+                                                <span>{a.name}{a.spotifyId && <span className="text-zinc-500 text-xs ml-1">• Spotify</span>}{a.appleId && <span className="text-zinc-500 text-xs ml-1">• Apple</span>}</span>
+                                                <X size={14} className="cursor-pointer hover:text-red-500 shrink-0 ml-2" onClick={() => removeReleasePrimaryArtist(i)}/>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">Featuring Artist</Label>
-                                <div className="flex gap-2">
-                                    <Input value={featuringArtist} onChange={(e) => setFeaturingArtist(e.target.value)} placeholder="Select Featuring Artist" className="bg-white/5 border-white/10 text-white h-12" />
-                                    <Button type="button" onClick={() => openArtistDialog('release-featuring')} size="icon" className="h-12 w-12 bg-indigo-500 hover:bg-indigo-600 rounded-lg shrink-0">+</Button>
-                                </div>
+                                <Label className="text-xs uppercase font-bold text-zinc-400">Featuring Artist(s)</Label>
+                                <Button type="button" onClick={() => openArtistDialog('release-featuring')} className="bg-indigo-500/80 hover:bg-indigo-600 text-white w-full h-10"><Plus size={14} className="mr-2" /> Add Featuring Artist</Button>
+                                {featuringArtists.length > 0 && (
+                                    <div className="space-y-1 mt-2">
+                                        {featuringArtists.map((a, i) => (
+                                            <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded text-sm text-zinc-300">
+                                                <span>{a.name}{a.spotifyId && <span className="text-zinc-500 text-xs ml-1">• Spotify</span>}{a.appleId && <span className="text-zinc-500 text-xs ml-1">• Apple</span>}</span>
+                                                <X size={14} className="cursor-pointer hover:text-red-500 shrink-0 ml-2" onClick={() => removeReleaseFeaturingArtist(i)}/>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-zinc-400">Genre <span className="text-red-500">*</span></Label>
-                                <Select value={genre} onValueChange={setGenre}>
-                                    <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Select Genre" /></SelectTrigger>
-                                    <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                        <SelectItem value="pop">Pop</SelectItem>
-                                        <SelectItem value="hiphop">Hip Hop</SelectItem>
-                                        <SelectItem value="rnb">R&B</SelectItem>
-                                        <SelectItem value="rock">Rock</SelectItem>
-                                        <SelectItem value="electronic">Electronic</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Popover open={genreOpen} onOpenChange={setGenreOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" aria-expanded={genreOpen} className="w-full bg-white/5 border-white/10 text-white h-12 justify-between hover:bg-white/10 font-normal">
+                                            {genre ? GENRE_OPTIONS.find(g => g.value === genre)?.label : "Select Genre"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-zinc-900 border-zinc-800" align="start">
+                                        <Command className="bg-zinc-900">
+                                            <CommandInput placeholder="Search genre..." className="text-white" />
+                                            <CommandList className="max-h-60">
+                                                <CommandEmpty className="text-zinc-500 text-sm py-4 text-center">No genre found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {GENRE_OPTIONS.map(g => (
+                                                        <CommandItem
+                                                            key={g.value}
+                                                            value={g.label}
+                                                            onSelect={() => { setGenre(g.value); setGenreOpen(false); }}
+                                                            className="text-zinc-300 hover:bg-white/10 cursor-pointer"
+                                                        >
+                                                            <Check className={`mr-2 h-4 w-4 ${genre === g.value ? 'opacity-100 text-emerald-500' : 'opacity-0'}`} />
+                                                            {g.label}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                              <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-zinc-400">Sub Genre <span className="text-red-500">*</span></Label>
@@ -882,10 +962,35 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                              <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-zinc-400">P-Line <span className="text-red-500">*</span></Label>
                                 <div className="flex gap-2">
-                                    <Select value={pLineYear} onValueChange={setPLineYear}>
-                                        <SelectTrigger className="w-[100px] bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Year" /></SelectTrigger>
-                                        <SelectContent className="bg-zinc-900 border-zinc-800 text-white max-h-[300px]">{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
-                                    </Select>
+                                    <Popover open={pLineYearOpen} onOpenChange={setPLineYearOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" aria-expanded={pLineYearOpen} className="w-[100px] bg-white/5 border-white/10 text-white h-12 justify-between hover:bg-white/10 font-normal px-2">
+                                                {pLineYear || "Year"}
+                                                <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[100px] p-0 bg-zinc-900 border-zinc-800">
+                                            <Command className="bg-zinc-900">
+                                                <CommandInput placeholder="Year" className="text-white h-8 text-xs" />
+                                                <CommandList className="max-h-[200px]">
+                                                    <CommandEmpty className="text-zinc-500 text-xs py-2 text-center">No year.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {years.map(y => (
+                                                            <CommandItem
+                                                                key={y}
+                                                                value={y}
+                                                                onSelect={() => { setPLineYear(y); setPLineYearOpen(false); }}
+                                                                className="text-zinc-300 hover:bg-white/10 cursor-pointer text-xs"
+                                                            >
+                                                                <Check className={`mr-1 h-3 w-3 ${pLineYear === y ? 'opacity-100 text-emerald-500' : 'opacity-0'}`} />
+                                                                {y}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                     <Input value={pLineText} onChange={(e) => setPLineText(e.target.value)} placeholder="Owner" className="flex-1 bg-white/5 border-white/10 text-white h-12" />
                                 </div>
                             </div>
@@ -899,10 +1004,35 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-zinc-400">C-Line <span className="text-red-500">*</span></Label>
                                 <div className="flex gap-2">
-                                    <Select value={cLineYear} onValueChange={setCLineYear}>
-                                        <SelectTrigger className="w-[100px] bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Year" /></SelectTrigger>
-                                        <SelectContent className="bg-zinc-900 border-zinc-800 text-white max-h-[300px]">{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
-                                    </Select>
+                                    <Popover open={cLineYearOpen} onOpenChange={setCLineYearOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" aria-expanded={cLineYearOpen} className="w-[100px] bg-white/5 border-white/10 text-white h-12 justify-between hover:bg-white/10 font-normal px-2">
+                                                {cLineYear || "Year"}
+                                                <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[100px] p-0 bg-zinc-900 border-zinc-800">
+                                            <Command className="bg-zinc-900">
+                                                <CommandInput placeholder="Year" className="text-white h-8 text-xs" />
+                                                <CommandList className="max-h-[200px]">
+                                                    <CommandEmpty className="text-zinc-500 text-xs py-2 text-center">No year.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {years.map(y => (
+                                                            <CommandItem
+                                                                key={y}
+                                                                value={y}
+                                                                onSelect={() => { setCLineYear(y); setCLineYearOpen(false); }}
+                                                                className="text-zinc-300 hover:bg-white/10 cursor-pointer text-xs"
+                                                            >
+                                                                <Check className={`mr-1 h-3 w-3 ${cLineYear === y ? 'opacity-100 text-emerald-500' : 'opacity-0'}`} />
+                                                                {y}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                     <Input value={cLineText} onChange={(e) => setCLineText(e.target.value)} placeholder="Owner" className="flex-1 bg-white/5 border-white/10 text-white h-12" />
                                 </div>
                             </div>
@@ -1087,19 +1217,33 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                         </div>
                         
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Primary Artist <span className="text-red-500">*</span></Label>
-                            <div className="flex gap-2">
-                                <Input value={currentTrack.primaryArtist} onChange={(e) => updateCurrentTrack({ primaryArtist: e.target.value })} placeholder="Lead Artist Name" className="bg-white/5 border-white/10 text-white h-12" />
-                                <Button type="button" onClick={() => openArtistDialog('track')} size="icon" className="h-12 w-12 bg-indigo-500 hover:bg-indigo-600 rounded-lg shrink-0">+</Button>
-                            </div>
+                            <Label className="text-xs uppercase font-bold text-zinc-400">Primary Artist(s) <span className="text-red-500">*</span></Label>
+                            <Button type="button" onClick={() => openArtistDialog('track')} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10"><Plus size={14} className="mr-2" /> Add Primary Artist</Button>
+                            {currentTrack.primaryArtists.length > 0 && (
+                                <div className="space-y-1 mt-2">
+                                    {currentTrack.primaryArtists.map((a: any, i: number) => (
+                                        <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded text-sm text-zinc-300">
+                                            <span>{a.name}{a.spotifyId && <span className="text-zinc-500 text-xs ml-1">• Spotify</span>}{a.appleId && <span className="text-zinc-500 text-xs ml-1">• Apple</span>}</span>
+                                            <X size={14} className="cursor-pointer hover:text-red-500 shrink-0 ml-2" onClick={() => removeTrackPrimaryArtist(i)}/>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                         
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Featuring Artist</Label>
-                            <div className="flex gap-2">
-                                <Input value={currentTrack.featuringArtist} onChange={(e) => updateCurrentTrack({ featuringArtist: e.target.value })} placeholder="Guest Artist Name" className="bg-white/5 border-white/10 text-white h-12" />
-                                <Button type="button" onClick={() => openArtistDialog('track-featuring')} size="icon" className="h-12 w-12 bg-indigo-500 hover:bg-indigo-600 rounded-lg shrink-0">+</Button>
-                            </div>
+                            <Label className="text-xs uppercase font-bold text-zinc-400">Featuring Artist(s)</Label>
+                            <Button type="button" onClick={() => openArtistDialog('track-featuring')} className="bg-indigo-500/80 hover:bg-indigo-600 text-white w-full h-10"><Plus size={14} className="mr-2" /> Add Featuring Artist</Button>
+                            {currentTrack.featuringArtists.length > 0 && (
+                                <div className="space-y-1 mt-2">
+                                    {currentTrack.featuringArtists.map((a: any, i: number) => (
+                                        <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded text-sm text-zinc-300">
+                                            <span>{a.name}{a.spotifyId && <span className="text-zinc-500 text-xs ml-1">• Spotify</span>}{a.appleId && <span className="text-zinc-500 text-xs ml-1">• Apple</span>}</span>
+                                            <X size={14} className="cursor-pointer hover:text-red-500 shrink-0 ml-2" onClick={() => removeTrackFeaturingArtist(i)}/>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                         
                                 <div className="space-y-3">
@@ -1141,9 +1285,22 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                                      )}
                                 </div>
                                 
-                                <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-zinc-400">Music Producer <span className="text-red-500">*</span></Label>
-                                    <Input value={currentTrack.producer} onChange={(e) => updateCurrentTrack({ producer: e.target.value })} placeholder="Music Producer" className="bg-white/5 border-white/10 text-white h-12" />
+                                <div className="space-y-3">
+                                    <Label className="text-xs uppercase font-bold text-zinc-400">Music Producer(s) <span className="text-red-500">*</span></Label>
+                                    <div className="flex gap-2">
+                                        <Input value={newProducerName} onChange={(e) => setNewProducerName(e.target.value)} placeholder="Producer Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                    </div>
+                                    <Button type="button" onClick={addProducer} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10">+ Add Producer</Button>
+                                    {currentTrack.producers.length > 0 && (
+                                        <div className="space-y-1 mt-2">
+                                            {currentTrack.producers.map((p: any, i: number) => (
+                                                <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded text-sm text-zinc-300">
+                                                    <span>{p.name}</span>
+                                                    <X size={14} className="cursor-pointer hover:text-red-500" onClick={() => removeProducer(i)}/>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 
                                 <div className="space-y-2">
@@ -1212,16 +1369,35 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
 
                                 <div className="space-y-2">
                                      <Label className="text-xs uppercase font-bold text-zinc-400">Genre <span className="text-red-500">*</span></Label>
-                                     <Select value={currentTrack.genre} onValueChange={(val) => updateCurrentTrack({ genre: val })}>
-                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Select Genre" /></SelectTrigger>
-                                        <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                                            <SelectItem value="pop">Pop</SelectItem>
-                                            <SelectItem value="hiphop">Hip Hop</SelectItem>
-                                            <SelectItem value="rnb">R&B</SelectItem>
-                                            <SelectItem value="rock">Rock</SelectItem>
-                                            <SelectItem value="electronic">Electronic</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                     <Popover open={trackGenreOpen} onOpenChange={setTrackGenreOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" aria-expanded={trackGenreOpen} className="w-full bg-white/5 border-white/10 text-white h-12 justify-between hover:bg-white/10 font-normal">
+                                                {currentTrack.genre ? GENRE_OPTIONS.find(g => g.value === currentTrack.genre)?.label : "Select Genre"}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-zinc-900 border-zinc-800" align="start">
+                                            <Command className="bg-zinc-900">
+                                                <CommandInput placeholder="Search genre..." className="text-white" />
+                                                <CommandList className="max-h-60">
+                                                    <CommandEmpty className="text-zinc-500 text-sm py-4 text-center">No genre found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {GENRE_OPTIONS.map(g => (
+                                                            <CommandItem
+                                                                key={g.value}
+                                                                value={g.label}
+                                                                onSelect={() => { updateCurrentTrack({ genre: g.value }); setTrackGenreOpen(false); }}
+                                                                className="text-zinc-300 hover:bg-white/10 cursor-pointer"
+                                                            >
+                                                                <Check className={`mr-2 h-4 w-4 ${currentTrack.genre === g.value ? 'opacity-100 text-emerald-500' : 'opacity-0'}`} />
+                                                                {g.label}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                                  <div className="space-y-2">
                                     <Label className="text-xs uppercase font-bold text-zinc-400">Sub Genre <span className="text-red-500">*</span></Label>
@@ -1345,7 +1521,7 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                              </div>
                              <div>
                                  <h4 className="text-xl font-bold text-white mb-2">{title}</h4>
-                                 <p className="text-zinc-400 flex items-center gap-2 mb-1"><span className="text-zinc-600 text-xs font-bold uppercase">Artist:</span> {primaryArtist}</p>
+                                 <p className="text-zinc-400 flex items-center gap-2 mb-1"><span className="text-zinc-600 text-xs font-bold uppercase">Artist:</span> {primaryArtists.map(a => a.name).join(', ') || '-'}</p>
                                  <p className="text-zinc-400 flex items-center gap-2 mb-1"><span className="text-zinc-600 text-xs font-bold uppercase">Label:</span> {labelName}</p>
                                  <p className="text-zinc-400 flex items-center gap-2"><span className="text-zinc-600 text-xs font-bold uppercase">Date:</span> {releaseDate}</p>
                              </div>
@@ -1411,6 +1587,7 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                     {/* Save Draft Button - Available at any step */}
                     <Button 
                         type="button" 
+                        data-draft-save
                         onClick={(e) => handleSubmit(e, 'draft')}
                         disabled={loading || !title} // Minimum requirement: Title
                         className="w-full md:w-auto bg-white text-black hover:bg-zinc-200 transition-all h-12 px-6 rounded-md font-bold"
@@ -1467,6 +1644,57 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                     <DialogFooter>
                          <Button variant="ghost" type="button" onClick={() => setIsArtistDialogOpen(false)} className="text-zinc-400 hover:text-white">Cancel</Button>
                          <Button type="button" onClick={saveArtistDetails} className="bg-indigo-600 hover:bg-indigo-500 text-white">Save Artist</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Cover Art Format Warning Dialog */}
+            <Dialog open={coverWarningOpen} onOpenChange={setCoverWarningOpen}>
+                <DialogContent className="bg-zinc-950 border-white/10 text-white max-w-md">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                <AlertTriangle className="w-6 h-6 text-amber-400" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-lg">Cover Art Issue Detected</DialogTitle>
+                                <DialogDescription className="text-zinc-400 text-sm">
+                                    Your artwork doesn&apos;t meet platform requirements
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                            <p className="text-sm text-amber-200 leading-relaxed">
+                                {coverWarningMessage}
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                            <p className="text-sm font-semibold text-white">What you can do:</p>
+                            <ol className="text-sm text-zinc-400 space-y-1.5 list-decimal list-inside">
+                                <li>Save your current release as a <span className="text-white font-medium">Draft</span></li>
+                                <li>Go to <span className="text-indigo-400 font-medium">Tools → Cover Art Studio</span> to resize</li>
+                                <li>Come back and upload the fixed artwork</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                        <Button 
+                            variant="ghost" 
+                            onClick={() => setCoverWarningOpen(false)} 
+                            className="text-zinc-400 hover:text-white"
+                        >
+                            I&apos;ll fix it later
+                        </Button>
+                        <Button 
+                            onClick={handleSaveDraftAndRedirect}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white gap-2"
+                        >
+                            <Save className="w-4 h-4" />
+                            Save Draft & Go to Tools
+                            <ExternalLink className="w-4 h-4" />
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

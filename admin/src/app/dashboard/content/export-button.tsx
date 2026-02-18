@@ -17,6 +17,20 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+// Helper to parse JSON-stored artist/producer fields for export
+function parseField(val: any): string {
+    if (!val) return ''
+    if (typeof val === 'string') {
+        try {
+            const parsed = JSON.parse(val)
+            if (Array.isArray(parsed)) return parsed.map((a: any) => a.name || a).join(', ')
+        } catch {}
+        return val
+    }
+    if (Array.isArray(val)) return val.map((a: any) => a.name || a).join(', ')
+    return String(val)
+}
+
 export default function ExportButton({ status = 'approved' }: { status?: string }) {
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
@@ -170,10 +184,10 @@ export default function ExportButton({ status = 'approved' }: { status?: string 
             track.channels || "",
             
             // Artists
-            track.albums?.primary_artist || "",
-            track.albums?.featuring_artist || "",
-            track.primary_artist || "",
-            track.featuring_artist || "",
+            parseField(track.albums?.primary_artist) || "",
+            parseField(track.albums?.featuring_artist) || "",
+            parseField(track.primary_artist) || "",
+            parseField(track.featuring_artist) || "",
             
             // IDs
             track.albums?.primary_artist_spotify_id || "",
@@ -189,7 +203,7 @@ export default function ExportButton({ status = 'approved' }: { status?: string 
             // Credits - Properly formatted strings
             Array.isArray(track.lyricists) ? track.lyricists.map((l: any) => `${l.firstName} ${l.lastName}`).join(", ") : (track.lyricists || ""),
             Array.isArray(track.composers) ? track.composers.map((c: any) => `${c.firstName} ${c.lastName}`).join(", ") : (track.composers || ""),
-            track.producers || "",
+            parseField(track.producers) || "",
             track.publisher || "",
             
             // Legal

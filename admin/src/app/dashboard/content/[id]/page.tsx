@@ -14,6 +14,33 @@ import { updateTrackStatus } from '../actions' // Reusing from list view actions
 import { format } from 'date-fns'
 import MetadataEditor from '@/components/admin/metadata-editor'
 
+// Helper to parse stored JSON artist fields into display strings
+function parseArtistDisplay(value: any): string {
+    if (!value) return '-'
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value)
+            if (Array.isArray(parsed)) return parsed.map((a: any) => a.name || a).join(', ') || '-'
+        } catch {}
+        return value || '-'
+    }
+    if (Array.isArray(value)) return value.map((a: any) => a.name || a).join(', ') || '-'
+    return String(value) || '-'
+}
+
+function parseProducerDisplay(value: any): string {
+    if (!value) return '-'
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value)
+            if (Array.isArray(parsed)) return parsed.map((p: any) => p.name || p).join(', ') || '-'
+        } catch {}
+        return value
+    }
+    if (Array.isArray(value)) return value.map((p: any) => p.name || p).join(', ') || '-'
+    return String(value) || '-'
+}
+
 export default async function TrackReviewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const { track, notes } = await getTrackDetails(id)
@@ -116,8 +143,8 @@ export default async function TrackReviewPage({ params }: { params: Promise<{ id
 
                                  <TabsContent value="credits" className="space-y-8 mt-0">
                                      <Section title="Artists" icon={Mic}>
-                                         <GridItem label="Primary Artist" value={track.primary_artist || track.albums?.primary_artist} />
-                                         <GridItem label="Featuring" value={track.featuring_artist || track.albums?.featuring_artist || '-'} />
+                                         <GridItem label="Primary Artist(s)" value={parseArtistDisplay(track.primary_artist || track.albums?.primary_artist)} />
+                                         <GridItem label="Featuring Artist(s)" value={parseArtistDisplay(track.featuring_artist || track.albums?.featuring_artist)} />
                                      </Section>
                                      <Section title="Contributors" icon={FileText}>
                                          {track.lyricists?.map((l: any, i:number) => (
@@ -126,7 +153,7 @@ export default async function TrackReviewPage({ params }: { params: Promise<{ id
                                          {track.composers?.map((c: any, i:number) => (
                                               <GridItem key={i} label="Composer" value={`${c.firstName} ${c.lastName}`} />
                                          ))}
-                                         <GridItem label="Producer" value={track.producers || '-'} />
+                                         <GridItem label="Producer(s)" value={parseProducerDisplay(track.producers)} />
                                      </Section>
                                  </TabsContent>
 
