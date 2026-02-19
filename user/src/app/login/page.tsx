@@ -141,7 +141,10 @@ export default function LoginPage() {
                     />
                     <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900">Keep me logged in</span>
                   </label>
-                  <Link href="/forgot-password" className="text-sm font-bold border-b-2 border-transparent hover:border-black transition-all">
+                  <Link 
+                    href="/forgot-password" 
+                    className="relative z-20 cursor-pointer text-sm font-bold border-b-2 border-transparent hover:border-black transition-all"
+                  >
                     Forgot?
                   </Link>
                 </div>
