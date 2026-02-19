@@ -119,9 +119,17 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-xs font-bold text-gray-900 uppercase tracking-widest mb-2">
-                    Password
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="password" className="block text-xs font-bold text-gray-900 uppercase tracking-widest">
+                      Password
+                    </label>
+                    <Link 
+                      href="/forgot-password" 
+                      className="text-xs font-bold text-gray-500 hover:text-black border-b border-transparent hover:border-black transition-all"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
                   <Input 
                     id="password" 
                     name="password" 
@@ -133,7 +141,7 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between relative z-50 isolate">
+                <div className="flex items-center relative z-50">
                   <label className="flex items-center cursor-pointer group relative z-50">
                     <input 
                       type="checkbox" 
@@ -141,14 +149,6 @@ export default function LoginPage() {
                     />
                     <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900">Keep me logged in</span>
                   </label>
-                  <div className="relative z-[100] pointer-events-auto">
-                    <Link 
-                      href="/forgot-password" 
-                      className="text-sm font-bold border-b-2 border-transparent hover:border-black transition-all block py-2"
-                    >
-                      Forgot?
-                    </Link>
-                  </div>
                 </div>
 
                 <SubmitButton 
