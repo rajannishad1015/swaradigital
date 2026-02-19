@@ -119,17 +119,9 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label htmlFor="password" className="block text-xs font-bold text-gray-900 uppercase tracking-widest">
-                      Password
-                    </label>
-                    <Link 
-                      href="/forgot-password" 
-                      className="text-xs font-bold text-gray-500 hover:text-black border-b border-transparent hover:border-black transition-all"
-                    >
-                      Forgot Password?
-                    </Link>
-                  </div>
+                  <label htmlFor="password" className="block text-xs font-bold text-gray-900 uppercase tracking-widest mb-2">
+                    Password
+                  </label>
                   <Input 
                     id="password" 
                     name="password" 
@@ -141,14 +133,20 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="flex items-center relative z-50">
-                  <label className="flex items-center cursor-pointer group relative z-50">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center cursor-pointer group">
                     <input 
                       type="checkbox" 
                       className="w-4 h-4 border-gray-300 bg-white text-black focus:ring-black rounded-none" 
                     />
                     <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900">Keep me logged in</span>
                   </label>
+                  <Link 
+                    href="/forgot-password" 
+                    className="text-sm font-bold border-b-2 border-transparent hover:border-black transition-all py-2"
+                  >
+                    Forgot?
+                  </Link>
                 </div>
 
                 <SubmitButton 
