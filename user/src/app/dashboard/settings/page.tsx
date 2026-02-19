@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { User, Mail, Phone, MapPin, Lock, Edit2, CreditCard, Instagram, Twitter, Youtube, Globe, Music2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import EditProfileDialog from './edit-profile-dialog'
+import ProfileEditorDialog from './profile-editor-dialog'
 import ChangePasswordDialog from './change-password-dialog'
 
 export default async function SettingsPage() {
@@ -55,10 +55,10 @@ export default async function SettingsPage() {
           </div>
 
           <div className="flex gap-3 relative z-20">
-             <EditProfileDialog profile={profile} trigger={
+             <ProfileEditorDialog profile={profile} trigger={
                  <Button className="bg-white hover:bg-zinc-200 text-black border-0 font-bold shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all transform hover:-translate-y-0.5">
                     <Edit2 size={16} className="mr-2" />
-                    Edit Profile
+                    Edit Profile v2.1
                  </Button>
              } />
           </div>
@@ -78,7 +78,7 @@ export default async function SettingsPage() {
                             </div>
                             Contact Info
                         </CardTitle>
-                        <EditProfileDialog profile={profile} trigger={
+                        <ProfileEditorDialog profile={profile} trigger={
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-zinc-400 hover:text-white hover:bg-white/5">
                                 <Edit2 size={14} />
                             </Button>
