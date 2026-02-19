@@ -58,7 +58,7 @@ export default async function SettingsPage() {
              <ProfileEditorDialog profile={profile} trigger={
                  <Button className="bg-white hover:bg-zinc-200 text-black border-0 font-bold shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all transform hover:-translate-y-0.5">
                     <Edit2 size={16} className="mr-2" />
-                    Edit Profile v2.1
+                    Edit Profile
                  </Button>
              } />
           </div>
