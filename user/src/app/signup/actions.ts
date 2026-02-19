@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 
 export async function signup(formData: FormData) {
@@ -15,9 +16,10 @@ export async function signup(formData: FormData) {
     email,
     password,
     options: {
-        data: {
-            full_name: fullName,
-        }
+      emailRedirectTo: `${(await headers()).get('origin')}/auth/callback?next=/dashboard`,
+      data: {
+        full_name: fullName,
+      }
     }
   })
 
