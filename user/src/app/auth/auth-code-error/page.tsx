@@ -1,9 +1,16 @@
 import Link from 'next/link'
 import { AlertTriangle } from 'lucide-react'
 
-export default function AuthCodeError() {
+export default function AuthCodeError({
+  searchParams,
+}: {
+  searchParams: { error?: string }
+}) {
+  const error = searchParams.error ?? 'The link may have expired or is invalid.'
+
   return (
     <div className="h-screen relative overflow-hidden bg-black flex items-center justify-center p-4">
+      {/* ... keeping existing background/layout ... */}
       <div 
         className="absolute inset-0 bg-[url('/auth-bg.png')] bg-cover bg-center bg-no-repeat"
         style={{ filter: 'brightness(0.4) contrast(1.1) saturate(0.9)' }}
@@ -20,7 +27,7 @@ export default function AuthCodeError() {
         </h1>
         
         <p className="text-gray-600 mb-8 font-medium">
-          There was a problem verifying your request. The link may have expired or is invalid.
+          {error}
         </p>
 
         <Link 
