@@ -133,20 +133,22 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center cursor-pointer group">
+                <div className="flex items-center justify-between relative z-50">
+                  <label className="flex items-center cursor-pointer group relative z-50">
                     <input 
                       type="checkbox" 
                       className="w-4 h-4 border-gray-300 bg-white text-black focus:ring-black rounded-none" 
                     />
                     <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900">Keep me logged in</span>
                   </label>
-                  <Link 
-                    href="/forgot-password" 
-                    className="relative z-20 cursor-pointer text-sm font-bold border-b-2 border-transparent hover:border-black transition-all"
-                  >
-                    Forgot?
-                  </Link>
+                  <div className="relative z-50">
+                    <Link 
+                      href="/forgot-password" 
+                      className="text-sm font-bold border-b-2 border-transparent hover:border-black transition-all block py-2"
+                    >
+                      Forgot?
+                    </Link>
+                  </div>
                 </div>
 
                 <SubmitButton 
