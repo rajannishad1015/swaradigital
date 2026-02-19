@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
@@ -14,7 +15,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {
-    return <div>Log in required</div>
+    redirect('/login')
   }
 
   const { data: profile } = await supabase

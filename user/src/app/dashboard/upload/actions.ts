@@ -36,6 +36,17 @@ export async function submitTrack(formData: any) {
             return { success: false, error: 'Unauthorized' }
         }
 
+        // Server-side input validation
+        if (!formData.title || typeof formData.title !== 'string' || formData.title.trim().length === 0) {
+            return { success: false, error: 'Release title is required' }
+        }
+        if (formData.title.length > 200) {
+            return { success: false, error: 'Release title is too long (max 200 characters)' }
+        }
+        if (!formData.releaseType || !['single', 'ep', 'album', 'compilation'].includes(formData.releaseType)) {
+            return { success: false, error: 'Invalid release type' }
+        }
+
         // Get Artist ID
         const { data: profile } = await supabase
             .from('profiles')
@@ -251,15 +262,19 @@ export async function submitTrack(formData: any) {
             .from('tracks')
             .insert(tracksToInsert);
         
-        if (tracksError) throw new Error(tracksError.message)
+        if (tracksError) {
+            // CLEANUP: Delete orphaned album to avoid stale data
+            await supabase.from('albums').delete().eq('id', album.id)
+            throw new Error(tracksError.message)
+        }
 
         revalidatePath('/dashboard')
         return { success: true }
         
-    } catch (error: any) {
-        console.error("Submit Track Detailed Error:", error)
+    } catch (error: unknown) {
         // Check if it's a Supabase error (often has details/hint)
-        const detailedError = error.details || error.hint || error.message || JSON.stringify(error);
+        const err = error as Record<string, string> | null
+        const detailedError = err?.details || err?.hint || err?.message || (error instanceof Error ? error.message : 'Unknown error');
         return { 
             success: false, 
             error: `Upload Failed: ${detailedError}` 

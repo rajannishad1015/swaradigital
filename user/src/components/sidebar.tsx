@@ -76,19 +76,17 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
                 </div>
 
                 {/* Dropdowns */}
-                <NavGroup icon={ShieldCheck} label="Rights Manager" />
                 <NavGroup icon={Wrench} label="Tools" items={[
                     { href: "/dashboard/tools/audio-converter", label: "Audio Converter" },
                     { href: "/dashboard/tools/advanced-options", label: "Advanced Options" }
                 ]} />
-                <NavGroup icon={Megaphone} label="Promotions" />
 
                 {/* Section Divider */}
                 <div className="py-4 px-4">
                     <div className="h-px bg-zinc-800/50" />
                 </div>
 
-                <NavItem href="#" icon={UserPlus} label="Invite Artist" badge="Soon" />
+                <NavItem href="#" icon={UserPlus} label="Invite Artist" badge="Soon" disabled />
                 <NavItem href="/dashboard/faq" icon={HelpCircle} label="Documentation" active={pathname === '/dashboard/faq'} />
             </nav>
 
@@ -119,7 +117,7 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
     )
 }
 
-function NavItem({ href, icon: Icon, label, active, badge }: { href: string, icon: any, label: string, active?: boolean, badge?: string }) {
+function NavItem({ href, icon: Icon, label, active, badge, disabled }: { href: string, icon: any, label: string, active?: boolean, badge?: string, disabled?: boolean }) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
 

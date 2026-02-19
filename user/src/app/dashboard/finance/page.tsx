@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
 import ProfileEditorDialog from '../settings/profile-editor-dialog'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
@@ -28,7 +29,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return <div>Log in required</div>
+    redirect('/login')
   }
   const { data: profile } = await supabase
     .from('profiles')
@@ -67,9 +68,10 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
       payoutQuery = payoutQuery.gte('created_at', dateLimit)
   }
 
-  // 2. Search Filter (Transactions)
+  // 2. Search Filter (Transactions) — escape SQL wildcards
   if (search) {
-      transQuery = transQuery.ilike('description', `%${search}%`)
+      const escapedSearch = search.replace(/%/g, '\\%').replace(/_/g, '\\_')
+      transQuery = transQuery.ilike('description', `%${escapedSearch}%`)
   }
 
   if (artistId) {

@@ -237,7 +237,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
 
   const addTrack = () => {
     // DEBUG: Diagnose user issue
-    console.log(`Debug AddTrack: Type=${releaseType}, Tracks=${tracks.length}`)
+    // Validate track count based on release type
     
     if (releaseType === 'single' && tracks.length >= 1) {
         toast.error("Singles can only have one track.")
@@ -696,6 +696,12 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
               }
           }
       }
+      if (step === 3) {
+          if (selectedPlatforms.length === 0) {
+              toast.error("Please select at least one distribution platform.")
+              return false
+          }
+      }
       return true
   }
 
@@ -808,7 +814,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
         const result = await submitTrack(formData)
         
         if (!result.success) {
-            console.error("Submission failed:", result.error)
+            console.warn("Submission failed:", result.error)
             toast.error(result.error || "Failed to submit release", {
                 duration: 8000,
                 className: "bg-red-600 text-white border-red-700 font-bold shadow-2xl"
@@ -828,7 +834,6 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
             }
         }
     } catch (error: unknown) {
-        console.error(error)
         const errorMessage = error instanceof Error ? error.message : "Failed to submit release";
         toast.error(errorMessage)
     } finally {

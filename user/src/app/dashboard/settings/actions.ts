@@ -34,6 +34,36 @@ export async function updateProfile(formData: FormData) {
   const tiktokUrl = formData.get('tiktokUrl') as string
   const websiteUrl = formData.get('websiteUrl') as string
 
+  // Input validation
+  if (fullName && fullName.length > 128) throw new Error('Full name is too long (max 128 characters)')
+  if (artistName && artistName.length > 128) throw new Error('Artist name is too long (max 128 characters)')
+  if (bio && bio.length > 500) throw new Error('Bio is too long (max 500 characters)')
+
+  // Validate URL fields
+  const urlFields = { instagramUrl, twitterUrl, facebookUrl, youtubeUrl, soundcloudUrl, tiktokUrl, websiteUrl }
+  for (const [name, value] of Object.entries(urlFields)) {
+    if (value && value.trim() !== '') {
+      try {
+        new URL(value)
+      } catch {
+        throw new Error(`Invalid URL format for ${name.replace('Url', '')}`)
+      }
+    }
+  }
+
+  // Validate phone format (if provided)
+  if (phone && phone.trim() !== '' && !/^\+?[\d\s\-()]{7,15}$/.test(phone)) {
+    throw new Error('Invalid phone number format')
+  }
+
+  // Validate financial fields format (if provided)
+  if (ifscCode && ifscCode.trim() !== '' && !/^[A-Z]{4}0[A-Z0-9]{6}$/i.test(ifscCode)) {
+    throw new Error('Invalid IFSC code format')
+  }
+  if (panNumber && panNumber.trim() !== '' && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(panNumber)) {
+    throw new Error('Invalid PAN number format')
+  }
+
   const { error } = await supabase
     .from('profiles')
     .update({
@@ -80,19 +110,34 @@ export async function changePassword(formData: FormData) {
 
   if (!user) throw new Error('Unauthorized')
 
+  const currentPassword = formData.get('currentPassword') as string
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirmPassword') as string
 
-  if (!password || !confirmPassword) {
+  if (!currentPassword || !password || !confirmPassword) {
     throw new Error('All fields are required')
+  }
+
+  // Verify current password before allowing change
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user.email!,
+    password: currentPassword
+  })
+
+  if (signInError) {
+    throw new Error('Current password is incorrect')
   }
 
   if (password !== confirmPassword) {
     throw new Error('Passwords do not match')
   }
 
-  if (password.length < 6) {
-    throw new Error('Password must be at least 6 characters')
+  if (password.length < 8) {
+    throw new Error('Password must be at least 8 characters')
+  }
+
+  if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+    throw new Error('Password must contain at least one uppercase letter and one number')
   }
 
   const { error } = await supabase.auth.updateUser({

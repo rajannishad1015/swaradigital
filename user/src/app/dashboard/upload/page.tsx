@@ -1,11 +1,12 @@
 import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
 import UploadForm from './upload-form'
 
 export default async function UploadPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
-  if (!user) return null
+  if (!user) redirect('/login')
 
   // Fetch metrics for first upload check
   const { count } = await supabase

@@ -25,7 +25,7 @@ export async function createTicket(formData: FormData) {
   const { data: ticket, error: ticketError } = await supabase
     .from('tickets')
     .insert({
-      user_id: user.id,
+      artist_id: user.id,
       subject,
       category,
       priority,
@@ -35,7 +35,6 @@ export async function createTicket(formData: FormData) {
     .single()
 
   if (ticketError) {
-    console.error('Ticket creation error:', ticketError)
     throw new Error('Failed to create ticket')
   }
 
@@ -57,7 +56,6 @@ export async function createTicket(formData: FormData) {
     })
 
   if (messageError) {
-    console.error('Message creation error:', messageError)
     throw new Error('Failed to create ticket message')
   }
 
@@ -80,11 +78,11 @@ export async function replyTx(formData: FormData) {
   // Verify ownership
   const { data: ticket } = await supabase
     .from('tickets')
-    .select('user_id')
+    .select('artist_id')
     .eq('id', ticketId)
     .single()
   
-  if (ticket?.user_id !== user.id) throw new Error('Unauthorized')
+  if (!ticket || ticket.artist_id !== user.id) throw new Error('Unauthorized')
 
   // Upload Attachment (if present)
   let attachmentUrl = null
@@ -92,7 +90,7 @@ export async function replyTx(formData: FormData) {
     attachmentUrl = await uploadAttachment(attachment, supabase)
   }
 
-  await supabase.from('ticket_messages').insert({
+  const { error: replyError } = await supabase.from('ticket_messages').insert({
     ticket_id: ticketId,
     sender_id: user.id,
     message,
@@ -100,13 +98,17 @@ export async function replyTx(formData: FormData) {
     attachment_url: attachmentUrl
   })
 
+  if (replyError) {
+    throw new Error('Failed to send reply. Please try again.')
+  }
+
   revalidatePath(`/dashboard/support/${ticketId}`)
   revalidatePath('/dashboard/support')
 }
 
-async function uploadAttachment(file: File, supabase: any) {
+async function uploadAttachment(file: File, supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never) {
     const fileExt = file.name.split('.').pop()
-    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
     const filePath = `${fileName}`
 
     const { error: uploadError } = await supabase.storage
@@ -114,8 +116,7 @@ async function uploadAttachment(file: File, supabase: any) {
         .upload(filePath, file)
 
     if (uploadError) {
-        console.error('Upload Error:', uploadError)
-        return null
+        throw new Error('Failed to upload attachment. Please try again.')
     }
 
     const { data: { publicUrl } } = supabase.storage

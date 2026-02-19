@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { Toaster } from "@/components/ui/sonner"
 import Sidebar from '@/components/sidebar'
 import MobileSidebar from '@/components/mobile-sidebar'
 import NotificationCenter from '@/components/notification-center'
@@ -27,7 +26,6 @@ export default async function DashboardLayout({
         .single()
 
     if (profile?.status === 'banned' || profile?.status === 'suspended') {
-        const supabase = await createClient()
         await supabase.auth.signOut()
         redirect('/login?error=Your account has been suspended. Please contact support.')
     }
@@ -106,7 +104,7 @@ export default async function DashboardLayout({
              </PageTransition>
         </div>
       </div>
-      <Toaster />
+      {/* Toaster is rendered in root layout */}
     </div>
   )
 }

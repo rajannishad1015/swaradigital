@@ -3,13 +3,13 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function createWithdrawalRequest(amount: number, paymentMode: string, paymentDetails: any) {
+export async function createWithdrawalRequest(amount: number, paymentMode: string, paymentDetails: Record<string, string>) {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  if (amount < 10) {
+  if (!Number.isFinite(amount) || amount < 10) {
       throw new Error("Minimum withdrawal amount is $10.00")
   }
 
@@ -37,35 +37,34 @@ export async function createWithdrawalRequest(amount: number, paymentMode: strin
     }
   }
 
-  // 1. Check Balance
+  // 1. Check current balance
   const { data: profile } = await supabase.from('profiles').select('balance').eq('id', user.id).single()
   
   if (!profile || (Number(profile.balance) || 0) < amount) {
       throw new Error("Insufficient balance")
   }
 
-  // 2. Create Request (Pending)
-  // Ideally, we might want to "lock" the funds here.
-  // For this pattern, we will insert the request. Admin approval will deduruct? 
-  // OR we deduct NOW.
-  // Let's deduct NOW to prevent double spend. If rejected, we add back.
-  
   const newBalance = (Number(profile.balance) || 0) - amount
 
-  // Transaction: Update Profile & Create Request
-  const { error: updateError } = await supabase
+  // Atomic update with balance check guard to prevent race conditions
+  const { data: deductResult, error: deductError } = await supabase
     .from('profiles')
     .update({ balance: newBalance })
     .eq('id', user.id)
+    .gte('balance', amount) // Guard: only update if balance >= amount (prevents double-spend)
+    .select('balance')
+    .single()
 
-  if (updateError) throw new Error("Failed to update balance")
+  if (deductError || !deductResult) {
+    throw new Error("Insufficient balance or concurrent request in progress. Please try again.")
+  }
 
-  // 3. Create Transaction Record
+  // 2. Create Transaction Record — with rollback on failure
   const { data: tx, error: txError } = await supabase
     .from('transactions')
     .insert({
         user_id: user.id,
-        amount: -amount, // Debit
+        amount: -amount,
         type: 'withdrawal',
         description: `Withdrawal Request via ${paymentMode} (Pending)`,
         status: 'pending'
@@ -74,10 +73,15 @@ export async function createWithdrawalRequest(amount: number, paymentMode: strin
     .single()
 
   if (txError) {
-      console.error("Failed to log transaction:", txError)
-      throw new Error("Failed to initialize transaction")
+      // ROLLBACK: Restore balance since transaction log failed
+      await supabase
+        .from('profiles')
+        .update({ balance: (Number(deductResult.balance) || 0) + amount })
+        .eq('id', user.id)
+      throw new Error("Failed to initialize transaction. Balance has been restored.")
   }
 
+  // 3. Create Payout Request — with rollback on failure
   const { error: insertError } = await supabase
     .from('payout_requests')
     .insert({
@@ -90,8 +94,13 @@ export async function createWithdrawalRequest(amount: number, paymentMode: strin
     })
 
   if (insertError) {
-      console.error("Failed to create payout request", insertError)
-      throw new Error("Failed to create request")
+      // ROLLBACK: Restore balance and remove the orphaned transaction
+      await supabase
+        .from('profiles')
+        .update({ balance: (Number(deductResult.balance) || 0) + amount })
+        .eq('id', user.id)
+      await supabase.from('transactions').delete().eq('id', tx.id)
+      throw new Error("Failed to create payout request. Balance has been restored.")
   }
 
   revalidatePath('/dashboard')
@@ -156,17 +165,14 @@ export async function deleteTrack(trackId: string) {
         throw new Error('Only draft or rejected tracks can be deleted')
     }
 
-    console.log('Attempting to delete track:', trackId)
     const { error } = await supabase
         .from('tracks')
         .delete()
         .eq('id', trackId)
 
     if (error) {
-        console.error('Delete error:', error)
         throw new Error(error.message)
     }
-    console.log('Track deleted successfully')
 
     revalidatePath('/dashboard')
     return { success: true }

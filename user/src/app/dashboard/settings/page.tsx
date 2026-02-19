@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
 import { User, Mail, Phone, MapPin, Lock, Edit2, CreditCard, Instagram, Twitter, Youtube, Globe, Music2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,10 +10,12 @@ export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  if (!user) redirect('/login')
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', user?.id)
+    .eq('id', user.id)
     .single()
 
   return (
@@ -144,14 +147,14 @@ export default async function SettingsPage() {
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="relative z-10">
                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">IFSC Code</div>
-                            <div className="font-mono font-bold text-white text-lg">{profile?.ifsc_code || '---'}</div>
+                            <div className="font-mono font-bold text-white text-lg">{profile?.ifsc_code ? `${profile.ifsc_code.slice(0, 4)}••••••` : '---'}</div>
                         </div>
                     </div>
                     <div className="bg-zinc-900 border border-white/5 rounded-2xl p-5 relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="relative z-10">
                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">PAN Number</div>
-                            <div className="font-mono font-bold text-white text-lg">{profile?.pan_number || '---'}</div>
+                            <div className="font-mono font-bold text-white text-lg">{profile?.pan_number ? `${profile.pan_number.slice(0, 2)}••••••${profile.pan_number.slice(-1)}` : '---'}</div>
                         </div>
                     </div>
                 </div>
@@ -160,14 +163,14 @@ export default async function SettingsPage() {
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="relative z-10">
                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">PayPal Email</div>
-                            <div className="font-bold text-white text-lg">{profile?.paypal_email || 'Not linked'}</div>
+                            <div className="font-bold text-white text-lg">{profile?.paypal_email ? `${profile.paypal_email.slice(0, 3)}••••@${profile.paypal_email.split('@')[1]}` : 'Not linked'}</div>
                         </div>
                     </div>
                     <div className="bg-zinc-900 border border-white/5 rounded-2xl p-5 relative overflow-hidden group hover:border-indigo-500/30 transition-all duration-300">
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="relative z-10">
                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">UPI ID</div>
-                            <div className="font-mono font-bold text-white text-lg">{profile?.upi_id || 'Not linked'}</div>
+                            <div className="font-mono font-bold text-white text-lg">{profile?.upi_id ? `${profile.upi_id.slice(0, 3)}••••@${profile.upi_id.split('@')[1] || '••••'}` : 'Not linked'}</div>
                         </div>
                     </div>
                 </div>
@@ -246,7 +249,7 @@ export default async function SettingsPage() {
                              </div>
                              <div>
                                 <div className="text-base font-bold text-white mb-0.5">Password</div>
-                                <div className="text-xs text-zinc-500 font-medium">Last changed 30 days ago</div>
+                                <div className="text-xs text-zinc-500 font-medium">Change your password regularly for security</div>
                              </div>
                         </div>
                         <div className="relative z-10 w-full sm:w-auto">

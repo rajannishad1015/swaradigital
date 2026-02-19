@@ -31,7 +31,8 @@ export default async function EditTrackPage({ params }: PageProps) {
         (track as any).albums = (track as any).albums[0];
     }
 
-    console.log("Fetched Track Data:", JSON.stringify(track, null, 2));
+
+
 
     if (error || !track) {
         notFound()

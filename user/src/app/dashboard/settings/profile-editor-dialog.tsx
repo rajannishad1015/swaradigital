@@ -28,8 +28,8 @@ export default function EditProfileDialog({ profile, trigger }: { profile: any, 
         await updateProfile(formData)
         toast.success("Profile updated successfully")
         setOpen(false)
-    } catch (e: any) {
-        toast.error("Failed to update profile: " + e.message)
+    } catch (e: unknown) {
+        toast.error("Failed to update profile: " + (e instanceof Error ? e.message : 'Unknown error'))
     } finally {
         setLoading(false)
     }

@@ -27,8 +27,9 @@ export default function ChangePasswordDialog({ trigger }: { trigger?: React.Reac
         await changePassword(formData)
         toast.success("Password updated successfully")
         setOpen(false)
-    } catch (e: any) {
-        toast.error("Failed to update password: " + e.message)
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'An unknown error occurred'
+        toast.error("Failed to update password: " + message)
     } finally {
         setLoading(false)
     }
@@ -43,10 +44,21 @@ export default function ChangePasswordDialog({ trigger }: { trigger?: React.Reac
         <DialogHeader>
           <DialogTitle className="text-white">Change Password</DialogTitle>
           <DialogDescription className="text-zinc-400">
-            Enter your new password below.
+            Verify your current password, then enter your new password below.
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+                <Label htmlFor="currentPassword" className="text-zinc-300">Current Password</Label>
+                <Input 
+                    id="currentPassword" 
+                    name="currentPassword" 
+                    type="password" 
+                    required
+                    placeholder="••••••••" 
+                    className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600" 
+                />
+            </div>
             <div className="space-y-2">
                 <Label htmlFor="password" className="text-zinc-300">New Password</Label>
                 <Input 
@@ -57,6 +69,7 @@ export default function ChangePasswordDialog({ trigger }: { trigger?: React.Reac
                     placeholder="••••••••" 
                     className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600" 
                 />
+                <p className="text-[10px] text-zinc-600">Min 8 chars, 1 uppercase, 1 number</p>
             </div>
             <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-zinc-300">Confirm Password</Label>

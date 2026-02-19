@@ -1,1 +1,0 @@
-ALTER TABLE tracks ADD COLUMN IF NOT EXISTS takedown_reason TEXT;
