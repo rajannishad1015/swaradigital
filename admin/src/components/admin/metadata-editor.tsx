@@ -35,11 +35,15 @@ const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   genre: z.string().min(1, "Genre is required"),
   sub_genre: z.string().optional(),
-  language: z.string().min(1, "Language is required"),
-  is_explicit: z.boolean().default(false),
+  title_language: z.string().min(1, "Title Language is required"),
+  lyrics_language: z.string().optional(),
+  is_explicit: z.boolean(),
   isrc: z.string().regex(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/, { message: "Invalid ISRC format (e.g. USABC1234567)" }).optional().or(z.literal('')),
   version_type: z.string().optional(),
+  version_subtitle: z.string().optional(),
 })
+
+type FormValues = z.infer<typeof formSchema>
 
 interface MetadataEditorProps {
     track: any
@@ -49,20 +53,22 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
     const [isEditing, setIsEditing] = useState(false)
     const [loading, setLoading] = useState(false)
     
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: track.title || '',
             genre: track.genre || '',
             sub_genre: track.sub_genre || '',
-            language: track.language || '',
-            is_explicit: track.is_explicit || false,
+            title_language: track.title_language || track.language || '', 
+            lyrics_language: track.lyrics_language || '',
+            is_explicit: !!track.is_explicit,
             isrc: track.isrc || '',
             version_type: track.version_type || '',
+            version_subtitle: track.version_subtitle || '',
         },
     })
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: FormValues) {
         setLoading(true)
         try {
             await updateTrackMetadata(track.id, values)
@@ -130,29 +136,46 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
                         {/* ... rest of GridItems ... */}
                         <GridItem label="Version">
                             {isEditing ? (
-                                <FormField
-                                    control={form.control}
-                                    name="version_type"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <div className="space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="version_type"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger className="bg-zinc-900 border-white/10 h-8">
+                                                            <SelectValue placeholder="Select Version Type" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {VERSION_TYPES.map(type => (
+                                                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="version_subtitle"
+                                        render={({ field }) => (
+                                            <FormItem>
                                                 <FormControl>
-                                                    <SelectTrigger className="bg-zinc-900 border-white/10 h-8">
-                                                        <SelectValue placeholder="Select Version Type" />
-                                                    </SelectTrigger>
+                                                    <Input {...field} className="bg-zinc-900 border-white/10 h-8" placeholder="Version Subtitle (e.g. Radio Edit)" />
                                                 </FormControl>
-                                                <SelectContent>
-                                                    {VERSION_TYPES.map(type => (
-                                                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
                             ) : (
-                                 <span className="text-sm text-zinc-200 font-medium">{track.version_type || 'Original'}</span>
+                                 <div>
+                                    <span className="text-sm text-zinc-200 font-medium">{track.version_type || 'Original'}</span>
+                                    {track.version_subtitle && <span className="text-xs text-zinc-500 block">({track.version_subtitle})</span>}
+                                 </div>
                             )}
                         </GridItem>
 
@@ -203,17 +226,17 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
                             )}
                         </GridItem>
 
-                        <GridItem label="Language">
+                        <GridItem label="Title Language">
                             {isEditing ? (
                                 <FormField
                                     control={form.control}
-                                    name="language"
+                                    name="title_language"
                                     render={({ field }) => (
                                         <FormItem>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
                                                     <SelectTrigger className="bg-zinc-900 border-white/10 h-8">
-                                                        <SelectValue placeholder="Select Language" />
+                                                        <SelectValue placeholder="Select Title Language" />
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="max-h-[300px]">
@@ -227,7 +250,35 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
                                     )}
                                 />
                             ) : (
-                                 <span className="text-sm text-zinc-200 font-medium">{track.language}</span>
+                                 <span className="text-sm text-zinc-200 font-medium">{track.title_language || track.language || '-'}</span>
+                            )}
+                        </GridItem>
+
+                        <GridItem label="Lyrics Language">
+                            {isEditing ? (
+                                <FormField
+                                    control={form.control}
+                                    name="lyrics_language"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="bg-zinc-900 border-white/10 h-8">
+                                                        <SelectValue placeholder="Select Lyrics Language" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="max-h-[300px]">
+                                                    {LANGUAGES.map(l => (
+                                                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            ) : (
+                                 <span className="text-sm text-zinc-200 font-medium">{track.lyrics_language || '-'}</span>
                             )}
                         </GridItem>
 
@@ -317,6 +368,11 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
                         <GridItem label="Type">
                              <span className="text-sm text-zinc-200 font-medium">{track.albums?.type}</span>
                         </GridItem>
+                        <GridItem label="Album Description" fullWidth>
+                             <p className="text-sm text-zinc-400 leading-relaxed max-w-sm">
+                                {track.albums?.description || '-'}
+                             </p>
+                        </GridItem>
                     </Section>
 
                     <Section title="Lyrics" icon={FileText} fullWidth>
@@ -347,9 +403,9 @@ function Section({ title, icon: Icon, children, fullWidth, action }: { title: st
     )
 }
 
-function GridItem({ label, children }: { label: string, children: React.ReactNode }) {
+function GridItem({ label, children, fullWidth }: { label: string, children: React.ReactNode, fullWidth?: boolean }) {
     return (
-        <div>
+        <div className={fullWidth ? "col-span-full" : ""}>
             <span className="text-[10px] text-zinc-500 uppercase font-bold block mb-1">{label}</span>
             {children}
         </div>

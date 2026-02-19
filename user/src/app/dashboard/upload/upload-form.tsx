@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { UploadCloud, Loader2, Music, Image as ImageIcon, X, Calendar, Disc, Check, ChevronRight, ChevronLeft, Save, Plus, Trash2, AlertTriangle, ExternalLink, ChevronsUpDown } from 'lucide-react'
+import { UploadCloud, Loader2, Music, Image as ImageIcon, X, Calendar, Disc, Check, ChevronRight, ChevronLeft, Save, Plus, Trash2, AlertTriangle, ExternalLink, ChevronsUpDown, User } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -104,7 +104,13 @@ function parseProducerEntries(value: any): {name: string}[] {
     return [{name: String(value)}];
 }
 
-export default function UploadForm({ initialData, isFirstUpload }: { initialData?: Record<string, any>, isFirstUpload?: boolean }) {
+interface UploadFormProps {
+    initialData?: Record<string, any>
+    isFirstUpload?: boolean
+    userProfile?: any
+}
+
+export default function UploadForm({ initialData, isFirstUpload, userProfile }: UploadFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
@@ -125,10 +131,22 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
   const [releaseType, setReleaseType] = useState(initialData?.albums?.type || 'single')
   const [title, setTitle] = useState(initialData?.title || '')
   const [labelName, setLabelName] = useState(initialData?.albums?.label_name || '')
-  const [primaryArtists, setPrimaryArtists] = useState<{name: string, spotifyId: string, appleId: string}[]>(() => parseArtistEntries(initialData?.albums?.primary_artist, initialData?.albums?.primary_artist_spotify_id, initialData?.albums?.primary_artist_apple_id))
+  const [primaryArtists, setPrimaryArtists] = useState<{name: string, spotifyId: string, appleId: string}[]>(() => {
+      const fromDB = parseArtistEntries(initialData?.albums?.primary_artist, initialData?.albums?.primary_artist_spotify_id, initialData?.albums?.primary_artist_apple_id)
+      if (fromDB.length > 0 && fromDB[0].name !== 'undefined') return fromDB
+      
+      if (userProfile?.artist_name) {
+          return [{
+              name: userProfile.artist_name,
+              spotifyId: userProfile.spotify_artist_id || '',
+              appleId: userProfile.apple_artist_id || ''
+          }]
+      }
+      return []
+  })
   const [featuringArtists, setFeaturingArtists] = useState<{name: string, spotifyId: string, appleId: string}[]>(() => parseArtistEntries(initialData?.albums?.featuring_artist, initialData?.albums?.featuring_artist_spotify_id, initialData?.albums?.featuring_artist_apple_id))
-  const [genre, setGenre] = useState(initialData?.genre || '')
-  const [subGenre, setSubGenre] = useState(initialData?.albums?.sub_genre || '')
+  const [genre, setGenre] = useState(initialData?.genre || initialData?.albums?.genre || '')
+  const [subGenre, setSubGenre] = useState(initialData?.sub_genre || initialData?.albums?.sub_genre || '')
   const [courtesyLine, setCourtesyLine] = useState(initialData?.albums?.courtesy_line || '')
   const [description, setDescription] = useState(initialData?.description || '')
   const [language, setLanguage] = useState(initialData?.albums?.language || 'english')
@@ -142,7 +160,6 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
   const [cLineYearOpen, setCLineYearOpen] = useState(false)
   const [trackGenreOpen, setTrackGenreOpen] = useState(false)
   
-
 
   // Identifiers & Legal
   const currentYear = new Date().getFullYear().toString()
@@ -219,6 +236,13 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
   }
 
   const addTrack = () => {
+    // DEBUG: Diagnose user issue
+    console.log(`Debug AddTrack: Type=${releaseType}, Tracks=${tracks.length}`)
+    
+    if (releaseType === 'single' && tracks.length >= 1) {
+        toast.error("Singles can only have one track.")
+        return
+    }
     const newId = Math.random().toString(36).substr(2, 9)
     setTracks([...tracks, {
         id: newId,
@@ -534,19 +558,17 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
       img.onload = () => {
         const dims = `${img.width}x${img.height}px`
         if (img.width < 3000 || img.height < 3000) {
-          // Show warning dialog instead of rejecting
           setCoverWarningDims(dims)
           setCoverWarningMessage(`Your artwork is too small (${dims}). Minimum 3000×3000px is required by platforms like Apple Music and Spotify.`)
           setCoverWarningOpen(true)
           e.target.value = ''
           setCoverFile(null)
         } else if (img.width !== img.height) {
-          // Show warning dialog for non-square
           setCoverWarningDims(dims)
           setCoverWarningMessage(`Your artwork is not square (${dims}). Square artwork (e.g. 3000×3000px) is required by most music platforms.`)
           setCoverWarningOpen(true)
-          // Still set the file since it might be acceptable
-          setCoverFile(file)
+          e.target.value = ''
+          setCoverFile(null)
         } else {
           setCoverFile(file)
           toast.success("Artwork validated!")
@@ -571,7 +593,7 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
         // Wait briefly for save to process
         await new Promise(resolve => setTimeout(resolve, 1500))
       }
-      router.push('/dashboard/tools/audio-converter')
+      router.push('/dashboard/tools/audio-converter?tab=image')
     } catch {
       toast.error('Failed to save draft. Please save manually and try again.')
     }
@@ -585,7 +607,11 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
           if (!labelName.trim()) { toast.error("Label name is required."); return false; }
           if (primaryArtists.length === 0) { toast.error("At least one primary artist is required."); return false; }
           if (!releaseDate) { toast.error("Release date is required."); return false; }
-          
+          if (!genre) { toast.error("Genre is required."); return false; }
+          if (!subGenre) { toast.error("Sub-genre is required."); return false; }
+          if (!pLineYear || !pLineText) { toast.error("P-Line is required."); return false; }
+          if (!cLineYear || !cLineText) { toast.error("C-Line is required."); return false; }
+
           const selectedDate = new Date(releaseDate);
           const today = new Date();
           today.setHours(0,0,0,0);
@@ -599,27 +625,74 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
           }
       }
       if (step === 2) {
+          // Validate Single Constraint
+          if (releaseType === 'single' && tracks.length !== 1) {
+              toast.error("Single releases must have exactly one track.")
+              return false
+          }
+
           // Validate all tracks
           for (const track of tracks) {
+              // Audio
               if (!track.audioFile && !track.audioUrl) {
-                  toast.error(`Audio file missing for track: ${track.title || 'Untitled'}`);
-                  setActiveTrackId(track.id);
-                  return false;
+                  toast.error(`Audio file missing for track: ${track.title || 'Untitled'}`)
+                  setActiveTrackId(track.id)
+                  return false
               }
+              
+              // Basic Metadata
               if (!track.title.trim()) {
-                  toast.error("Track title is required.");
-                  setActiveTrackId(track.id);
-                  return false;
+                  toast.error("Track title is required.")
+                  setActiveTrackId(track.id)
+                  return false
               }
+              if (track.title.length > 100) {
+                  toast.error(`Track title too long for: ${track.title}`)
+                  setActiveTrackId(track.id)
+                  return false
+              }
+              
+              // Artists
+              if (track.primaryArtists.length === 0) {
+                  toast.error(`At least one primary artist required for track: ${track.title}`)
+                  setActiveTrackId(track.id)
+                  return false
+              }
+
+              // Genre & Sub-genre (Must match options if dropdown, but check existence)
               if (!track.genre) {
-                  toast.error(`Genre is required for track: ${track.title}`);
-                  setActiveTrackId(track.id);
-                  return false;
+                  toast.error(`Genre is required for track: ${track.title}`)
+                  setActiveTrackId(track.id)
+                  return false
               }
-              if (track.hasISRC === 'yes' && !/^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$/.test(track.isrc)) {
-                  toast.error(`Invalid ISRC format for track: ${track.title}`);
-                  setActiveTrackId(track.id);
-                  return false;
+              if (!track.subGenre) {
+                  toast.error(`Sub-genre is required for track: ${track.title}`)
+                  setActiveTrackId(track.id)
+                  return false
+              }
+
+              // ISRC
+              if (track.hasISRC === 'yes') {
+                  if (!track.isrc) {
+                    toast.error(`ISRC is required for track: ${track.title}`)
+                    setActiveTrackId(track.id)
+                    return false
+                  }
+                  if (!/^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$/.test(track.isrc)) {
+                    toast.error(`Invalid ISRC format for track: ${track.title}`)
+                    setActiveTrackId(track.id)
+                    return false
+                  }
+              }
+
+              // Producers & Composers & Lyricists logic
+              // (Typically not mandatory unless specific rules apply, kept loose for now unless specified)
+              
+              // Explicit Logic
+              if (!track.explicitType) {
+                  toast.error(`Explicit type setting required for track: ${track.title}`)
+                  setActiveTrackId(track.id)
+                  return false
               }
           }
       }
@@ -724,6 +797,8 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
             courtesyLine,
             description,
             language,
+            genre,
+            subGenre,
             coverArtUrl,
             selectedPlatforms,
             status: status,
@@ -843,7 +918,14 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                                     <button
                                         type="button"
                                         key={type.id}
-                                        onClick={(e) => { e.preventDefault(); setReleaseType(type.id); }}
+                                        onClick={(e) => { 
+                                            e.preventDefault(); 
+                                            if (type.id === 'single' && tracks.length > 1) {
+                                                toast.error("Cannot switch to Single. Remove extra tracks first.")
+                                                return
+                                            }
+                                            setReleaseType(type.id); 
+                                        }}
                                         className={`px-4 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all border ${
                                             releaseType === type.id 
                                             ? 'bg-indigo-500 text-white border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
@@ -1626,6 +1708,21 @@ export default function UploadForm({ initialData, isFirstUpload }: { initialData
                         <DialogDescription className="text-zinc-400">
                             Enter the artist's name and platform links.
                         </DialogDescription>
+                        {userProfile?.artist_name && (
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                    setArtistDialogName(userProfile.artist_name || '')
+                                    setArtistDialogSpotify(userProfile.spotify_artist_id || '')
+                                    setArtistDialogApple(userProfile.apple_artist_id || '')
+                                }}
+                                className="mt-2 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/10"
+                            >
+                                <User size={14} className="mr-2" /> Use My Profile
+                            </Button>
+                        )}
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">

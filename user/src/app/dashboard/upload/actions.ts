@@ -48,20 +48,58 @@ export async function submitTrack(formData: any) {
         // 1. Check if Editing (Single Track/Album Update)
         if (formData.id) {
             // Update Track
+            // Update Track
+            const trackData = formData.tracks[0]; // Assuming single track editing context for this ID
+            
             const { error: updateError } = await supabase
                 .from('tracks')
                 .update({
-                    title: formData.title,
-                    genre: formData.genre,
-                    language: formData.language,
-                    file_url: formData.audioUrl,
-                    duration: formData.duration,
-                    is_explicit: formData.explicit, 
+                    title: trackData.title,
+                    genre: trackData.genre,
+                    sub_genre: trackData.subGenre, 
+                    // Language
+                    title_language: trackData.titleLanguage,
+                    lyrics_language: trackData.lyricsLanguage,
+                    
+                    file_url: trackData.audioUrl,
+                    duration: trackData.duration,
+                    
+                    // Explicit & Version
+                    is_explicit: trackData.explicit, 
+                    explicit_type: trackData.explicitType,
+                    version_type: trackData.trackVersion,
+                    version_subtitle: trackData.versionSubtitle,
+                    is_instrumental: trackData.isInstrumental,
+                    
                     status: formData.status || 'pending',
-                    lyrics: formData.lyrics,
-                    copyright_line: formData.copyright_line || formData.copyrightLine, // handle camel vs snake
-                    publishing_line: formData.publishing_line || formData.publishingLine,
-                    contributors: formData.contributors,
+                    
+                    // Metadata & Credits
+                    lyrics: trackData.lyrics,
+                    lyricists: JSON.stringify(trackData.lyricists),
+                    composers: JSON.stringify(trackData.composers),
+                    producers: JSON.stringify(trackData.producers),
+                    publisher: trackData.publisher,
+                    production_year: trackData.productionYear,
+                    
+                    // Rights
+                    copyright_line: formData.cLine, // Inherited from album
+                    publishing_line: formData.pLine, // Inherited from album
+                    track_p_line: trackData.pLine,
+                    isrc: trackData.isrc,
+                    price_tier: trackData.priceTier,
+                    
+                    // Artists
+                    primary_artist: JSON.stringify(trackData.primaryArtists),
+                    featuring_artist: JSON.stringify(trackData.featuringArtists),
+                    primary_artist_spotify_id: trackData.primaryArtists?.[0]?.spotifyId || '',
+                    primary_artist_apple_id: trackData.primaryArtists?.[0]?.appleId || '',
+                    featuring_artist_spotify_id: trackData.featuringArtists?.[0]?.spotifyId || '',
+                    featuring_artist_apple_id: trackData.featuringArtists?.[0]?.appleId || '',
+
+                    // Misc
+                    caller_tune_timing: trackData.callerTuneTiming,
+                    distribute_video: trackData.distributeVideo === 'yes', // normalized boolean
+
                     rejection_reason: null // Clear rejection reason on resubmit
                 })
                 .eq('id', formData.id)

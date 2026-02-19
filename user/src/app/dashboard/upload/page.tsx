@@ -5,10 +5,20 @@ export default async function UploadPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
+  if (!user) return null
+
+  // Fetch metrics for first upload check
   const { count } = await supabase
     .from('tracks')
     .select('*', { count: 'exact', head: true })
-    .eq('artist_id', user?.id)
+    .eq('artist_id', user.id)
+
+  // Fetch User Profile for Autofill
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
 
   const isFirstUpload = (count || 0) === 0
 
@@ -19,7 +29,7 @@ export default async function UploadPage() {
           {isFirstUpload ? 'Your First Release' : 'Upload Music'}
         </h1>
       </div>
-      <UploadForm isFirstUpload={isFirstUpload} />
+      <UploadForm isFirstUpload={isFirstUpload} userProfile={profile} />
     </div>
   )
 }

@@ -23,11 +23,26 @@ function parseField(val: any): string {
     if (typeof val === 'string') {
         try {
             const parsed = JSON.parse(val)
-            if (Array.isArray(parsed)) return parsed.map((a: any) => a.name || a).join(', ')
+            if (Array.isArray(parsed)) {
+                return parsed.map((a: any) => {
+                    // Start with name check
+                    if (a.name) return a.name
+                    // Check for firstName/lastName (common for credits)
+                    if (a.firstName || a.lastName) return `${a.firstName || ''} ${a.lastName || ''}`.trim()
+                    // Fallback
+                    return String(a)
+                }).join(', ')
+            }
         } catch {}
         return val
     }
-    if (Array.isArray(val)) return val.map((a: any) => a.name || a).join(', ')
+    if (Array.isArray(val)) {
+        return val.map((a: any) => {
+             if (a.name) return a.name
+             if (a.firstName || a.lastName) return `${a.firstName || ''} ${a.lastName || ''}`.trim()
+             return String(a)
+        }).join(', ')
+    }
     return String(val)
 }
 
@@ -51,210 +66,165 @@ export default function ExportButton({ status = 'approved' }: { status?: string 
             return
         }
 
-        // Comprehensive CSV headers
+        // Pre-process data to find max columns needed
+        let maxPrimary = 1
+        let maxFeatured = 1
+        let maxComposers = 1
+        let maxLyricists = 1
+        let maxProducers = 1
+
+        const processedData = data.map((track: any) => {
+             const parseList = (json: any) => {
+                try {
+                    const parsed = typeof json === 'string' ? JSON.parse(json) : json
+                    if (Array.isArray(parsed)) {
+                        return parsed.map((a: any) => a.name || `${a.firstName || ''} ${a.lastName || ''}`.trim()).filter(Boolean)
+                    }
+                    return []
+                } catch { return [] }
+            }
+
+            const primary = parseList(track.primary_artist || track.albums?.primary_artist)
+            // Fallback for primary artist if empty: check profile
+            if (primary.length === 0 && (track.profiles?.artist_name || track.profiles?.full_name)) {
+                primary.push(track.profiles.artist_name || track.profiles.full_name)
+            }
+            
+            const featured = parseList(track.featuring_artist || track.albums?.featuring_artist)
+            const composers = parseList(track.composers)
+            const lyricists = parseList(track.lyricists)
+            const producers = parseList(track.producers)
+
+            maxPrimary = Math.max(maxPrimary, primary.length)
+            maxFeatured = Math.max(maxFeatured, featured.length)
+            maxComposers = Math.max(maxComposers, composers.length)
+            maxLyricists = Math.max(maxLyricists, lyricists.length)
+            maxProducers = Math.max(maxProducers, producers.length)
+
+            return {
+                ...track,
+                _primary: primary,
+                _featured: featured,
+                _composers: composers,
+                _lyricists: lyricists,
+                _producers: producers
+            }
+        })
+
+        // Generate Dynamic Headers
         const headers = [
-            // Basic Track Info
             "Track Title",
-            "Artist Name",
+            "Version",
+            "Version Subtitle",
+            // Dynamic Primary Artists
+            ...Array.from({ length: maxPrimary }, (_, i) => `Primary Artist ${i + 1}`),
+            // Dynamic Featured Artists
+            ...Array.from({ length: maxFeatured }, (_, i) => `Featured Artist ${i + 1}`),
             "Album Title",
             "Release Type",
-            
-            // Identifiers
-            "ISRC",
             "UPC",
-            
-            // Dates
+            "ISRC",
             "Release Date",
-            "Original Release Date",
-            "Production Year",
-            
-            // Track Details
             "Genre",
             "Sub Genre",
-            "Language",
             "Title Language",
             "Lyrics Language",
-            "Explicit",
-            "Explicit Type",
-            "Duration (s)",
-            "Track Number",
-            
-            // Version Info
-            "Version Type",
-            "Version Subtitle",
-            "Is Instrumental",
-
-            // Technical/Assets
-            "Format",
-            "Bitrate (kbps)",
-            "Sample Rate (Hz)",
-            "Channels",
-
-            // Artists
-            "Primary Artist",
-            "Featuring Artist",
-            "Track Primary Artist",
-            "Track Featuring Artist",
-            
-            // Artist Platform IDs
-            "Primary Artist Spotify ID",
-            "Primary Artist Apple ID",
-            "Featuring Artist Spotify ID",
-            "Featuring Artist Apple ID",
-            
-            "Track Primary Artist Spotify ID",
-            "Track Primary Artist Apple ID",
-            "Track Featuring Artist Spotify ID",
-            "Track Featuring Artist Apple ID",
-            
-            // Credits
-            "Lyricists",
-            "Composers",
-            "Producers",
-            "Publisher",
-            
-            // Legal
+            "Explicit?",
+            "Instrumental?",
+            "Duration",
+            "Label",
             "P-Line",
             "C-Line",
-            "Track P-Line",
-            "Courtesy Line",
-            
-            // Distribution
-            "Label Name",
-            "Price Tier",
-            "Target Platforms",
-            "Distribute Video",
-            "Caller Tune Timing",
-            
-            // Media
-            "Audio File URL",
+            "Publisher",
+            "Production Year",
+            // Dynamic Composers
+            ...Array.from({ length: maxComposers }, (_, i) => `Composer ${i + 1}`),
+            // Dynamic Lyricists
+            ...Array.from({ length: maxLyricists }, (_, i) => `Lyricist ${i + 1}`),
+             // Dynamic Producers
+            ...Array.from({ length: maxProducers }, (_, i) => `Producer ${i + 1}`),
+            "Spotify Artist ID",
+            "Apple Artist ID",
+            "Preview URL",
             "Cover Art URL",
-            
-            // Metadata
-            "Description",
-            "Lyrics",
-            
-            // Artist Info
             "Artist Email",
-            "Artist Full Name",
-            "Artist ID",
-            
-            // Status
-            "Status",
-            "Submission Date"
+            "Lyrics"
         ]
 
-        // Map data to comprehensive rows
-        const rows = data.map((track: any) => [
-            // Basic Track Info
-            track.title,
-            track.profiles?.artist_name || track.profiles?.full_name || "",
-            track.albums?.title || "Single",
-            track.albums?.type || "Single",
+        const rows = processedData.map((track: any) => {
+            const formatDuration = (sec: number) => {
+                if (!sec) return ""
+                const m = Math.floor(sec / 60)
+                const s = sec % 60
+                return `${m}:${s.toString().padStart(2, '0')}`
+            }
             
-            // Identifiers
-            track.isrc || "",
-            track.albums?.upc || "",
-            
-            // Dates
-            track.albums?.release_date || "",
-            track.albums?.original_release_date || "",
-            track.production_year || "",
-            
-            // Track Details
-            track.genre || "",
-            track.sub_genre || track.albums?.sub_genre || "",
-            track.language || "",
-            track.title_language || "",
-            track.lyrics_language || "",
-            track.is_explicit ? "Yes" : "No",
-            track.explicit_type || "",
-            track.duration || "",
-            track.track_number || "",
-            
-            // Version Info
-            track.version_type || "",
-            track.version_subtitle || "",
-            track.is_instrumental ? "Yes" : "No",
+            const getCol = (arr: string[], index: number) => arr[index] || ""
 
-            // Technical/Assets
-            track.encoding || "",
-            track.bitrate || "",
-            track.sample_rate || "",
-            track.channels || "",
-            
-            // Artists
-            parseField(track.albums?.primary_artist) || "",
-            parseField(track.albums?.featuring_artist) || "",
-            parseField(track.primary_artist) || "",
-            parseField(track.featuring_artist) || "",
-            
-            // IDs
-            track.albums?.primary_artist_spotify_id || "",
-            track.albums?.primary_artist_apple_id || "",
-            track.albums?.featuring_artist_spotify_id || "",
-            track.albums?.featuring_artist_apple_id || "",
-            
-            track.primary_artist_spotify_id || "",
-            track.primary_artist_apple_id || "",
-            track.featuring_artist_spotify_id || "",
-            track.featuring_artist_apple_id || "",
-            
-            // Credits - Properly formatted strings
-            Array.isArray(track.lyricists) ? track.lyricists.map((l: any) => `${l.firstName} ${l.lastName}`).join(", ") : (track.lyricists || ""),
-            Array.isArray(track.composers) ? track.composers.map((c: any) => `${c.firstName} ${c.lastName}`).join(", ") : (track.composers || ""),
-            parseField(track.producers) || "",
-            track.publisher || "",
-            
-            // Legal
-            track.albums?.p_line || "",
-            track.albums?.c_line || "",
-            track.track_p_line || "",
-            track.albums?.courtesy_line || "",
-            
-            // Distribution
-            track.albums?.label_name || "",
-            track.price_tier || "",
-            track.albums?.target_platforms?.join("; ") || "",
-            track.distribute_video ? "Yes" : "No",
-            track.caller_tune_timing || "",
-            
-            // Media
-            track.file_url || "",
-            track.albums?.cover_art_url || "",
-            
-            // Metadata
-            track.albums?.description || "",
-            track.lyrics || "",
-            
-            // Artist Info
-            track.profiles?.email || "",
-            track.profiles?.full_name || "",
-            track.artist_id || "",
-            
-            // Status
-            track.status || "pending",
-            track.created_at || ""
-        ])
+            return [
+                track.title || "",
+                track.version_type || "Original",
+                track.version_subtitle || "",
+                // Primary Artists
+                ...Array.from({ length: maxPrimary }, (_, i) => getCol(track._primary, i)),
+                // Featured Artists
+                ...Array.from({ length: maxFeatured }, (_, i) => getCol(track._featured, i)),
+                track.albums?.title || "Single",
+                track.albums?.type || "Single",
+                track.albums?.upc || "",
+                track.isrc || "",
+                track.albums?.release_date || "",
+                track.genre || "",
+                track.sub_genre || "",
+                track.title_language || "English",
+                track.lyrics_language || "",
+                track.is_explicit ? "Yes" : "No",
+                track.is_instrumental ? "Yes" : "No",
+                formatDuration(track.duration),
+                track.albums?.label_name || "",
+                track.albums?.p_line || "",
+                track.albums?.c_line || "",
+                track.publisher || "",
+                track.production_year || "",
+                // Composers
+                ...Array.from({ length: maxComposers }, (_, i) => getCol(track._composers, i)),
+                // Lyricists
+                ...Array.from({ length: maxLyricists }, (_, i) => getCol(track._lyricists, i)),
+                // Producers
+                ...Array.from({ length: maxProducers }, (_, i) => getCol(track._producers, i)),
+                track.primary_artist_spotify_id || "",
+                track.primary_artist_apple_id || "",
+                track.file_url || "", // Audio URL
+                track.albums?.cover_art_url || "",
+                track.profiles?.email || "",
+                track.lyrics || ""
+            ]
+        })
 
-        // construct CSV string
+        // CSV Construction
         const csvContent = [
             headers.join(','),
-            ...rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
+            ...rows.map(row => row.map(cell => {
+                const cellStr = String(cell || '')
+                // Escape quotes and wrap in quotes if contains comma or quote
+                if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                    return `"${cellStr.replace(/"/g, '""')}"`
+                }
+                return cellStr
+            }).join(','))
         ].join('\n')
 
-        // trigger download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', `musicflow_export_${status}_filtered.csv`)
+        link.setAttribute('download', `MusicFlow_Metadata_${new Date().toISOString().split('T')[0]}.csv`)
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
         
-        toast.success(`Exported ${data.length} tracks successfully!`)
-        setOpen(false) // Close dialog on success
+        toast.success(`Exported ${data.length} tracks.`)
+        setOpen(false)
 
     } catch (error: any) {
         toast.error("Export failed: " + error.message)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
     Music, 
@@ -76,14 +77,18 @@ const PRESETS = [
 
 type TabType = 'audio' | 'image'
 
-export default function AudioConverterPage() {
+import { Suspense } from 'react'
+
+function AudioConverterContent() {
     const [logs, setLogs] = useState<string[]>([])
     const addLog = useCallback((msg: string) => {
         setLogs(prev => [...prev.slice(-49), msg])
     }, [])
 
     const { convert, cancel, loading: ffmpegLoading, loaded: ffmpegLoaded, load: loadFFmpeg } = useFFmpeg(addLog)
-    const [activeTab, setActiveTab] = useState<TabType>('audio')
+    const searchParams = useSearchParams()
+    const defaultTab = searchParams.get('tab') as TabType || 'audio'
+    const [activeTab, setActiveTab] = useState<TabType>(defaultTab)
     
     // Use state for rendering, ref for immediate value access in loops
     const [isProcessing, setIsProcessing] = useState(false)
@@ -558,6 +563,14 @@ export default function AudioConverterPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function AudioConverterPage() {
+    return (
+        <Suspense fallback={<div className="text-white">Loading...</div>}>
+            <AudioConverterContent />
+        </Suspense>
     )
 }
 

@@ -84,10 +84,14 @@ export async function updateTrackMetadata(trackId: string, data: any) {
         .update({
             title: data.title,
             genre: data.genre,
+            sub_genre: data.sub_genre,
+            title_language: data.title_language,
+            lyrics_language: data.lyrics_language,
+            version_type: data.version_type,
+            version_subtitle: data.version_subtitle,
             isrc: data.isrc,
             is_explicit: data.is_explicit,
-            status: data.status // Admin might change status directly here
-            // Add other fields as needed
+            status: data.status
         })
         .eq('id', trackId)
         

@@ -40,7 +40,8 @@ export async function getExportData(
             primary_artist_spotify_id,
             primary_artist_apple_id,
             featuring_artist_spotify_id,
-            featuring_artist_apple_id
+            featuring_artist_apple_id,
+            display_artist
         ),
         profiles (
             artist_name,
