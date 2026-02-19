@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import EditProfileDialog from '../settings/edit-profile-dialog'
+import ProfileEditorDialog from '../settings/profile-editor-dialog'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Building2, Pencil, Wallet, ArrowUpRight, ShieldCheck } from 'lucide-react'
@@ -173,7 +173,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                 <p className="text-zinc-500 mt-2 font-medium">Manage earnings, payouts, and financial health.</p>
             </div>
             <div className="flex items-center gap-3">
-                 <EditProfileDialog 
+                 <ProfileEditorDialog 
                     profile={profile} 
                     trigger={
                         <Button variant="outline" className="border-white/10 hover:bg-white/5 text-zinc-400 hover:text-white transition-all h-10 px-6 font-bold uppercase tracking-wider text-xs">
