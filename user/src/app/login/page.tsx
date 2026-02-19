@@ -133,7 +133,7 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between relative z-50">
+                <div className="flex items-center justify-between relative z-50 isolate">
                   <label className="flex items-center cursor-pointer group relative z-50">
                     <input 
                       type="checkbox" 
@@ -141,7 +141,7 @@ export default function LoginPage() {
                     />
                     <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900">Keep me logged in</span>
                   </label>
-                  <div className="relative z-50">
+                  <div className="relative z-[100] pointer-events-auto">
                     <Link 
                       href="/forgot-password" 
                       className="text-sm font-bold border-b-2 border-transparent hover:border-black transition-all block py-2"
