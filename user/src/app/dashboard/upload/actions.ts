@@ -300,7 +300,11 @@ export async function submitTrack(formData: any) {
         }
 
         revalidatePath('/dashboard')
-        return { success: true }
+        // Return the first track's ID so clients can switch to edit mode on subsequent saves
+        const firstTrackId = tracksToInsert.length > 0
+            ? (await supabase.from('tracks').select('id').eq('album_id', album.id).order('created_at').limit(1).single()).data?.id
+            : undefined
+        return { success: true, trackId: firstTrackId }
         
     } catch (error: unknown) {
         // Check if it's a Supabase error (often has details/hint)

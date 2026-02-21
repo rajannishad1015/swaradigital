@@ -115,6 +115,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
   const [loading, setLoading] = useState(false)
   const [draftLoaded, setDraftLoaded] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  // Tracks the server-side ID of a previously saved draft (prevents duplicate album creation on re-save)
+  const [savedDraftId, setSavedDraftId] = useState<string | null>(null)
   
   // File States
   const [audioFile, setAudioFile] = useState<File | null>(null)
@@ -355,6 +357,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
     if(confirm("Are you sure you want to discard this draft? All unsaved progress will be lost.")) {
         localStorage.removeItem('upload_draft')
         setDraftLoaded(false)
+        setSavedDraftId(null)
         window.location.reload()
     }
   }
@@ -387,6 +390,9 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
       if (draft.cLineYear) setCLineYear(draft.cLineYear)
       if (draft.cLineText) setCLineText(draft.cLineText)
       if (draft.selectedPlatforms) setSelectedPlatforms(draft.selectedPlatforms)
+
+      // Restore the saved server-side draft ID (prevents duplicate album creation on re-save)
+      if (draft.savedDraftId) setSavedDraftId(draft.savedDraftId)
 
       // Restore tracks (metadata only — audio files cannot be serialized)
       if (draft.tracks && draft.tracks.length > 0) {
@@ -784,6 +790,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
           releaseDate, originalReleaseDate, upc,
           pLineYear, pLineText, cLineYear, cLineText,
           selectedPlatforms,
+          savedDraftId, // Persist the server-side ID to prevent duplicate albums
           // Save track metadata (audioFile is a File object and cannot be serialized)
           tracks: tracks.map(t => ({
             ...t,
@@ -867,7 +874,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
         }))
 
         const formData = {
-            id: initialData?.id,
+            id: initialData?.id || savedDraftId, // Use server draft ID on repeat saves to avoid creating a new album
             title,
             releaseType,
             labelName,
@@ -902,7 +909,15 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
 
         if (result.success) {
             if (status === 'draft') {
-                // Keep the draft in localStorage but show success toast
+                // If the server created a new record, save its ID so subsequent saves go to edit mode
+                if (result.trackId && !savedDraftId) {
+                    setSavedDraftId(result.trackId)
+                    // Update localStorage with the new server ID
+                    try {
+                        const existing = JSON.parse(localStorage.getItem('upload_draft') || '{}')
+                        localStorage.setItem('upload_draft', JSON.stringify({ ...existing, savedDraftId: result.trackId }))
+                    } catch { /* non-fatal */ }
+                }
                 toast.success("Draft saved successfully! Your track details have been preserved.", { duration: 4000 })
                 setDraftLoaded(true)
                 setLoading(false)
