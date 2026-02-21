@@ -106,49 +106,104 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
   }
 
   const handleDownload = (track: any) => {
+      // Find all tracks that belong to the same album/EP from the loaded list
+      const tracksToExport = track.album_id 
+          ? initialTracks.filter((t: any) => t.album_id === track.album_id)
+          : [track];
+
+      // Sort by track number if available, otherwise by created_at
+      tracksToExport.sort((a, b) => (a.track_number || 0) - (b.track_number || 0));
+
+      // Helper to format JSON lists to string
+      const formatList = (val: any) => {
+          if (!val) return "";
+          try {
+              const parsed = typeof val === 'string' ? JSON.parse(val) : val;
+              if (Array.isArray(parsed)) {
+                  return parsed.map(item => {
+                      if (typeof item === 'object') {
+                          if (item.name) return item.name;
+                          if (item.firstName || item.lastName) return `${item.firstName || ''} ${item.lastName || ''}`.trim();
+                          return JSON.stringify(item);
+                      }
+                      return item;
+                  }).join(', ');
+              }
+              return String(val);
+          } catch (e) {
+              return String(val);
+          }
+      }
+
       // Expanded Metadata Headers
       const headers = [
-          "Track Title", "Track Version", "Artist Name", "Featured Artist", 
-          "Album Title", "UPC", "ISRC", "Release Date", "Original Release Date",
-          "Main Genre", "Sub Genre", "Language", "Explicit", "Duration (s)", 
-          "Track Number", "Album Type", "Label", "P Line", "C Line",
-          "Spotify ID", "Apple ID", "Cover Art URL", "Audio File URL", "Artist Email"
+          "Track Title", "Track Version", "Version Subtitle", "Artist Name", "Featured Artist", 
+          "Album Title", "Album Type", "UPC", "ISRC", "Release Date", "Original Release Date",
+          "Main Genre", "Sub Genre", "Language", "Title Language", "Lyrics Language",
+          "Explicit?", "Explicit Type", "Instrumental?", "Duration (s)", 
+          "Track Number", "Label", "P Line (Album)", "C Line (Album)", "Track P Line",
+          "Courtesy Line", "Album Description", "Producers", "Composers", "Lyricists", 
+          "Publisher", "Production Year", "Price Tier", "Caller Tune Timing", "Distribute Video",
+          "Selected Platforms", "Bitrate", "Sample Rate", "Channels", "Encoding",
+          "Spotify ID", "Apple ID", "Cover Art URL", "Audio File URL", "Artist Email", "Lyrics"
       ]
 
-      // Map Data
-      const row = [
-          track.title,
-          track.version || "",
-          track.profiles?.artist_name || track.profiles?.full_name || "",
-          track.albums?.featuring_artist || "",
-          track.albums?.title || "Single",
-          track.albums?.upc || "",
-          track.isrc || "",
-          track.albums?.release_date || "",
-          track.albums?.original_release_date || "",
-          track.genre,
-          track.albums?.sub_genre || "",
-          track.language,
-          track.is_explicit ? "Yes" : "No",
-          track.duration,
-          track.track_number,
-          track.albums?.type || "Single",
-          track.albums?.label_name || "",
-          track.albums?.p_line || "",
-          track.albums?.c_line || "",
-          track.albums?.primary_artist_spotify_id || "",
-          track.albums?.primary_artist_apple_id || "",
-          track.albums?.cover_art_url || "",
-          track.file_url,
-          track.profiles?.email
-      ]
+      // Map Data Rows
+      const rows = tracksToExport.map(t => [
+          t.title,
+          t.version_type || "",
+          t.version_subtitle || "",
+          formatList(t.primary_artist) || t.profiles?.artist_name || t.profiles?.full_name || "",
+          formatList(t.featuring_artist) || t.albums?.featuring_artist || "",
+          t.albums?.title || "Single",
+          t.albums?.type || "Single",
+          t.albums?.upc || "",
+          t.isrc || "",
+          t.albums?.release_date || "",
+          t.albums?.original_release_date || "",
+          t.genre || t.albums?.genre || "",
+          t.sub_genre || t.albums?.sub_genre || "",
+          t.language || "",
+          t.title_language || "",
+          t.lyrics_language || "",
+          t.is_explicit ? "Yes" : "No",
+          t.explicit_type || "",
+          t.is_instrumental ? "Yes" : "No",
+          t.duration,
+          t.track_number,
+          t.albums?.label_name || "",
+          t.albums?.p_line || "",
+          t.albums?.c_line || "",
+          t.track_p_line || "",
+          t.albums?.courtesy_line || "",
+          t.albums?.description || "",
+          formatList(t.producers),
+          formatList(t.composers),
+          formatList(t.lyricists),
+          t.publisher || "",
+          t.production_year || "",
+          t.price_tier || "",
+          t.caller_tune_timing || "",
+          t.distribute_video ? "Yes" : "No",
+          formatList(t.albums?.target_platforms),
+          t.bitrate || "",
+          t.sample_rate || "",
+          t.channels || "",
+          t.encoding || "",
+          t.primary_artist_spotify_id || t.albums?.primary_artist_spotify_id || "",
+          t.primary_artist_apple_id || t.albums?.primary_artist_apple_id || "",
+          t.albums?.cover_art_url || "",
+          t.file_url,
+          t.profiles?.email,
+          t.lyrics || ""
+      ])
 
       const csvContent = [
           headers.join(','),
-          row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(',')
+          ...rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
       ].join('\n')
 
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
@@ -180,6 +235,7 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
           <TableHeader>
             <TableRow className="border-white/5 bg-white/[0.02] hover:bg-white/[0.02]">
               <TableHead className="w-[300px] text-[10px] uppercase font-black tracking-widest text-zinc-500">Track Info</TableHead>
+              <TableHead className="hidden lg:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Album/EP</TableHead>
               <TableHead className="hidden lg:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Identifiers</TableHead>
               <TableHead className="hidden xl:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Genre</TableHead>
               <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Preview</TableHead>
@@ -217,6 +273,14 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
                         <a href={`/dashboard/content/${track.id}`} className="font-bold text-white text-sm truncate group-hover:text-indigo-400 transition-colors hover:underline block max-w-[180px]">{track.title}</a>
                         <span className="text-xs text-zinc-500 font-medium truncate block max-w-[180px]">{track.profiles?.artist_name || 'Unknown'}</span>
                     </div>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-white truncate max-w-[150px]">{track.albums?.title || 'Single'}</span>
+                    <Badge variant="outline" className="w-fit text-[9px] uppercase tracking-wider h-4 px-1 bg-white/5 border-white/10 text-zinc-500 font-bold mt-1">
+                      {track.albums?.type || 'single'}
+                    </Badge>
                   </div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
@@ -310,16 +374,12 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
                                 </div>
                             </button>
                         </div>
-                        <div className="min-w-0">
-                            <h3 className="font-bold text-white text-base leading-tight truncate pr-2">{track.title}</h3>
-                            <p className="text-xs text-zinc-400 font-medium truncate mt-0.5">{track.profiles?.artist_name || 'Unknown Artist'}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="outline" className="text-[9px] px-1.5 h-4 bg-white/5 border-white/10 text-zinc-500">
-                                    {track.genre}
-                                </Badge>
-                                {track.is_explicit && (
-                                    <Badge variant="destructive" className="text-[9px] px-1.5 h-4">E</Badge>
-                                )}
+                        <div className="pr-2">
+                            <h3 className="font-bold text-white text-sm truncate leading-tight">{track.title}</h3>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <p className="text-[10px] text-zinc-500 font-mono">ID: {track.id.substring(0, 8).toUpperCase()}</p>
+                                <span className="text-zinc-700 font-bold">•</span>
+                                <p className="text-[10px] text-zinc-500 truncate max-w-[100px] font-medium italic">{track.albums?.title || 'Single'}</p>
                             </div>
                         </div>
                     </div>

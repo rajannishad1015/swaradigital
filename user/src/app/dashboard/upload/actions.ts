@@ -58,90 +58,121 @@ export async function submitTrack(formData: any) {
 
         // 1. Check if Editing (Single Track/Album Update)
         if (formData.id) {
-            // Update Track
-            // Update Track
-            const trackData = formData.tracks[0]; // Assuming single track editing context for this ID
-            
-            const { error: updateError } = await supabase
+            // First, get the current track and it's album_id
+            const { data: currentTrack } = await supabase
                 .from('tracks')
-                .update({
-                    title: trackData.title,
-                    genre: trackData.genre,
-                    sub_genre: trackData.subGenre, 
-                    // Language
-                    title_language: trackData.titleLanguage,
-                    lyrics_language: trackData.lyricsLanguage,
-                    
-                    file_url: trackData.audioUrl,
-                    duration: trackData.duration,
-                    
-                    // Explicit & Version
-                    is_explicit: trackData.explicit, 
-                    explicit_type: trackData.explicitType,
-                    version_type: trackData.trackVersion,
-                    version_subtitle: trackData.versionSubtitle,
-                    is_instrumental: trackData.isInstrumental,
-                    
-                    status: formData.status || 'pending',
-                    
-                    // Metadata & Credits
-                    lyrics: trackData.lyrics,
-                    lyricists: JSON.stringify(trackData.lyricists),
-                    composers: JSON.stringify(trackData.composers),
-                    producers: JSON.stringify(trackData.producers),
-                    publisher: trackData.publisher,
-                    production_year: trackData.productionYear,
-                    
-                    // Rights
-                    copyright_line: formData.cLine, // Inherited from album
-                    publishing_line: formData.pLine, // Inherited from album
-                    track_p_line: trackData.pLine,
-                    isrc: trackData.isrc,
-                    price_tier: trackData.priceTier,
-                    
-                    // Artists
-                    primary_artist: JSON.stringify(trackData.primaryArtists),
-                    featuring_artist: JSON.stringify(trackData.featuringArtists),
-                    primary_artist_spotify_id: trackData.primaryArtists?.[0]?.spotifyId || '',
-                    primary_artist_apple_id: trackData.primaryArtists?.[0]?.appleId || '',
-                    featuring_artist_spotify_id: trackData.featuringArtists?.[0]?.spotifyId || '',
-                    featuring_artist_apple_id: trackData.featuringArtists?.[0]?.appleId || '',
-
-                    // Misc
-                    caller_tune_timing: trackData.callerTuneTiming,
-                    distribute_video: trackData.distributeVideo === 'yes', // normalized boolean
-
-                    rejection_reason: null // Clear rejection reason on resubmit
-                })
+                .select('album_id')
                 .eq('id', formData.id)
-                .eq('artist_id', user.id) // Security check
+                .single()
 
-            if (updateError) throw new Error(updateError.message)
+            if (!currentTrack) throw new Error("Track not found")
+            const albumId = currentTrack.album_id
 
-            // Update Album Cover if needed (Assuming 1:1 track-album for singles)
-            // We need to fetch the track to get album_id first
-            const { data: track } = await supabase.from('tracks').select('album_id').eq('id', formData.id).single()
-            
-            if (track?.album_id) {
-                 await supabase.from('albums').update({
+            // Update Album Metadata
+            const { error: albumUpdateError } = await supabase
+                .from('albums')
+                .update({
+                    title: formData.title + (formData.releaseType === 'single' ? ' - Single' : ''),
+                    type: formData.releaseType || 'single',
                     cover_art_url: formData.coverArtUrl,
-                    title: formData.title + (formData.releaseType === 'single' ? ' - Single' : ''), 
                     release_date: formData.releaseDate || null,
+                    total_tracks: formData.tracks ? formData.tracks.length : 1,
                     label_name: formData.labelName,
-                    primary_artist: formData.primaryArtist,
+                    primary_artist: JSON.stringify(formData.primaryArtists),
+                    featuring_artist: JSON.stringify(formData.featuringArtists),
                     genre: formData.genre,
                     sub_genre: formData.subGenre,
                     original_release_date: formData.originalReleaseDate || null,
                     p_line: formData.pLine,
                     c_line: formData.cLine,
                     courtesy_line: formData.courtesyLine,
-                    description: formData.description
-                 }).eq('id', track.album_id)
+                    description: formData.description,
+                    target_platforms: formData.selectedPlatforms,
+                })
+                .eq('id', albumId)
+                .eq('artist_id', user.id)
+
+            if (albumUpdateError) throw new Error(`Album update failed: ${albumUpdateError.message}`)
+
+            // Now Process Tracks
+            // We'll update existing tracks, insert new ones, and remove deleted ones
+            const existingTrackIds = (await supabase.from('tracks').select('id').eq('album_id', albumId)).data?.map(t => t.id) || []
+            const currentFormTrackIds = formData.tracks.map((t: any) => t.id).filter((id: any) => id && id.length > 10) // UUIDs are > 10 chars
+
+            // 1. Delete tracks that are no longer in the form
+            const tracksToDelete = existingTrackIds.filter(id => !currentFormTrackIds.includes(id))
+            if (tracksToDelete.length > 0) {
+                await supabase.from('tracks').delete().in('id', tracksToDelete).eq('artist_id', user.id)
+            }
+
+            // 2. Update or Insert Tracks
+            for (const track of formData.tracks) {
+                const isNewTrack = !track.id || track.id.length < 10 // temporary IDs are short
+
+                // Tech Metadata / Analysis
+                let standardUrl = track.audioUrl, previewUrl = null, fingerprintId = null, isMatched = false;
+                if (track.audioUrl && (track.audioFile || !track.preview_url)) {
+                     // If there's a new file OR no preview yet, run processing
+                     const fpResult = await checkAudioFingerprint(track.audioUrl, track.title || '');
+                     isMatched = fpResult.isMatched;
+                     fingerprintId = fpResult.fingerprintId;
+                     const tcResult = await simulateTranscode(track.audioUrl);
+                     standardUrl = tcResult.standardUrl;
+                     previewUrl = tcResult.previewUrl;
+                }
+
+                const trackPayload = {
+                    artist_id: user.id,
+                    album_id: albumId,
+                    title: track.title,
+                    file_url: track.audioUrl,
+                    duration: track.duration,
+                    is_explicit: track.explicit,
+                    lyrics: track.lyrics,
+                    copyright_line: formData.cLine,
+                    publishing_line: formData.pLine,
+                    version_type: track.trackVersion || 'original',
+                    is_instrumental: track.isInstrumental || 'no',
+                    version_subtitle: track.versionSubtitle,
+                    primary_artist: JSON.stringify(track.primaryArtists || formData.primaryArtists),
+                    featuring_artist: JSON.stringify(track.featuringArtists),
+                    genre: track.genre || formData.genre,
+                    sub_genre: track.subGenre || formData.subGenre,
+                    lyricists: track.lyricists,
+                    composers: track.composers,
+                    producers: track.producers,
+                    production_year: track.productionYear || null,
+                    publisher: track.publisher,
+                    isrc: track.isrc,
+                    price_tier: track.priceTier,
+                    explicit_type: track.explicitType,
+                    track_p_line: track.pLine,
+                    caller_tune_timing: track.callerTuneTiming,
+                    distribute_video: track.distributeVideo === 'yes',
+                    title_language: track.titleLanguage,
+                    lyrics_language: track.lyricsLanguage,
+                    
+                    // Tech
+                    bitrate: track.audioAnalysis?.bitrate,
+                    sample_rate: track.audioAnalysis?.sampleRate,
+                    channels: track.audioAnalysis?.channels,
+                    encoding: track.audioAnalysis?.format,
+                    
+                    status: isMatched ? 'flagged' : (formData.status || 'pending'),
+                    rejection_reason: null // Clear rejection reason on resubmit
+                }
+
+                if (isNewTrack) {
+                    await supabase.from('tracks').insert(trackPayload)
+                } else {
+                    await supabase.from('tracks').update(trackPayload).eq('id', track.id).eq('artist_id', user.id)
+                }
             }
 
             revalidatePath('/dashboard')
             return { success: true }
         }
+
 
         // 2. Create Album (New Upload)
         const { data: album, error: albumError } = await supabase

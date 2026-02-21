@@ -114,38 +114,53 @@ export default function ExportButton({ status = 'approved' }: { status?: string 
         // Generate Dynamic Headers
         const headers = [
             "Track Title",
-            "Version",
+            "Track Version",
             "Version Subtitle",
             // Dynamic Primary Artists
             ...Array.from({ length: maxPrimary }, (_, i) => `Primary Artist ${i + 1}`),
             // Dynamic Featured Artists
             ...Array.from({ length: maxFeatured }, (_, i) => `Featured Artist ${i + 1}`),
             "Album Title",
-            "Release Type",
+            "Album Type",
             "UPC",
             "ISRC",
             "Release Date",
-            "Genre",
+            "Original Release Date",
+            "Main Genre",
             "Sub Genre",
+            "Language",
             "Title Language",
             "Lyrics Language",
             "Explicit?",
+            "Explicit Type",
             "Instrumental?",
-            "Duration",
+            "Duration (s)",
+            "Track Number",
             "Label",
-            "P-Line",
-            "C-Line",
+            "P Line (Album)",
+            "C Line (Album)",
+            "Track P Line",
+            "Courtesy Line",
+            "Album Description",
             "Publisher",
             "Production Year",
+            "Price Tier",
+            "Caller Tune Timing",
+            "Distribute Video",
+            "Selected Platforms",
             // Dynamic Composers
             ...Array.from({ length: maxComposers }, (_, i) => `Composer ${i + 1}`),
             // Dynamic Lyricists
             ...Array.from({ length: maxLyricists }, (_, i) => `Lyricist ${i + 1}`),
              // Dynamic Producers
             ...Array.from({ length: maxProducers }, (_, i) => `Producer ${i + 1}`),
-            "Spotify Artist ID",
-            "Apple Artist ID",
-            "Preview URL",
+            "Bitrate",
+            "Sample Rate",
+            "Channels",
+            "Encoding",
+            "Spotify ID",
+            "Apple ID",
+            "Audio File URL",
             "Cover Art URL",
             "Artist Email",
             "Lyrics"
@@ -160,6 +175,14 @@ export default function ExportButton({ status = 'approved' }: { status?: string 
             }
             
             const getCol = (arr: string[], index: number) => arr[index] || ""
+            const formatList = (val: any) => {
+                if (!val) return "";
+                try {
+                    const parsed = typeof val === 'string' ? JSON.parse(val) : val;
+                    if (Array.isArray(parsed)) return parsed.join(', ');
+                    return String(val);
+                } catch { return String(val); }
+            }
 
             return [
                 track.title || "",
@@ -174,24 +197,39 @@ export default function ExportButton({ status = 'approved' }: { status?: string 
                 track.albums?.upc || "",
                 track.isrc || "",
                 track.albums?.release_date || "",
+                track.albums?.original_release_date || "",
                 track.genre || "",
                 track.sub_genre || "",
+                track.albums?.language || "",
                 track.title_language || "English",
                 track.lyrics_language || "",
                 track.is_explicit ? "Yes" : "No",
+                track.explicit_type || "",
                 track.is_instrumental ? "Yes" : "No",
-                formatDuration(track.duration),
+                track.duration || "",
+                track.track_number || "",
                 track.albums?.label_name || "",
                 track.albums?.p_line || "",
                 track.albums?.c_line || "",
+                track.track_p_line || "",
+                track.albums?.courtesy_line || "",
+                track.albums?.description || "",
                 track.publisher || "",
                 track.production_year || "",
+                track.price_tier || "",
+                track.caller_tune_timing || "",
+                track.distribute_video ? "Yes" : "No",
+                formatList(track.albums?.target_platforms),
                 // Composers
                 ...Array.from({ length: maxComposers }, (_, i) => getCol(track._composers, i)),
                 // Lyricists
                 ...Array.from({ length: maxLyricists }, (_, i) => getCol(track._lyricists, i)),
                 // Producers
                 ...Array.from({ length: maxProducers }, (_, i) => getCol(track._producers, i)),
+                track.bitrate || "",
+                track.sample_rate || "",
+                track.channels || "",
+                track.encoding || "",
                 track.primary_artist_spotify_id || "",
                 track.primary_artist_apple_id || "",
                 track.file_url || "", // Audio URL

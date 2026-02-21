@@ -22,8 +22,8 @@ export default async function EditTrackPage({ params }: PageProps) {
         .eq('artist_id', user.id)
         .single()
 
-    if (error) {
-        console.error("Error fetching track:", error);
+    if (error || !track) {
+        notFound()
     }
 
     // Normalize albums if it's returned as an array
@@ -31,12 +31,19 @@ export default async function EditTrackPage({ params }: PageProps) {
         (track as any).albums = (track as any).albums[0];
     }
 
-
-
-
-    if (error || !track) {
-        notFound()
+    // If this track is part of an album, fetch all tracks in that album
+    if (track.album_id) {
+        const { data: albumTracks } = await supabase
+            .from('tracks')
+            .select('*')
+            .eq('album_id', track.album_id)
+            .order('created_at', { ascending: true })
+        
+        if (albumTracks) {
+            track.tracks = albumTracks
+        }
     }
+
 
     // Only allow editing if draft or rejected
     if (track.status !== 'draft' && track.status !== 'rejected') {

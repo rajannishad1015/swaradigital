@@ -358,6 +358,53 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
         window.location.reload()
     }
   }
+
+  // Load draft from localStorage on mount (only for new uploads, not edits)
+  useEffect(() => {
+    if (initialData) return // Skip for edit mode - data comes from server
+    try {
+      const saved = localStorage.getItem('upload_draft')
+      if (!saved) return
+      const draft = JSON.parse(saved)
+      if (!draft || !draft.title) return
+
+      // Restore release-level fields
+      if (draft.releaseType) setReleaseType(draft.releaseType)
+      if (draft.title) setTitle(draft.title)
+      if (draft.labelName) setLabelName(draft.labelName)
+      if (draft.primaryArtists) setPrimaryArtists(draft.primaryArtists)
+      if (draft.featuringArtists) setFeaturingArtists(draft.featuringArtists)
+      if (draft.genre) setGenre(draft.genre)
+      if (draft.subGenre) setSubGenre(draft.subGenre)
+      if (draft.courtesyLine) setCourtesyLine(draft.courtesyLine)
+      if (draft.description) setDescription(draft.description)
+      if (draft.language) setLanguage(draft.language)
+      if (draft.releaseDate) setReleaseDate(draft.releaseDate)
+      if (draft.originalReleaseDate) setOriginalReleaseDate(draft.originalReleaseDate)
+      if (draft.upc) setUpc(draft.upc)
+      if (draft.pLineYear) setPLineYear(draft.pLineYear)
+      if (draft.pLineText) setPLineText(draft.pLineText)
+      if (draft.cLineYear) setCLineYear(draft.cLineYear)
+      if (draft.cLineText) setCLineText(draft.cLineText)
+      if (draft.selectedPlatforms) setSelectedPlatforms(draft.selectedPlatforms)
+
+      // Restore tracks (metadata only — audio files cannot be serialized)
+      if (draft.tracks && draft.tracks.length > 0) {
+        setTracks(draft.tracks.map((t: TrackItem) => ({
+          ...t,
+          audioFile: null, // Files cannot be stored in localStorage
+        })))
+        setActiveTrackId(draft.tracks[0].id)
+      }
+
+      setDraftLoaded(true)
+      toast.info('Draft restored! Please re-upload any audio files.', { duration: 5000 })
+    } catch {
+      // Ignore corrupted draft data
+      localStorage.removeItem('upload_draft')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   
   // Helpers
   const addLyricist = () => {
@@ -454,6 +501,9 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
   const handleAudioChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+        // Capture the target track ID to ensure we update the correct track after async processing
+        const targetTrackId = activeTrackId;
+        
         // Validate Format (Client-side extension check first)
         const allowedExtensions = ['wav', 'flac', 'mp3']
         const ext = file.name.split('.').pop()?.toLowerCase()
@@ -514,8 +564,9 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                console.warn("Deep audio analysis failed, proceeding with basic metadata", analysisErr)
            }
 
-           // If all good
-           updateCurrentTrack({
+           // Update the specific track we started with
+           setTracks(prev => prev.map(t => t.id === targetTrackId ? {
+               ...t,
                audioFile: file,
                duration: Math.round(duration),
                audioAnalysis: {
@@ -526,13 +577,16 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                    duration,
                    ...deepAnalysis
                }
-           })
+           } : t))
            
            if (!Object.keys(deepAnalysis).length) {
                toast.success("Audio basics valid!")
            } else {
                toast.success("Audio analysis complete!")
            }
+           
+           // Reset input so the same file can be uploaded again if needed (e.g. for another track)
+           e.target.value = ''
 
        } catch (error) {
            console.error("Audio analysis failed", error)
@@ -719,7 +773,30 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
 
   const handleSubmit = async (e: React.FormEvent | React.MouseEvent, status: 'pending' | 'draft' = 'pending') => {
     e.preventDefault()
-    
+
+    // Save metadata to localStorage immediately when saving draft (before any async ops)
+    // This preserves all typed text even if server-side save fails or user navigates away
+    if (status === 'draft' && !initialData) {
+      try {
+        const draftData = {
+          releaseType, title, labelName, primaryArtists, featuringArtists,
+          genre, subGenre, courtesyLine, description, language,
+          releaseDate, originalReleaseDate, upc,
+          pLineYear, pLineText, cLineYear, cLineText,
+          selectedPlatforms,
+          // Save track metadata (audioFile is a File object and cannot be serialized)
+          tracks: tracks.map(t => ({
+            ...t,
+            audioFile: null, // Exclude File object
+          }))
+        }
+        localStorage.setItem('upload_draft', JSON.stringify(draftData))
+        setDraftLoaded(true)
+      } catch {
+        // localStorage may be full or unavailable - non-fatal
+      }
+    }
+
     setLoading(true)
     const supabase = createClient()
     const timestamp = Date.now()
@@ -824,6 +901,13 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
         }
 
         if (result.success) {
+            if (status === 'draft') {
+                // Keep the draft in localStorage but show success toast
+                toast.success("Draft saved successfully! Your track details have been preserved.", { duration: 4000 })
+                setDraftLoaded(true)
+                setLoading(false)
+                return
+            }
             localStorage.removeItem('upload_draft')
             toast.success(initialData ? "Release updated successfully!" : "Release submitted successfully!")
             
@@ -1233,8 +1317,13 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                             </CardHeader>
                             <CardContent className="pb-4">
                                 <div className={`relative transition-all h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer group hover:border-indigo-500/50 hover:bg-indigo-500/5 ${currentTrack.audioFile || currentTrack.audioUrl ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/10 bg-black/20'}`}>
-                                    <input type="file" accept="audio/*" onChange={handleAudioChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                                    {currentTrack.audioFile || currentTrack.audioUrl ? (
+                                    <input type="file" accept="audio/*" onChange={handleAudioChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" disabled={analyzingFile} />
+                                    {analyzingFile ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+                                            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Analyzing File...</p>
+                                        </div>
+                                    ) : currentTrack.audioFile || currentTrack.audioUrl ? (
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
                                                 <Music className="text-emerald-500" size={16} />
