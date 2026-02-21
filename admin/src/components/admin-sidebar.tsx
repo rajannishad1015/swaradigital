@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, Users, Music, Settings, LogOut, DollarSign, LifeBuoy, Megaphone, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Users, Music, Settings, LogOut, DollarSign, LifeBuoy, Megaphone, Menu, X, ClipboardList } from 'lucide-react'
 import { signOut } from '@/app/dashboard/actions'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -26,6 +26,7 @@ export default function AdminSidebar({ user, pendingTickets }: AdminSidebarProps
     ]
 
     const managementItems = [
+        { href: '/dashboard/requests', label: 'Requests Queue', icon: ClipboardList },
         { href: '/dashboard/support', label: 'Support', icon: LifeBuoy, badge: pendingTickets },
         { href: '/dashboard/announcements', label: 'Broadcasts', icon: Megaphone },
         { href: '/dashboard/settings', label: 'System Settings', icon: Settings },

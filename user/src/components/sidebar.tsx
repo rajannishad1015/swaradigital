@@ -20,7 +20,9 @@ import {
     LogOut,
     ChevronDown,
     PlusCircle,
-    Clock
+    Clock,
+    Gavel,
+    UserCheck
 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from './ui/button'
@@ -69,6 +71,13 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
                     )}
                 </div>
                 <NavItem href="/dashboard/settings" icon={Wrench} label="Settings" active={pathname === '/dashboard/settings'} />
+                
+                <div className="h-6" />
+                <p className="px-4 text-[9px] font-semibold text-zinc-600 uppercase tracking-[0.15em] mb-3">Protection</p>
+                <NavGroup icon={ShieldCheck} label="Rights Manager" items={[
+                    { href: "/dashboard/rights/ugc-claims", label: "UGC Claims" },
+                    { href: "/dashboard/rights/whitelist", label: "Whitelist" }
+                ]} />
 
                 {/* Section Divider */}
                 <div className="py-4 px-4">
@@ -78,6 +87,7 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
                 {/* Dropdowns */}
                 <NavGroup icon={Wrench} label="Tools" items={[
                     { href: "/dashboard/tools/audio-converter", label: "Audio Converter" },
+                    { href: "/dashboard/tools/profile-linking", label: "Profile Linking" },
                     { href: "/dashboard/tools/advanced-options", label: "Advanced Options" }
                 ]} />
 

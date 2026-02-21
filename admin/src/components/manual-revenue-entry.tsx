@@ -26,19 +26,31 @@ const entrySchema = z.object({
   country: z.string().min(2, "Required"),
   revenue: z.coerce.number().min(0.0001, "Required"),
   period: z.string().regex(/^\d{4}-\d{2}$/, "Format: YYYY-MM"),
-  quantity: z.coerce.number().int().min(1).default(1),
-  currency: z.string().default("USD"),
+  quantity: z.coerce.number().int().min(1),
+  currency: z.string().min(1, "Required"),
 });
 
 const formSchema = z.object({
   entries: z.array(entrySchema).min(1, "Add at least one entry"),
 });
 
+type FormValues = {
+  entries: {
+    isrc: string;
+    platform: string;
+    country: string;
+    revenue: number;
+    period: string;
+    quantity: number;
+    currency: string;
+  }[]
+}
+
 export default function ManualRevenueEntry() {
   const [isUploading, setIsUploading] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       entries: [
         { isrc: "", platform: "Spotify", country: "US", revenue: 0, period: new Date().toISOString().slice(0, 7), quantity: 1, currency: "USD" }
@@ -51,7 +63,7 @@ export default function ManualRevenueEntry() {
     name: "entries",
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     setIsUploading(true);
     try {
         // Map form values to match expected backend structure
