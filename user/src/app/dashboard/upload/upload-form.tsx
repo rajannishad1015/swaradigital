@@ -891,6 +891,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
             subGenre,
             coverArtUrl,
             selectedPlatforms,
+            upc,
             status: status,
             tracks: processedTracks
         }
@@ -1714,7 +1715,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                  <h4 className="text-xl font-bold text-white mb-2">{title}</h4>
                                  <p className="text-zinc-400 flex items-center gap-2 mb-1"><span className="text-zinc-600 text-xs font-bold uppercase">Artist:</span> {primaryArtists.map(a => a.name).join(', ') || '-'}</p>
                                  <p className="text-zinc-400 flex items-center gap-2 mb-1"><span className="text-zinc-600 text-xs font-bold uppercase">Label:</span> {labelName}</p>
-                                 <p className="text-zinc-400 flex items-center gap-2"><span className="text-zinc-600 text-xs font-bold uppercase">Date:</span> {releaseDate}</p>
+                                 <p className="text-zinc-400 flex items-center gap-2 mb-1"><span className="text-zinc-600 text-xs font-bold uppercase">Date:</span> {releaseDate}</p>
+                                 {upc && <p className="text-zinc-400 flex items-center gap-2"><span className="text-zinc-600 text-xs font-bold uppercase">UPC:</span> {upc}</p>}
                              </div>
                          </div>
                          

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/sidebar'
@@ -6,6 +7,11 @@ import NotificationCenter from '@/components/notification-center'
 import ArtistSwitcher from '@/components/artist-switcher'
 import PageTransition from '@/components/page-transition'
 import Breadcrumbs from '@/components/breadcrumbs'
+
+export const metadata: Metadata = {
+  title: 'Artist Dashboard | SwaraDigital',
+  robots: { index: false, follow: false },
+}
 
 export default async function DashboardLayout({
   children,

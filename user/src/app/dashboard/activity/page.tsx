@@ -24,7 +24,7 @@ export default async function ActivityPage() {
   }
 
   // Setup queries
-  let trackQuery = supabase.from('tracks').select('*, albums(title)')
+  let trackQuery = supabase.from('tracks').select('*, albums(title, type)')
   let ticketQuery = supabase.from('tickets').select('*')
   
   if (isLabel) {

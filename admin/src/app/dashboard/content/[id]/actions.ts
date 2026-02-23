@@ -75,11 +75,15 @@ export async function updateTrackMetadata(trackId: string, data: any) {
     
     if (!user) throw new Error('Unauthorized')
 
-    // Update tracks table
-    // Note: We need to separate track data from album data if combined in form
+    // 1. Get album_id for the track
+    const { data: track } = await supabase
+        .from('tracks')
+        .select('album_id')
+        .eq('id', trackId)
+        .single()
     
-    // Simple update for now, can be expanded
-    const { error } = await supabase
+    // 2. Update tracks table
+    const { error: trackError } = await supabase
         .from('tracks')
         .update({
             title: data.title,
@@ -95,7 +99,16 @@ export async function updateTrackMetadata(trackId: string, data: any) {
         })
         .eq('id', trackId)
         
-    if (error) throw new Error(error.message)
+    if (trackError) throw new Error(trackError.message)
+
+    // 3. Update upc in albums table if provided
+    if (track?.album_id && data.upc !== undefined) {
+        const { error: albumError } = await supabase
+            .from('albums')
+            .update({ upc: data.upc })
+            .eq('id', track.album_id)
+        if (albumError) throw new Error(albumError.message)
+    }
     
     // Log this action
     await logAdminAction('EDITED_METADATA', 'TRACK', trackId, { updated_fields: Object.keys(data) })

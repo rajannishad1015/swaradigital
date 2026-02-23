@@ -79,7 +79,7 @@ export function Features() {
   ];
 
   return (
-    <section className="py-16 md:py-24 relative bg-slate-50 border-t border-slate-200 overflow-hidden">
+    <section id="features" className="py-16 md:py-24 relative bg-slate-50 border-t border-slate-200 overflow-hidden">
       
       {/* Background Pattern - Image */}
       {/* Background Pattern - Premium Music */}

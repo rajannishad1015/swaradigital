@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,17 +42,20 @@ const formSchema = z.object({
   isrc: z.string().regex(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/, { message: "Invalid ISRC format (e.g. USABC1234567)" }).optional().or(z.literal('')),
   version_type: z.string().optional(),
   version_subtitle: z.string().optional(),
+  upc: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
 
 interface MetadataEditorProps {
     track: any
+    initialEdit?: boolean
 }
 
-export default function MetadataEditor({ track }: MetadataEditorProps) {
-    const [isEditing, setIsEditing] = useState(false)
+export default function MetadataEditor({ track, initialEdit = false }: MetadataEditorProps) {
+    const [isEditing, setIsEditing] = useState(initialEdit)
     const [loading, setLoading] = useState(false)
+    const router = useRouter()
     
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -65,6 +69,7 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
             isrc: track.isrc || '',
             version_type: track.version_type || '',
             version_subtitle: track.version_subtitle || '',
+            upc: track.albums?.upc || '',
         },
     })
 
@@ -74,7 +79,7 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
             await updateTrackMetadata(track.id, values)
             toast.success("Metadata updated successfully")
             setIsEditing(false)
-            // Ideally we'd refresh logic or rely on Next.js revalidatePath
+            router.refresh()
         } catch (error: any) {
             toast.error("Failed to update: " + error.message)
         } finally {
@@ -360,7 +365,22 @@ export default function MetadataEditor({ track }: MetadataEditorProps) {
                              <span className="text-sm text-zinc-200 font-medium">{track.albums?.title}</span>
                         </GridItem>
                         <GridItem label="UPC">
-                             <span className="text-sm text-zinc-200 font-medium font-mono">{track.albums?.upc || '-'}</span>
+                             {isEditing ? (
+                                <FormField
+                                    control={form.control}
+                                    name="upc"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <Input {...field} className="bg-zinc-900 border-white/10 h-8 font-mono" placeholder="Enter UPC" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                             ) : (
+                                <span className="text-sm text-zinc-200 font-medium font-mono">{track.albums?.upc || '-'}</span>
+                             )}
                         </GridItem>
                         <GridItem label="Release Date">
                             <span className="text-sm text-zinc-200 font-medium">{track.albums?.release_date ? format(new Date(track.albums.release_date), 'PPP') : 'N/A'}</span>

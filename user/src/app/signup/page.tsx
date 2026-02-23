@@ -1,9 +1,15 @@
+import type { Metadata } from 'next'
 import { signup } from './actions'
 import { Input } from '@/components/ui/input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import Link from 'next/link'
 import { Disc, Music, Radio, Headphones, Mic2, PlayCircle } from 'lucide-react'
 import { AuthMessages } from '@/components/auth/auth-messages'
+
+export const metadata: Metadata = {
+  title: 'Create Account | SwaraDigital',
+  robots: { index: false, follow: false },
+}
 
 export default function SignupPage() {
   return (

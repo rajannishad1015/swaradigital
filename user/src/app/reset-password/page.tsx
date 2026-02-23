@@ -1,8 +1,14 @@
+import type { Metadata } from 'next'
 import { updatePassword } from './actions'
 import { Input } from '@/components/ui/input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { Disc } from 'lucide-react'
 import { AuthMessages } from '@/components/auth/auth-messages'
+
+export const metadata: Metadata = {
+  title: 'Reset Password | SwaraDigital',
+  robots: { index: false, follow: false },
+}
 
 export default function ResetPasswordPage() {
   return (

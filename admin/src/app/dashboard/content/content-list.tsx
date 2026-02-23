@@ -1,6 +1,6 @@
-'use client'
+"use client"
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
 import { updateTrackStatus } from './actions'
 import {
   Table,
@@ -19,9 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import MetadataEditor from '@/components/admin/metadata-editor'
+import { Pencil } from 'lucide-react'
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Check, X, Download, Search, Music, ExternalLink, Play, Pause, MoreVertical, Disc } from 'lucide-react'
+import { Check, X, Download, Search, Music, ExternalLink, Play, Pause, MoreVertical, Disc, ChevronDown, ChevronRight } from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -32,12 +34,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
+import { toast } from 'sonner'
 
 export default function ContentList({ initialTracks, status = 'pending' }: { initialTracks: any[], status?: string }) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTrack, setSelectedTrack] = useState<any>(null)
-  const [rejectionReason, setRejectionReason] = useState('')
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editingTrack, setEditingTrack] = useState<any>(null)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [selectedRelease, setSelectedRelease] = useState<any>(null)
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
   
   // Audio Player State
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null)
@@ -51,6 +57,39 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
     (track.albums?.upc || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     (track.albums?.title || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Grouping Logic
+  const groupedReleases = useMemo(() => {
+    const groups: Record<string, any> = {}
+    
+    filteredTracks.forEach(track => {
+      const albumId = track.album_id || `single-${track.id}`
+      if (!groups[albumId]) {
+        groups[albumId] = {
+          id: albumId,
+          isAlbum: !!track.album_id,
+          type: track.albums?.type || 'single',
+          albumData: track.albums,
+          profiles: track.profiles,
+          tracks: [],
+          title: track.albums?.title || track.title,
+          genre: track.genre || track.albums?.genre,
+          created_at: track.created_at,
+          cover_art_url: track.albums?.cover_art_url
+        }
+      }
+      groups[albumId].tracks.push(track)
+    })
+    
+    return Object.values(groups).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [filteredTracks])
+
+  const toggleRow = (id: string) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
+  }
 
   const handlePlayPause = (track: any) => {
     if (currentTrackId === track.id) {
@@ -67,8 +106,6 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
         }
         setCurrentTrackId(track.id)
         setIsPlaying(true)
-        // We'll set the src in the render or effect, but here we just update state
-        // actually better to have a single audio element that we control
         setTimeout(() => {
             if(audioRef.current) {
                 audioRef.current.src = track.file_url
@@ -78,43 +115,43 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
     }
   }
 
-  const handleApprove = async (id: string, e?: React.MouseEvent) => {
+  const handleApprove = async (ids: string | string[], e?: React.MouseEvent) => {
     e?.stopPropagation()
     try {
-        await updateTrackStatus(id, 'approved')
-    } catch (e) {
-        console.error(e)
+        await updateTrackStatus(ids, 'approved')
+        toast.success("Release(s) approved successfully")
+    } catch (err: any) {
+        toast.error(err.message || "Failed to approve")
     }
   }
 
   const handleReject = async () => {
-    if (!selectedTrack) return
+    if (!selectedRelease) return
+    const ids = selectedRelease.tracks.map((t: any) => t.id)
     try {
-        await updateTrackStatus(selectedTrack.id, 'rejected', rejectionReason)
+        await updateTrackStatus(ids, 'rejected', rejectionReason)
         setIsRejectDialogOpen(false)
         setRejectionReason('')
-        setSelectedTrack(null)
-    } catch (e) {
-        console.error(e)
+        setSelectedRelease(null)
+        toast.success("Release(s) rejected")
+    } catch (err: any) {
+        toast.error(err.message || "Failed to reject")
     }
   }
 
-  const openRejectDialog = (track: any, e?: React.MouseEvent) => {
+  const openRejectDialog = (release: any, e?: React.MouseEvent) => {
       e?.stopPropagation()
-      setSelectedTrack(track)
+      setSelectedRelease(release)
       setIsRejectDialogOpen(true)
   }
 
   const handleDownload = (track: any) => {
-      // Find all tracks that belong to the same album/EP from the loaded list
       const tracksToExport = track.album_id 
           ? initialTracks.filter((t: any) => t.album_id === track.album_id)
           : [track];
 
-      // Sort by track number if available, otherwise by created_at
       tracksToExport.sort((a, b) => (a.track_number || 0) - (b.track_number || 0));
 
-      // Helper to format JSON lists to string
       const formatList = (val: any) => {
           if (!val) return "";
           try {
@@ -135,7 +172,6 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
           }
       }
 
-      // Expanded Metadata Headers
       const headers = [
           "Track Title", "Track Version", "Version Subtitle", "Artist Name", "Featured Artist", 
           "Album Title", "Album Type", "UPC", "ISRC", "Release Date", "Original Release Date",
@@ -148,7 +184,6 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
           "Spotify ID", "Apple ID", "Cover Art URL", "Audio File URL", "Artist Email", "Lyrics"
       ]
 
-      // Map Data Rows
       const rows = tracksToExport.map(t => [
           t.title,
           t.version_type || "",
@@ -215,7 +250,6 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
 
   return (
     <div className="space-y-6">
-      {/* Search Input */}
       <div className="relative w-full md:max-w-md group z-10">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
         <Input 
@@ -226,217 +260,306 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
         />
       </div>
 
-      {/* Hidden Audio Element */}
       <audio ref={audioRef} onEnded={() => setIsPlaying(false)} onPause={() => setIsPlaying(false)} onPlay={() => setIsPlaying(true)} className="hidden" />
 
-      {/* Desktop Table View */}
       <div className="hidden md:block bg-white/[0.03] backdrop-blur-xl rounded-2xl border border-white/5 overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="border-white/5 bg-white/[0.02] hover:bg-white/[0.02]">
-              <TableHead className="w-[300px] text-[10px] uppercase font-black tracking-widest text-zinc-500">Track Info</TableHead>
-              <TableHead className="hidden lg:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Album/EP</TableHead>
+              <TableHead className="w-[300px] text-[10px] uppercase font-black tracking-widest text-zinc-500">Release Info</TableHead>
+              <TableHead className="hidden lg:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Details</TableHead>
               <TableHead className="hidden lg:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Identifiers</TableHead>
               <TableHead className="hidden xl:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Genre</TableHead>
-              <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Preview</TableHead>
+              <TableHead className="text-[10px] uppercase font-black tracking-widest text-zinc-500">Tracks</TableHead>
               <TableHead className="text-right text-[10px] uppercase font-black tracking-widest text-zinc-500">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTracks.map((track) => (
-              <TableRow key={track.id} className="border-white/5 hover:bg-white/[0.02] transition-colors group">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="relative group/cover w-10 h-10 shrink-0">
-                        {track.albums?.cover_art_url ? (
-                            <img src={track.albums.cover_art_url} alt={track.title} className="w-full h-full object-cover rounded-md shadow-md" />
-                        ) : (
-                            <div className="w-full h-full bg-zinc-800 rounded-md flex items-center justify-center">
-                                <Disc size={16} className="text-zinc-600" />
-                            </div>
-                        )}
-                         <button 
-                            onClick={() => handlePlayPause(track)}
-                            className={cn(
-                                "absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity rounded-md",
-                                currentTrackId === track.id && isPlaying ? "opacity-100" : "opacity-0 group-hover/cover:opacity-100"
-                            )}
-                         >
-                            {currentTrackId === track.id && isPlaying ? (
-                                <Pause size={16} className="text-white fill-current" />
+            {groupedReleases.map((release) => (
+              <React.Fragment key={release.id}>
+                  <TableRow className={`border-white/5 hover:bg-white/[0.02] transition-colors group ${expandedRows[release.id] ? 'bg-white/[0.04]' : ''}`}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="relative group/cover w-10 h-10 shrink-0">
+                            {release.cover_art_url ? (
+                                <img src={release.cover_art_url} alt={release.title} className="w-full h-full object-cover rounded-md shadow-md" />
                             ) : (
-                                <Play size={16} className="text-white fill-current" />
+                                <div className="w-full h-full bg-zinc-800 rounded-md flex items-center justify-center">
+                                    <Disc size={16} className="text-zinc-600" />
+                                </div>
                             )}
-                         </button>
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                        <a href={`/dashboard/content/${track.id}`} className="font-bold text-white text-sm truncate group-hover:text-indigo-400 transition-colors hover:underline block max-w-[180px]">{track.title}</a>
-                        <span className="text-xs text-zinc-500 font-medium truncate block max-w-[180px]">{track.profiles?.artist_name || 'Unknown'}</span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-bold text-white truncate max-w-[150px]">{track.albums?.title || 'Single'}</span>
-                    <Badge variant="outline" className="w-fit text-[9px] uppercase tracking-wider h-4 px-1 bg-white/5 border-white/10 text-zinc-500 font-bold mt-1">
-                      {track.albums?.type || 'single'}
-                    </Badge>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[9px] h-4 px-1 bg-white/5 border-white/10 text-zinc-400 font-mono tracking-wider">UPC</Badge>
-                        <span className="text-xs font-mono text-zinc-300">{track.albums?.upc || 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[9px] h-4 px-1 bg-white/5 border-white/10 text-zinc-400 font-mono tracking-wider">ISRC</Badge>
-                        <span className="text-xs font-mono text-zinc-300">{track.isrc || 'N/A'}</span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden xl:table-cell">
-                  <Badge variant="secondary" className="bg-white/5 text-zinc-400 hover:bg-white/10 border-white/5">
-                    {track.genre}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {/* Mini Visualizer / Progress Bar placeholder */}
-                   <div className="w-24 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                        {currentTrackId === track.id && isPlaying && (
-                            <div className="h-full bg-indigo-500 animate-pulse w-2/3" />
-                        )}
-                   </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-white" onClick={() => handleDownload(track)}>
-                          <Download size={14} />
-                      </Button>
-
-                      {(!status || status === 'pending') && (
-                          <>
-                              <Button size="sm" className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 h-8 rounded-lg font-bold text-xs" onClick={(e) => handleApprove(track.id, e)}>
-                                  Approve
-                              </Button>
-                              <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-lg font-bold text-xs" onClick={(e) => openRejectDialog(track, e)}>
-                                  Reject
-                              </Button>
-                          </>
-                      )}
-
-                      {status === 'approved' && (
-                          <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-lg font-bold text-xs" onClick={(e) => openRejectDialog(track, e)}>
-                              Take Down
+                             {release.tracks.length === 1 && (
+                                <button 
+                                    onClick={() => handlePlayPause(release.tracks[0])}
+                                    className={cn(
+                                        "absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity rounded-md",
+                                        currentTrackId === release.tracks[0].id && isPlaying ? "opacity-100" : "opacity-0 group-hover/cover:opacity-100"
+                                    )}
+                                >
+                                    {currentTrackId === release.tracks[0].id && isPlaying ? (
+                                        <Pause size={16} className="text-white fill-current" />
+                                    ) : (
+                                        <Play size={16} className="text-white fill-current" />
+                                    )}
+                                </button>
+                             )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                            <span className="font-bold text-white text-sm truncate group-hover:text-indigo-400 transition-colors block max-w-[180px] uppercase">{release.title}</span>
+                            <span className="text-xs text-zinc-500 font-medium truncate block max-w-[180px]">{release.profiles?.artist_name || 'Unknown'}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-white truncate max-w-[150px] uppercase">{release.type}</span>
+                        <Badge variant="outline" className="w-fit text-[9px] uppercase tracking-wider h-4 px-1 bg-white/5 border-white/10 text-zinc-500 font-bold mt-1">
+                          {release.tracks.length} {release.tracks.length === 1 ? 'TRACK' : 'TRACKS'}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[9px] h-4 px-1 bg-white/5 border-white/10 text-zinc-400 font-mono tracking-wider">UPC</Badge>
+                            <span className="text-xs font-mono text-zinc-300">{release.albumData?.upc || (release.tracks.length === 1 ? release.tracks[0].isrc : 'N/A')}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
+                      <Badge variant="secondary" className="bg-white/5 text-zinc-400 hover:bg-white/10 border-white/5">
+                        {release.genre}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                       {release.tracks.length > 1 && (
+                            <Button variant="ghost" size="sm" onClick={() => toggleRow(release.id)} className="text-zinc-500 hover:text-white gap-2">
+                                {expandedRows[release.id] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                {expandedRows[release.id] ? 'Hide' : 'Tracks'}
+                            </Button>
+                       )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-white" onClick={() => handleDownload(release.tracks[0])}>
+                              <Download size={14} />
                           </Button>
-                      )}
-                      
-                      {status === 'rejected' && (
-                           <Button size="sm" variant="outline" className="h-8 rounded-lg bg-zinc-900 border-white/10 text-zinc-400 hover:text-white hover:bg-zinc-800" onClick={(e) => handleApprove(track.id, e)}>
-                              Re-Approve
-                          </Button>
-                      )}
+
+                          {release.tracks.length === 1 && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setEditingTrack(release.tracks[0])
+                                    setIsEditDialogOpen(true)
+                                }}
+                              >
+                                <Pencil size={14} />
+                              </Button>
+                          )}
+
+                          {(!status || status === 'pending') && (
+                              <>
+                                  <Button size="sm" className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 h-8 rounded-lg font-bold text-xs" onClick={(e) => handleApprove(release.tracks.map((t: any) => t.id), e)}>
+                                      Approve {release.tracks.length > 1 ? 'All' : ''}
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-lg font-bold text-xs" onClick={(e) => openRejectDialog(release, e)}>
+                                      Reject {release.tracks.length > 1 ? 'All' : ''}
+                                  </Button>
+                              </>
+                          )}
+
+                          {status === 'approved' && (
+                              <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-lg font-bold text-xs" onClick={(e) => openRejectDialog(release, e)}>
+                                  Take Down
+                              </Button>
+                          )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Expanded Tracks */}
+                  {expandedRows[release.id] && release.tracks.map((track: any, index: number) => (
+                      <TableRow key={track.id} className="border-white/5 bg-white/[0.01] hover:bg-white/[0.02]">
+                          <TableCell className="pl-12">
+                              <div className="flex items-center gap-3">
+                                  <button onClick={() => handlePlayPause(track)} className="text-zinc-500 hover:text-indigo-400">
+                                      {currentTrackId === track.id && isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                                  </button>
+                                  <span className="text-sm font-medium text-zinc-300">{index + 1}. {track.title}</span>
+                              </div>
+                          </TableCell>
+                          <TableCell colSpan={2}>
+                              <div className="flex items-center gap-4">
+                                  <span className="text-[10px] font-mono text-zinc-500">ISRC: {track.isrc || 'N/A'}</span>
+                                  <Badge variant="outline" className="text-[9px] h-4 px-1">{track.status}</Badge>
+                              </div>
+                          </TableCell>
+                          <TableCell colSpan={2}>
+                               {/* Track specific actions could go here if needed, but usually we approve at release level */}
+                          </TableCell>
+                          <TableCell className="text-right">
+                               <div className="flex justify-end gap-2">
+                                 <a href={`/dashboard/content/${track.id}`}>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-500 hover:text-white">
+                                        <ExternalLink size={12} />
+                                    </Button>
+                                 </a>
+                                 <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-7 w-7 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10"
+                                    onClick={() => {
+                                        setEditingTrack(track)
+                                        setIsEditDialogOpen(true)
+                                    }}
+                                 >
+                                    <Pencil size={12} />
+                                 </Button>
+                                </div>
+                          </TableCell>
+                      </TableRow>
+                  ))}
+              </React.Fragment>
+            ))}
+            {groupedReleases.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="h-48 text-center text-zinc-500">
+                  <div className="flex flex-col items-center gap-3">
+                    <Music size={32} className="opacity-20" />
+                    <p>No releases found</p>
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
 
       {/* Mobile Card View */}
       <div className="grid grid-cols-1 gap-4 md:hidden">
-        {filteredTracks.map((track) => (
-            <div key={track.id} className="bg-zinc-900/50 backdrop-blur-md border border-white/5 rounded-2xl p-4 flex flex-col gap-4 active:scale-[0.99] transition-transform">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                         <div className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden shadow-lg border border-white/10">
-                            {track.albums?.cover_art_url ? (
-                                <img src={track.albums.cover_art_url} alt={track.title} className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                                    <Disc size={20} className="text-zinc-600" />
+        {groupedReleases.map((release) => (
+            <div key={release.id} className="bg-zinc-900/50 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden active:scale-[0.99] transition-transform">
+                <div className="p-4 flex flex-col gap-4" onClick={() => release.tracks.length > 1 && toggleRow(release.id)}>
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                             <div className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden shadow-lg border border-white/10">
+                                {release.cover_art_url ? (
+                                    <img src={release.cover_art_url} alt={release.title} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                                        <Disc size={20} className="text-zinc-600" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="pr-2">
+                                <h3 className="font-bold text-white text-sm truncate leading-tight uppercase">{release.title}</h3>
+                                <p className="text-[10px] text-zinc-500 truncate max-w-[100px] font-medium mt-0.5">{release.profiles?.artist_name || 'Unknown'}</p>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <Badge variant="outline" className="text-[8px] h-3 px-1 uppercase">{release.type}</Badge>
+                                    <span className="text-zinc-700 font-bold text-[8px]">•</span>
+                                    <span className="text-[9px] text-zinc-500 font-mono">{release.tracks.length} TRACKS</span>
                                 </div>
-                            )}
-                            <button 
-                                onClick={() => handlePlayPause(track)}
-                                className="absolute inset-0 bg-black/30 flex items-center justify-center"
-                            >
-                                <div className={cn(
-                                    "w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 transition-transform active:scale-90",
-                                    currentTrackId === track.id && isPlaying ? "text-indigo-400" : "text-white"
-                                )}>
-                                    {currentTrackId === track.id && isPlaying ? (
-                                        <Pause size={14} fill="currentColor" />
-                                    ) : (
-                                        <Play size={14} fill="currentColor" className="ml-0.5" />
-                                    )}
-                                </div>
-                            </button>
-                        </div>
-                        <div className="pr-2">
-                            <h3 className="font-bold text-white text-sm truncate leading-tight">{track.title}</h3>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                                <p className="text-[10px] text-zinc-500 font-mono">ID: {track.id.substring(0, 8).toUpperCase()}</p>
-                                <span className="text-zinc-700 font-bold">•</span>
-                                <p className="text-[10px] text-zinc-500 truncate max-w-[100px] font-medium italic">{track.albums?.title || 'Single'}</p>
                             </div>
                         </div>
-                    </div>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-zinc-500">
-                          <MoreVertical size={16} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-zinc-950 border-white/10 text-white min-w-[160px] rounded-xl p-1">
-                        <DropdownMenuItem onClick={() => handleDownload(track)} className="h-9 px-3 rounded-lg hover:bg-white/5 cursor-pointer">
-                            <Download size={14} className="mr-2 opacity-50" /> Download Metadata
-                        </DropdownMenuItem>
-                        <a href={`/dashboard/content/${track.id}`}>
-                            <DropdownMenuItem className="h-9 px-3 rounded-lg hover:bg-white/5 cursor-pointer text-indigo-400 focus:text-indigo-400">
-                                <ExternalLink size={14} className="mr-2 opacity-50" /> View Details
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-zinc-500">
+                              <MoreVertical size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-zinc-950 border-white/10 text-white min-w-[160px] rounded-xl p-1">
+                            <DropdownMenuItem onClick={() => handleDownload(release.tracks[0])} className="h-9 px-3 rounded-lg hover:bg-white/5 cursor-pointer">
+                                <Download size={14} className="mr-2 opacity-50" /> Download Metadata
                             </DropdownMenuItem>
-                        </a>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                            {release.tracks.length === 1 && (
+                                <DropdownMenuItem 
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setEditingTrack(release.tracks[0])
+                                        setIsEditDialogOpen(true)
+                                    }} 
+                                    className="h-9 px-3 rounded-lg hover:bg-indigo-500/10 cursor-pointer text-indigo-400"
+                                >
+                                    <Pencil size={14} className="mr-2 opacity-50" /> Edit Metadata
+                                </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+
+                    {release.tracks.length > 1 && (
+                        <div className="flex items-center justify-center py-1 bg-white/5 rounded-lg text-[10px] font-bold text-zinc-500 uppercase tracking-widest gap-2">
+                            {expandedRows[release.id] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                            {expandedRows[release.id] ? 'Hide' : 'View'} {release.tracks.length} Tracks
+                        </div>
+                    )}
                 </div>
 
-                {/* Progress bar visual for mobile if playing */}
-                {currentTrackId === track.id && (
-                    <div className="h-1 bg-zinc-800 rounded-full overflow-hidden w-full">
-                         <div className="h-full bg-indigo-500 animate-[progress_30s_linear_infinite] w-full origin-left" />
+                {/* Mobile Expanded Tracks */}
+                {expandedRows[release.id] && (
+                    <div className="bg-black/20 border-t border-white/5">
+                        {release.tracks.map((track: any, index: number) => (
+                            <div key={track.id} className="p-3 border-b border-white/5 last:border-0 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <button onClick={(e) => { e.stopPropagation(); handlePlayPause(track); }} className="text-zinc-500">
+                                        {currentTrackId === track.id && isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                                    </button>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-white truncate">{index + 1}. {track.title}</p>
+                                        <p className="text-[8px] text-zinc-600 font-mono">ISRC: {track.isrc || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-8 w-8 text-indigo-400 hover:bg-indigo-500/10"
+                                      onClick={(e) => {
+                                          e.stopPropagation()
+                                          setEditingTrack(track)
+                                          setIsEditDialogOpen(true)
+                                      }}
+                                  >
+                                      <Pencil size={14} />
+                                  </Button>
+                                  <a href={`/dashboard/content/${track.id}`} onClick={(e) => e.stopPropagation()}>
+                                      <ExternalLink size={14} className="text-zinc-500 hover:text-white" />
+                                  </a>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
 
                 {/* Actions Grid */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+                <div className="grid grid-cols-2 gap-2 p-4 pt-0">
                      {(!status || status === 'pending') && (
                           <>
-                              <Button className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 h-10 rounded-xl font-bold text-sm transition-all active:scale-95" onClick={(e) => handleApprove(track.id, e)}>
-                                  Approve
+                              <Button className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 h-10 rounded-xl font-bold text-sm transition-all active:scale-95" onClick={(e) => { e.stopPropagation(); handleApprove(release.tracks.map((t: any) => t.id), e); }}>
+                                  Approve {release.tracks.length > 1 ? 'All' : ''}
                               </Button>
-                              <Button variant="ghost" className="bg-red-500/5 text-red-400 hover:text-white hover:bg-red-500 border border-red-500/10 h-10 rounded-xl font-bold text-sm transition-all active:scale-95" onClick={(e) => openRejectDialog(track, e)}>
-                                  Reject
+                              <Button variant="ghost" className="bg-red-500/5 text-red-400 hover:text-white hover:bg-red-500 border border-red-500/10 h-10 rounded-xl font-bold text-sm transition-all active:scale-95" onClick={(e) => { e.stopPropagation(); openRejectDialog(release, e); }}>
+                                  Reject {release.tracks.length > 1 ? 'All' : ''}
                               </Button>
                           </>
                       )}
                       
-                      {/* Other status actions logic similar to desktop... */}
                       {status === 'approved' && (
-                           <Button variant="ghost" className="col-span-2 bg-red-500/5 text-red-400 hover:text-white hover:bg-red-500 border border-red-500/10 h-10 rounded-xl font-bold text-sm" onClick={(e) => openRejectDialog(track, e)}>
-                              Take Down
+                           <Button variant="ghost" className="col-span-2 bg-red-500/5 text-red-400 hover:text-white hover:bg-red-500 border border-red-500/10 h-10 rounded-xl font-bold text-sm" onClick={(e) => { e.stopPropagation(); openRejectDialog(release, e); }}>
+                              Take Down Release
                           </Button>
                       )}
                 </div>
             </div>
         ))}
-
-        {filteredTracks.length === 0 && (
+        {groupedReleases.length === 0 && (
              <div className="flex flex-col items-center justify-center h-48 text-zinc-500 gap-3 border border-white/5 rounded-2xl bg-zinc-900/20">
                 <Music size={32} className="opacity-20" />
-                <p>No tracks found</p>
+                <p>No releases found</p>
             </div>
         )}
       </div>
@@ -444,7 +567,7 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <DialogContent className="bg-zinc-950 border-white/10 text-white sm:rounded-2xl w-[90%] max-w-[400px] rounded-2xl mx-auto">
             <DialogHeader>
-                <DialogTitle className="text-left">{status === 'approved' ? 'Take Down' : 'Reject'} Track</DialogTitle>
+                <DialogTitle className="text-left">{status === 'approved' ? 'Take Down' : 'Reject'} Release</DialogTitle>
                 <DialogDescription className="text-left text-zinc-400">
                     Reason for {status === 'approved' ? 'taking down' : 'rejection'}:
                 </DialogDescription>
@@ -461,6 +584,20 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
                     {status === 'approved' ? 'Confirm' : 'Reject'}
                 </Button>
             </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl bg-zinc-950 border-white/10 text-white overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil size={20} className="text-indigo-400" />
+              Edit Track Metadata
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {editingTrack && <MetadataEditor track={editingTrack} initialEdit={true} />}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

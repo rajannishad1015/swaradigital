@@ -38,7 +38,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   }
 
   // Setup queries
-  let trackQuery = supabase.from('tracks').select('*, albums(cover_art_url, title)')
+  let trackQuery = supabase.from('tracks').select('*, albums(cover_art_url, title, type)')
   let ticketQuery = supabase.from('tickets').select('*', { count: 'exact', head: true }).in('status', ['open', 'in_progress'])
 
   if (artistId) {

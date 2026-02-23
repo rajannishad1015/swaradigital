@@ -87,6 +87,7 @@ export async function submitTrack(formData: any) {
                     c_line: formData.cLine,
                     courtesy_line: formData.courtesyLine,
                     description: formData.description,
+                    upc: formData.upc,
                     target_platforms: formData.selectedPlatforms,
                 })
                 .eq('id', albumId)
@@ -195,6 +196,7 @@ export async function submitTrack(formData: any) {
                 courtesy_line: formData.courtesyLine,
                 description: formData.description,
                 target_platforms: formData.selectedPlatforms,
+                upc: formData.upc,
                 primary_artist_spotify_id: formData.primaryArtists?.[0]?.spotifyId || '',
                 primary_artist_apple_id: formData.primaryArtists?.[0]?.appleId || '',
                 featuring_artist_spotify_id: formData.featuringArtists?.[0]?.spotifyId || '',

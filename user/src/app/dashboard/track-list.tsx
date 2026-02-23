@@ -28,8 +28,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useState } from "react"
-import { Play, Pause, AlertCircle, Edit2, Trash2, ShieldAlert, ClipboardCheck } from 'lucide-react'
+import React, { useState, useMemo } from "react"
+import { Play, Pause, AlertCircle, Edit2, Trash2, ShieldAlert, ClipboardCheck, ChevronDown, ChevronRight, Disc } from 'lucide-react'
 import { bulkDeleteTracks, requestTakedown, deleteTrack, requestCorrection } from "./actions"
 import Link from 'next/link'
 import { toast } from "sonner"
@@ -42,12 +42,46 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
   
   // Bulk Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
 
   const [takedownReason, setTakedownReason] = useState('')
   const [correctionField, setCorrectionField] = useState('title')
   const [correctionValue, setCorrectionValue] = useState('')
   const [correctionReason, setCorrectionReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Grouping Logic
+  const groupedReleases = useMemo(() => {
+    const groups: Record<string, any> = {}
+    
+    tracks.forEach(track => {
+      const albumId = track.album_id || `single-${track.id}`
+      if (!groups[albumId]) {
+        groups[albumId] = {
+          id: albumId,
+          isAlbum: !!track.album_id,
+          albumData: track.albums,
+          tracks: [],
+          title: track.albums?.title || track.title,
+          type: (track.albums?.type || (track.album_id ? 'album' : 'single')).toUpperCase(),
+          genre: track.genre,
+          status: track.status, // We'll simplify this to the first track's status or logic-based
+          created_at: track.created_at,
+          cover_art_url: track.albums?.cover_art_url
+        }
+      }
+      groups[albumId].tracks.push(track)
+    })
+    
+    return Object.values(groups).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [tracks])
+
+  const toggleRow = (id: string) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
+  }
 
   // Helper Functions
   const getStatusBadge = (status: string) => {
@@ -136,7 +170,7 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
   }
 
   // Filter selectable tracks for "Delete" (Draft/Rejected only)
-  const canDeleteSelected = selectedIds.every(id => {
+  const canDeleteSelected = selectedIds.length > 0 && selectedIds.every(id => {
       const track = tracks.find(t => t.id === id)
       return track && (track.status === 'draft' || track.status === 'rejected')
   })
@@ -155,114 +189,162 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                             />
                         </TableHead>
                         <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 h-10 w-[80px]">Cover</TableHead>
-                        <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 h-10">Title / ISRC</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 h-10">Title / Release</TableHead>
                         <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 h-10">Genre</TableHead>
                         <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 h-10">Status</TableHead>
-                        <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 h-10 text-right">Delivery Date</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 h-10 text-right">Date</TableHead>
                         <TableHead className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 h-10 w-[50px]"></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {tracks.map((track) => (
-                        <TableRow key={track.id} className={`border-white/5 hover:bg-white/[0.02] transition-colors group ${selectedIds.includes(track.id) ? 'bg-white/[0.04]' : ''}`}>
-                            <TableCell className="py-4">
-                                <Checkbox 
-                                    checked={selectedIds.includes(track.id)}
-                                    onCheckedChange={(checked) => handleSelectOne(checked as boolean, track.id)}
-                                    className="border-zinc-600 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
-                                />
-                            </TableCell>
-                            <TableCell className="py-4">
-                                <div className="relative h-12 w-12 rounded-lg overflow-hidden shadow-lg border border-white/10 group-hover:border-white/30 transition-all">
-                                    <img src={track.albums?.cover_art_url || "/placeholder.png"} alt="Cover" className="h-full w-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                        <Play size={16} className="text-white fill-white" />
+                    {groupedReleases.map((release) => (
+                        <React.Fragment key={release.id}>
+                            <TableRow className={`border-white/5 hover:bg-white/[0.02] transition-colors group ${expandedRows[release.id] ? 'bg-white/[0.04]' : ''}`}>
+                                <TableCell className="py-4">
+                                    {release.tracks.length === 1 ? (
+                                        <Checkbox 
+                                            checked={selectedIds.includes(release.tracks[0].id)}
+                                            onCheckedChange={(checked) => handleSelectOne(checked as boolean, release.tracks[0].id)}
+                                            className="border-zinc-600 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
+                                        />
+                                    ) : (
+                                         <div className="w-4" />
+                                    )}
+                                </TableCell>
+                                <TableCell className="py-4">
+                                    <div className="relative h-12 w-12 rounded-lg overflow-hidden shadow-lg border border-white/10 group-hover:border-white/30 transition-all">
+                                        <img src={release.cover_art_url || "/placeholder.png"} alt="Cover" className="h-full w-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                            {release.tracks.length === 1 ? <Play size={16} className="text-white fill-white" /> : <Disc size={16} className="text-white" />}
+                                        </div>
                                     </div>
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-white tracking-tight group-hover:text-indigo-400 transition-colors">{track.title}</span>
-                                    <span className="text-[10px] text-zinc-500 font-mono mt-1 flex items-center gap-2">
-                                        <span className="bg-white/5 px-1.5 py-0.5 rounded border border-white/5">ID: {track.id.substring(0, 8).toUpperCase()}</span>
-                                        {track.isrc && <span className="bg-white/5 px-1.5 py-0.5 rounded border border-white/5 text-zinc-400">ISRC: {track.isrc}</span>}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-white tracking-tight group-hover:text-indigo-400 transition-colors uppercase">{release.title}</span>
+                                            {release.tracks.length > 1 && (
+                                                <Badge variant="outline" className="text-[9px] h-4 px-1 bg-white/5 border-white/10 text-zinc-500 font-bold">
+                                                    {release.tracks.length} TRACKS
+                                                </Badge>
+                                            )}
+                                        </div>
+                                         <span className="text-[10px] text-zinc-500 font-mono mt-1 flex items-center gap-2 uppercase">
+                                             <span className="bg-white/5 px-1.5 py-0.5 rounded border border-white/5">{release.type}</span>
+                                             {release.albumData?.upc && (
+                                                 <span className="bg-white/5 px-1.5 py-0.5 rounded border border-white/5">UPC: {release.albumData.upc}</span>
+                                             )}
+                                             {release.tracks.length === 1 && release.tracks[0].isrc && (
+                                                 <span className="bg-white/5 px-1.5 py-0.5 rounded border border-white/5">ISRC: {release.tracks[0].isrc}</span>
+                                             )}
+                                         </span>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <span className="text-xs font-medium text-zinc-400 bg-white/5 px-2 py-1 rounded-md border border-white/5">
+                                        {release.genre}
                                     </span>
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                <span className="text-xs font-medium text-zinc-400 bg-white/5 px-2 py-1 rounded-md border border-white/5">
-                                    {track.genre}
-                                </span>
-                            </TableCell>
-                            <TableCell>
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger>
-                                            {getStatusBadge(track.status)}
-                                        </TooltipTrigger>
-                                        {track.status === 'rejected' && track.rejection_reason && (
-                                            <TooltipContent side="right" className="bg-red-950 border-red-900 text-red-200">
-                                                <p className="font-bold text-xs uppercase tracking-wider mb-1">Rejection Reason:</p>
-                                                <p className="text-xs">{track.rejection_reason}</p>
-                                            </TooltipContent>
-                                        )}
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <span className="text-xs font-medium text-zinc-500 tabular-nums">
-                                    {new Date(track.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </span>
-                            </TableCell>
-                            <TableCell>
-                                 {(track.status === 'draft' || track.status === 'rejected') && (
-                                    <div className="flex items-center gap-1">
-                                        <Link href={`/dashboard/tracks/${track.id}`}>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-white hover:bg-white/10 rounded-full">
-                                                <Edit2 size={14} />
-                                            </Button>
-                                        </Link>
+                                </TableCell>
+                                <TableCell>
+                                    {release.tracks.length === 1 ? getStatusBadge(release.tracks[0].status) : (
+                                        <Badge variant="outline" className="text-zinc-500 border-zinc-800">MULTIPLE</Badge>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <span className="text-xs font-medium text-zinc-500 tabular-nums">
+                                        {new Date(release.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </span>
+                                </TableCell>
+                                <TableCell>
+                                    {release.tracks.length > 1 ? (
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            onClick={() => handleDelete(track.id)}
-                                            className="h-8 w-8 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-full"
-                                            title="Delete Release"
+                                            onClick={() => toggleRow(release.id)}
+                                            className="h-8 w-8 text-zinc-500 hover:text-white"
                                         >
-                                            <Trash2 size={14} />
+                                            {expandedRows[release.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                         </Button>
-                                    </div>
-                                 )}
-                                 {track.status === 'approved' && (
-                                    <div className="flex items-center gap-1">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            onClick={() => {
-                                                setSelectedTrackId(track.id);
-                                                setCorrectionField('title');
-                                                setCorrectionValue(track.title);
-                                                setCorrectionReason('');
-                                                setIsCorrectionOpen(true);
-                                            }}
-                                            className="h-8 w-8 text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-full"
-                                            title="Request Metadata Correction"
-                                        >
-                                            <ClipboardCheck size={14} />
-                                        </Button>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            onClick={() => openTakedownDialog(track.id)}
-                                            className="h-8 w-8 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-full"
-                                            title="Request Takedown"
-                                        >
-                                            <ShieldAlert size={14} />
-                                        </Button>
-                                    </div>
-                                 )}
-                            </TableCell>
-                        </TableRow>
+                                    ) : (
+                                        <div className="flex items-center gap-1">
+                                            {(release.tracks[0].status === 'draft' || release.tracks[0].status === 'rejected') && (
+                                                <>
+                                                    <Link href={`/dashboard/tracks/${release.tracks[0].id}`}>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-white hover:bg-white/10 rounded-full">
+                                                            <Edit2 size={14} />
+                                                        </Button>
+                                                    </Link>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        onClick={() => handleDelete(release.tracks[0].id)}
+                                                        className="h-8 w-8 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-full"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </Button>
+                                                </>
+                                            )}
+                                            {release.tracks[0].status === 'approved' && (
+                                                 <Button 
+                                                 variant="ghost" 
+                                                 size="icon" 
+                                                 onClick={() => openTakedownDialog(release.tracks[0].id)}
+                                                 className="h-8 w-8 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-full"
+                                             >
+                                                 <ShieldAlert size={14} />
+                                             </Button>
+                                            )}
+                                        </div>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                            
+                            {/* Expanded Tracks */}
+                            {expandedRows[release.id] && release.tracks.map((track: any, index: number) => (
+                                <TableRow key={track.id} className="border-white/5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors">
+                                    <TableCell className="pl-8">
+                                        <Checkbox 
+                                            checked={selectedIds.includes(track.id)}
+                                            onCheckedChange={(checked) => handleSelectOne(checked as boolean, track.id)}
+                                            className="border-zinc-600 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
+                                        />
+                                    </TableCell>
+                                    <TableCell className="text-[10px] font-bold text-zinc-600 text-center">
+                                        {index + 1}
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-zinc-300 text-sm">{track.title}</span>
+                                            <span className="text-[9px] text-zinc-600 font-mono">ISRC: {track.isrc || 'PENDING'}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell colSpan={2}>
+                                        {getStatusBadge(track.status)}
+                                    </TableCell>
+                                    <TableCell colSpan={2} className="text-right">
+                                        <div className="flex justify-end items-center gap-1">
+                                            {(track.status === 'draft' || track.status === 'rejected') && (
+                                                <>
+                                                    <Link href={`/dashboard/tracks/${track.id}`}>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-600 hover:text-white">
+                                                            <Edit2 size={12} />
+                                                        </Button>
+                                                    </Link>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        onClick={() => handleDelete(track.id)}
+                                                        className="h-7 w-7 text-zinc-600 hover:text-red-500"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </React.Fragment>
                     ))}
                 </TableBody>
             </Table>
@@ -278,91 +360,108 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                         onCheckedChange={handleSelectAll}
                         className="border-zinc-600 data-[state=checked]:bg-indigo-500"
                     />
-                    <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Select All</span>
+                    <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Select All Tracks</span>
                 </div>
             )}
 
-            {tracks.map((track) => (
-                <div key={track.id} className={`bg-white/5 border border-white/5 rounded-xl p-4 transition-colors ${selectedIds.includes(track.id) ? 'bg-white/10 border-indigo-500/30' : ''}`}>
-                    <div className="flex gap-4">
-                        <div className="flex flex-col gap-2 items-center">
-                            <Checkbox 
-                                checked={selectedIds.includes(track.id)}
-                                onCheckedChange={(checked) => handleSelectOne(checked as boolean, track.id)}
-                                className="border-zinc-600 data-[state=checked]:bg-indigo-500"
-                            />
-                            <div className="relative h-16 w-16 rounded-lg overflow-hidden shadow-lg border border-white/10">
-                                <img src={track.albums?.cover_art_url || "/placeholder.png"} alt="Cover" className="h-full w-full object-cover" />
-                            </div>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start mb-1">
-                                <div className="pr-2">
-                                    <h3 className="font-bold text-white text-sm truncate leading-tight">{track.title}</h3>
-                                    <p className="text-[10px] text-zinc-500 font-mono mt-0.5">ID: {track.id.substring(0, 8).toUpperCase()}</p>
-                                </div>
-                                {getStatusBadge(track.status)}
+            {groupedReleases.map((release) => (
+                <div key={release.id} className={`bg-white/5 border border-white/5 rounded-xl overflow-hidden transition-colors ${expandedRows[release.id] ? 'bg-white/10' : ''}`}>
+                    <div className="p-4" onClick={() => release.tracks.length > 1 && toggleRow(release.id)}>
+                        <div className="flex gap-4">
+                            <div className="relative h-16 w-16 rounded-lg overflow-hidden shadow-lg border border-white/10 shrink-0">
+                                <img src={release.cover_art_url || "/placeholder.png"} alt="Cover" className="h-full w-full object-cover" />
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-zinc-400">
-                                <div>
-                                    <span className="text-[10px] uppercase font-bold text-zinc-600 block">Genre</span>
-                                    {track.genre}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-start mb-1">
+                                    <div className="pr-2">
+                                        <h3 className="font-bold text-white text-sm truncate uppercase leading-tight">{release.title}</h3>
+                                         <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase">
+                                            {(release.type || 'SINGLE').toUpperCase()}
+                                            {release.albumData?.upc && ` • UPC: ${release.albumData.upc}`}
+                                            {release.tracks.length === 1 && release.tracks[0].isrc && ` • ISRC: ${release.tracks[0].isrc}`}
+                                         </p>
+                                    </div>
+                                    {release.tracks.length === 1 ? getStatusBadge(release.tracks[0].status) : (
+                                        <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-500">
+                                            {release.tracks.length} <Disc size={10} />
+                                        </div>
+                                    )}
                                 </div>
-                                <div>
-                                    <span className="text-[10px] uppercase font-bold text-zinc-600 block">Date</span>
-                                    {new Date(track.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                
+                                <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-zinc-400">
+                                    <div>
+                                        <span className="text-[10px] uppercase font-bold text-zinc-600 block">Genre</span>
+                                        {release.genre}
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] uppercase font-bold text-zinc-600 block">Date</span>
+                                        {new Date(release.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        {release.tracks.length > 1 && (
+                            <div className="mt-3 flex items-center justify-center border-t border-white/5 pt-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest gap-1">
+                                {expandedRows[release.id] ? 'Hide' : 'View'} {release.tracks.length} Tracks {expandedRows[release.id] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-white/5 flex justify-end gap-2">
-                         {(track.status === 'draft' || track.status === 'rejected') && (
-                            <>
-                                <Link href={`/dashboard/tracks/${track.id}`}>
-                                    <Button variant="ghost" size="sm" className="h-8 md:h-8 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10">
-                                        <Edit2 size={14} className="mr-2" /> Edit
+                    {/* Mobile Expanded Tracks */}
+                    {expandedRows[release.id] && release.tracks.length > 1 && (
+                        <div className="bg-black/20 border-t border-white/5">
+                            {release.tracks.map((track: any, index: number) => (
+                                <div key={track.id} className="p-3 border-b border-white/5 last:border-0 flex items-center gap-3">
+                                    <Checkbox 
+                                        checked={selectedIds.includes(track.id)}
+                                        onCheckedChange={(checked) => handleSelectOne(checked as boolean, track.id)}
+                                        className="border-zinc-600 data-[state=checked]:bg-indigo-500"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-white truncate">{index + 1}. {track.title}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            {getStatusBadge(track.status)}
+                                            <span className="text-[9px] text-zinc-600 font-mono">ISRC: {track.isrc || 'PENDING'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        {(track.status === 'draft' || track.status === 'rejected') && (
+                                            <Link href={`/dashboard/tracks/${track.id}`}>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-500">
+                                                    <Edit2 size={12} />
+                                                </Button>
+                                            </Link>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Single Track Actions */}
+                    {release.tracks.length === 1 && (
+                        <div className="px-4 pb-4 border-t border-white/5 pt-3 flex justify-end gap-2">
+                             {(release.tracks[0].status === 'draft' || release.tracks[0].status === 'rejected') && (
+                                <>
+                                    <Link href={`/dashboard/tracks/${release.tracks[0].id}`}>
+                                        <Button variant="ghost" size="sm" className="h-8 md:h-8 text-zinc-400">
+                                            <Edit2 size={14} className="mr-2" /> Edit
+                                        </Button>
+                                    </Link>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => handleDelete(release.tracks[0].id)}
+                                        className="h-8 md:h-8 text-red-400"
+                                    >
+                                        <Trash2 size={14} className="mr-2" /> Delete
                                     </Button>
-                                </Link>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => handleDelete(track.id)}
-                                    className="h-8 md:h-8 text-red-400 hover:text-red-300 bg-red-500/5 hover:bg-red-500/10"
-                                >
-                                    <Trash2 size={14} className="mr-2" /> Delete
-                                </Button>
-                            </>
-                         )}
-                         {track.status === 'approved' && (
-                            <>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => {
-                                        setSelectedTrackId(track.id);
-                                        setCorrectionField('title');
-                                        setCorrectionValue(track.title);
-                                        setCorrectionReason('');
-                                        setIsCorrectionOpen(true);
-                                    }}
-                                    className="h-8 text-indigo-400 hover:text-indigo-300 bg-indigo-500/5 hover:bg-indigo-500/10"
-                                >
-                                    <ClipboardCheck size={14} className="mr-2" /> Correct
-                                </Button>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => openTakedownDialog(track.id)}
-                                    className="h-8 text-amber-500 hover:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10"
-                                >
-                                    <ShieldAlert size={14} className="mr-2" /> Takedown
-                                </Button>
-                            </>
-                         )}
-                    </div>
+                                </>
+                             )}
+                        </div>
+                    )}
                 </div>
             ))}
         </div>

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { login } from './actions'
 import { Input } from '@/components/ui/input'
 import { SubmitButton } from '@/components/ui/submit-button'
@@ -6,6 +7,11 @@ import { Disc, Music, Radio, Headphones, Mic2, PlayCircle } from 'lucide-react'
 import { AuthMessages } from '@/components/auth/auth-messages'
 import { SignupSuccessDialog } from '@/components/auth/signup-success-dialog'
 import { Suspense } from 'react'
+
+export const metadata: Metadata = {
+  title: 'Sign In | SwaraDigital',
+  robots: { index: false, follow: false },
+}
 
 export default function LoginPage() {
   return (

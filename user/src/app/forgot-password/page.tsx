@@ -1,9 +1,15 @@
+import type { Metadata } from 'next'
 import { resetPassword } from './actions'
 import { Input } from '@/components/ui/input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import Link from 'next/link'
 import { Disc } from 'lucide-react'
 import { AuthMessages } from '@/components/auth/auth-messages'
+
+export const metadata: Metadata = {
+  title: 'Forgot Password | SwaraDigital',
+  robots: { index: false, follow: false },
+}
 
 export default function ForgotPasswordPage() {
   return (

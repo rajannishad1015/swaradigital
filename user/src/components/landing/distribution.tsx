@@ -18,7 +18,7 @@ const stores = [
 
 export function Distribution() {
   return (
-    <section className="pt-10 pb-20 lg:pt-16 lg:pb-24 relative overflow-hidden bg-slate-50">
+    <section className="pt-10 pb-20 lg:pt-16 lg:pb-24 relative overflow-hidden bg-slate-50" id="distribution">
       
       {/* Dynamic Animated Aurora Background */}
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">

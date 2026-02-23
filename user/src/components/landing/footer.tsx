@@ -100,11 +100,18 @@ export function Footer() {
                  © {new Date().getFullYear()} SwaraDigital. All rights reserved.
              </p>
              <div className="flex gap-4">
-                 {[Twitter, Instagram, Github, Mail].map((Icon, i) => (
-                     <Link key={i} href="#" className="text-slate-500 hover:text-white transition-colors">
-                         <Icon className="w-5 h-5" />
-                     </Link>
-                 ))}
+                 <Link href="#" aria-label="Follow SwaraDigital on Twitter" className="text-slate-500 hover:text-white transition-colors">
+                     <Twitter className="w-5 h-5" />
+                 </Link>
+                 <Link href="#" aria-label="Follow SwaraDigital on Instagram" className="text-slate-500 hover:text-white transition-colors">
+                     <Instagram className="w-5 h-5" />
+                 </Link>
+                 <Link href="#" aria-label="SwaraDigital on GitHub" className="text-slate-500 hover:text-white transition-colors">
+                     <Github className="w-5 h-5" />
+                 </Link>
+                 <Link href="mailto:support@musicflow.com" aria-label="Email SwaraDigital Support" className="text-slate-500 hover:text-white transition-colors">
+                     <Mail className="w-5 h-5" />
+                 </Link>
              </div>
          </div>
 

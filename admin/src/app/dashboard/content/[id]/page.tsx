@@ -158,12 +158,14 @@ export default async function TrackReviewPage({ params }: { params: Promise<{ id
                                  </TabsContent>
 
                                  <TabsContent value="legal" className="space-y-8 mt-0">
-                                      <Section title="Copyright" icon={Globe}>
-                                          <GridItem label="P Line" value={track.track_p_line || track.albums?.p_line} />
-                                          <GridItem label="C Line" value={track.albums?.c_line} />
-                                          <GridItem label="Label" value={track.albums?.label_name} />
-                                          <GridItem label="Publisher" value={track.publisher} />
-                                      </Section>
+                                       <Section title="Copyright & Identifiers" icon={Globe}>
+                                           <GridItem label="P Line" value={track.track_p_line || track.albums?.p_line} />
+                                           <GridItem label="C Line" value={track.albums?.c_line} />
+                                           <GridItem label="Label" value={track.albums?.label_name} />
+                                           <GridItem label="Publisher" value={track.publisher} />
+                                           <GridItem label="ISRC" value={track.isrc} fontMono />
+                                           <GridItem label="UPC" value={track.albums?.upc} fontMono />
+                                       </Section>
                                       
                                       <Section title="Distribution" icon={DollarSign}>
                                           <GridItem label="Price Tier" value={track.price_tier} />
