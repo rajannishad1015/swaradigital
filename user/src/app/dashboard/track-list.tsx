@@ -38,7 +38,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 export default function TrackList({ tracks }: { tracks: any[] }) {
   const [isTakedownOpen, setIsTakedownOpen] = useState(false)
   const [isCorrectionOpen, setIsCorrectionOpen] = useState(false)
-  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
+  const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([])
   
   // Bulk Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -89,11 +89,14 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
       case 'approved':
         return <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20">Approved</Badge>
       case 'rejected':
+      case 'archived':
         return <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20">Rejected</Badge>
       case 'draft':
         return <Badge className="bg-zinc-500/10 text-zinc-500 hover:bg-zinc-500/20 border-zinc-500/20">Draft</Badge>
       case 'pending':
         return <Badge className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-amber-500/20">Pending</Badge>
+      case 'takedown_requested':
+        return <Badge className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-amber-500/20">Takedown Requested</Badge>
       default:
         return <Badge variant="outline" className="text-zinc-400 border-zinc-700">{status}</Badge>
     }
@@ -144,14 +147,14 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
       }
   }
 
-  const openTakedownDialog = (id: string) => {
-      setSelectedTrackId(id)
+  const openTakedownDialog = (ids: string | string[]) => {
+      setSelectedTrackIds(Array.isArray(ids) ? ids : [ids])
       setTakedownReason('')
       setIsTakedownOpen(true)
   }
 
   const submitTakedown = async () => {
-      if (!selectedTrackId) return
+      if (selectedTrackIds.length === 0) return
       if (!takedownReason.trim()) {
           toast.error("Please provide a reason for takedown")
           return
@@ -159,7 +162,7 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
 
       setIsSubmitting(true)
       try {
-          await requestTakedown(selectedTrackId, takedownReason)
+          await requestTakedown(selectedTrackIds, takedownReason)
           toast.success("Takedown request submitted")
           setIsTakedownOpen(false)
       } catch (err: any) {
@@ -172,7 +175,7 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
   // Filter selectable tracks for "Delete" (Draft/Rejected only)
   const canDeleteSelected = selectedIds.length > 0 && selectedIds.every(id => {
       const track = tracks.find(t => t.id === id)
-      return track && (track.status === 'draft' || track.status === 'rejected')
+      return track?.status === 'draft' || track?.status === 'rejected' || track?.status === 'archived'
   })
 
   return (
@@ -197,7 +200,7 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {groupedReleases.map((release) => (
+                    {groupedReleases.map((release: any) => (
                         <React.Fragment key={release.id}>
                             <TableRow className={`border-white/5 hover:bg-white/[0.02] transition-colors group ${expandedRows[release.id] ? 'bg-white/[0.04]' : ''}`}>
                                 <TableCell className="py-4">
@@ -255,47 +258,70 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                                         {new Date(release.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                     </span>
                                 </TableCell>
-                                <TableCell>
-                                    {release.tracks.length > 1 ? (
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            onClick={() => toggleRow(release.id)}
-                                            className="h-8 w-8 text-zinc-500 hover:text-white"
-                                        >
-                                            {expandedRows[release.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                        </Button>
-                                    ) : (
-                                        <div className="flex items-center gap-1">
-                                            {(release.tracks[0].status === 'draft' || release.tracks[0].status === 'rejected') && (
-                                                <>
-                                                    <Link href={`/dashboard/tracks/${release.tracks[0].id}`}>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-white hover:bg-white/10 rounded-full">
-                                                            <Edit2 size={14} />
+                                <TableCell className="text-right whitespace-nowrap">
+                                    <div className="flex items-center justify-end gap-1">
+                                        {release.tracks.length > 1 ? (
+                                            <>
+                                                {release.tracks.some((t: any) => t.status === 'approved') && (
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="icon" 
+                                                                    onClick={() => openTakedownDialog(release.tracks.filter((t: any) => t.status === 'approved').map((t: any) => t.id))}
+                                                                    className="h-8 w-8 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-full"
+                                                                >
+                                                                    <ShieldAlert size={14} />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top" className="bg-zinc-900 border-white/10 text-white text-[10px] font-bold uppercase tracking-wider">
+                                                                Take Down Release
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                )}
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    onClick={() => toggleRow(release.id)}
+                                                    className="h-8 w-8 text-zinc-500 hover:text-white"
+                                                >
+                                                    {expandedRows[release.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <div className="flex items-center gap-1">
+                                                {(release.tracks[0].status === 'draft' || release.tracks[0].status === 'rejected' || release.tracks[0].status === 'archived') && (
+                                                    <>
+                                                        <Link href={`/dashboard/tracks/${release.tracks[0].id}`}>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-white hover:bg-white/10 rounded-full">
+                                                                <Edit2 size={14} />
+                                                            </Button>
+                                                        </Link>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            onClick={() => handleDelete(release.tracks[0].id)}
+                                                            className="h-8 w-8 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-full"
+                                                        >
+                                                            <Trash2 size={14} />
                                                         </Button>
-                                                    </Link>
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="icon" 
-                                                        onClick={() => handleDelete(release.tracks[0].id)}
-                                                        className="h-8 w-8 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-full"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </Button>
-                                                </>
-                                            )}
-                                            {release.tracks[0].status === 'approved' && (
-                                                 <Button 
-                                                 variant="ghost" 
-                                                 size="icon" 
-                                                 onClick={() => openTakedownDialog(release.tracks[0].id)}
-                                                 className="h-8 w-8 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-full"
-                                             >
-                                                 <ShieldAlert size={14} />
-                                             </Button>
-                                            )}
-                                        </div>
-                                    )}
+                                                    </>
+                                                )}
+                                                {release.tracks[0].status === 'approved' && (
+                                                     <Button 
+                                                         variant="ghost" 
+                                                         size="icon" 
+                                                         onClick={() => openTakedownDialog(release.tracks[0].id)}
+                                                         className="h-8 w-8 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-full"
+                                                     >
+                                                         <ShieldAlert size={14} />
+                                                     </Button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </TableCell>
                             </TableRow>
                             
@@ -323,7 +349,7 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                                     </TableCell>
                                     <TableCell colSpan={2} className="text-right">
                                         <div className="flex justify-end items-center gap-1">
-                                            {(track.status === 'draft' || track.status === 'rejected') && (
+                                            {(track.status === 'draft' || track.status === 'rejected' || track.status === 'archived') && (
                                                 <>
                                                     <Link href={`/dashboard/tracks/${track.id}`}>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-600 hover:text-white">
@@ -340,6 +366,16 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                                                     </Button>
                                                 </>
                                             )}
+                                            {track.status === 'approved' && (
+                                                  <Button 
+                                                      variant="ghost" 
+                                                      size="icon" 
+                                                      onClick={() => openTakedownDialog(track.id)}
+                                                      className="h-7 w-7 text-zinc-600 hover:text-amber-500 hover:bg-amber-500/10"
+                                                  >
+                                                      <ShieldAlert size={12} />
+                                                  </Button>
+                                             )}
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -364,7 +400,7 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                 </div>
             )}
 
-            {groupedReleases.map((release) => (
+            {groupedReleases.map((release: any) => (
                 <div key={release.id} className={`bg-white/5 border border-white/5 rounded-xl overflow-hidden transition-colors ${expandedRows[release.id] ? 'bg-white/10' : ''}`}>
                     <div className="p-4" onClick={() => release.tracks.length > 1 && toggleRow(release.id)}>
                         <div className="flex gap-4">
@@ -382,11 +418,26 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                                             {release.tracks.length === 1 && release.tracks[0].isrc && ` • ISRC: ${release.tracks[0].isrc}`}
                                          </p>
                                     </div>
-                                    {release.tracks.length === 1 ? getStatusBadge(release.tracks[0].status) : (
-                                        <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-500">
-                                            {release.tracks.length} <Disc size={10} />
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-1">
+                                        {release.tracks.some((t: any) => t.status === 'approved') && (
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openTakedownDialog(release.tracks.filter((t: any) => t.status === 'approved').map((t: any) => t.id));
+                                                }}
+                                                className="h-8 w-8 text-amber-500 hover:bg-amber-500/10 rounded-full"
+                                            >
+                                                <ShieldAlert size={14} />
+                                            </Button>
+                                        )}
+                                        {release.tracks.length === 1 ? getStatusBadge(release.tracks[0].status) : (
+                                            <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded text-[10px] font-bold text-zinc-500">
+                                                {release.tracks.length} <Disc size={10} />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 
                                 <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-zinc-400">
@@ -427,7 +478,17 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                                         </div>
                                     </div>
                                     <div className="flex gap-1">
-                                        {(track.status === 'draft' || track.status === 'rejected') && (
+                                        {track.status === 'approved' && (
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                onClick={() => openTakedownDialog(track.id)}
+                                                className="h-7 w-7 text-amber-500 hover:bg-amber-500/10"
+                                            >
+                                                <ShieldAlert size={12} />
+                                            </Button>
+                                        )}
+                                        {(track.status === 'draft' || track.status === 'rejected' || track.status === 'archived') && (
                                             <Link href={`/dashboard/tracks/${track.id}`}>
                                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-500">
                                                     <Edit2 size={12} />
@@ -443,7 +504,7 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                     {/* Single Track Actions */}
                     {release.tracks.length === 1 && (
                         <div className="px-4 pb-4 border-t border-white/5 pt-3 flex justify-end gap-2">
-                             {(release.tracks[0].status === 'draft' || release.tracks[0].status === 'rejected') && (
+                             {(release.tracks[0].status === 'draft' || release.tracks[0].status === 'rejected' || release.tracks[0].status === 'archived') && (
                                 <>
                                     <Link href={`/dashboard/tracks/${release.tracks[0].id}`}>
                                         <Button variant="ghost" size="sm" className="h-8 md:h-8 text-zinc-400">
@@ -459,6 +520,16 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                                         <Trash2 size={14} className="mr-2" /> Delete
                                     </Button>
                                 </>
+                             )}
+                             {release.tracks[0].status === 'approved' && (
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => openTakedownDialog(release.tracks[0].id)}
+                                    className="h-8 text-amber-500 hover:bg-amber-500/10"
+                                >
+                                    <ShieldAlert size={14} className="mr-2" /> Request Takedown
+                                </Button>
                              )}
                         </div>
                     )}
@@ -547,10 +618,11 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                     <Button variant="ghost" onClick={() => setIsCorrectionOpen(false)} className="text-zinc-400 hover:text-white">Cancel</Button>
                     <Button 
                         onClick={async () => {
-                            if (!selectedTrackId) return;
+                            if (selectedTrackIds.length === 0) return;
                             setIsSubmitting(true);
+                            const trackId = selectedTrackIds[0]; // Correction is per track for now
                             try {
-                                await requestCorrection(selectedTrackId, correctionField, correctionValue, correctionReason);
+                                await requestCorrection(trackId, correctionField, correctionValue, correctionReason);
                                 toast.success("Correction request submitted");
                                 setIsCorrectionOpen(false);
                             } catch (err: any) {

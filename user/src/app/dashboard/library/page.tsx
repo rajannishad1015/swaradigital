@@ -16,7 +16,7 @@ export default async function LibraryPage() {
   if (!user) return <div>Unauthorized</div>
 
   const { data: tracks, error } = await supabase.from('tracks')
-    .select('*, albums(cover_art_url, title, type)')
+    .select('*, albums(cover_art_url, title, type, upc)')
     .eq('artist_id', user.id)
     .order('created_at', { ascending: false })
 

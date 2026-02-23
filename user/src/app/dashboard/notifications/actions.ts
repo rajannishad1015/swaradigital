@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function fetchNotifications() {
+export async function fetchNotifications(limit: number = 20) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return []
@@ -13,7 +13,7 @@ export async function fetchNotifications() {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(50)
+        .limit(limit)
 
     if (error) {
         console.error('Error fetching notifications:', error)
@@ -40,6 +40,7 @@ export async function markAsRead(id: string) {
     }
 
     revalidatePath('/dashboard')
+    revalidatePath('/dashboard/notifications')
     return { success: true }
 }
 
@@ -60,6 +61,7 @@ export async function markAllAsRead() {
     }
 
     revalidatePath('/dashboard')
+    revalidatePath('/dashboard/notifications')
     return { success: true }
 }
 
@@ -80,5 +82,26 @@ export async function deleteNotification(id: string) {
     }
 
     revalidatePath('/dashboard')
+    revalidatePath('/dashboard/notifications')
+    return { success: true }
+}
+
+export async function deleteAllNotifications() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false }
+
+    const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id)
+
+    if (error) {
+        console.error('Error deleting all notifications:', error)
+        return { success: false }
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/notifications')
     return { success: true }
 }

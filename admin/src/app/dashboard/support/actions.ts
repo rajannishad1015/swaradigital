@@ -100,6 +100,24 @@ export async function updateTicketStatus(formData: FormData) {
     const status = formData.get('status') as string
 
     await supabase.from('tickets').update({ status }).eq('id', ticketId)
+
+    // Notify Artist
+    const { data: ticket } = await supabase
+        .from('tickets')
+        .select('artist_id, subject')
+        .eq('id', ticketId)
+        .single()
+
+    if (ticket) {
+        await supabase.from('notifications').insert({
+            user_id: ticket.artist_id,
+            type: 'support_reply',
+            title: `Ticket ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+            message: `The status of your ticket "${ticket.subject}" has been updated to: ${status}`,
+            link: `/dashboard/support/${ticketId}`,
+            is_read: false
+        })
+    }
     
     revalidatePath(`/dashboard/support/${ticketId}`)
     revalidatePath('/dashboard/support')

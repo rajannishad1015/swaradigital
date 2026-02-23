@@ -38,7 +38,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   }
 
   // Setup queries
-  let trackQuery = supabase.from('tracks').select('*, albums(cover_art_url, title, type)')
+  let trackQuery = supabase.from('tracks').select('*, albums(cover_art_url, title, type, upc)')
   let ticketQuery = supabase.from('tickets').select('*', { count: 'exact', head: true }).in('status', ['open', 'in_progress'])
 
   if (artistId) {
@@ -156,7 +156,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     <Link href="/dashboard/upload">
                         <Button className="h-12 px-8 bg-white hover:bg-indigo-500 text-black hover:text-white font-black text-[10px] uppercase tracking-[0.2em] transition-all rounded-full shadow-[0_0_20px_rgba(255,255,255,0.1)]">
                             <UploadCloud className="mr-2 h-4 w-4" />
-                            Launch Release
+                            New Release
                         </Button>
                     </Link>
                 </div>

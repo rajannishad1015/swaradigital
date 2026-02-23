@@ -14,13 +14,10 @@ export async function updateTrackStatus(trackIds: string | string[], status: 'ap
     throw new Error('Unauthorized')
   }
 
-  // Check role (optional, RLS handles it but good for early exit)
-  // ...
-
   // Fetch track details for notifications and logging
   const { data: tracks, error: fetchError } = await supabase
     .from('tracks')
-    .select('id, artist_id, title')
+    .select('id, artist_id, title, status, takedown_reason')
     .in('id', ids)
 
   if (fetchError || !tracks || tracks.length === 0) {
@@ -32,6 +29,7 @@ export async function updateTrackStatus(trackIds: string | string[], status: 'ap
     .update({ 
       status, 
       rejection_reason: status === 'rejected' ? reason : null,
+      takedown_reason: null, // Clear takedown reason once processed
       updated_at: new Date().toISOString()
     })
     .in('id', ids)
@@ -42,21 +40,38 @@ export async function updateTrackStatus(trackIds: string | string[], status: 'ap
 
   // Send Notifications and Log Actions
   for (const track of tracks) {
+    let notificationType: string = 'upload_status'
+    let notificationTitle = ''
+    let notificationMessage = ''
+
     if (status === 'rejected') {
-      await supabase.from('notifications').insert({
-        user_id: track.artist_id,
-        type: 'upload_status',
-        title: `Action Required: ${track.title}`,
-        message: reason || 'Your release has been rejected. Please check the details and resubmit.',
-        link: '/dashboard/catalog',
-        is_read: false
-      })
+      const isTakedown = track.status === 'takedown_requested'
+      if (isTakedown) {
+        notificationType = 'takedown_approved'
+        notificationTitle = `Takedown Approved: ${track.title}`
+        notificationMessage = `Your takedown request for "${track.title}" has been approved. The release has been removed from stores and is now back in your catalog for editing. ${reason ? `Note: ${reason}` : ''}`
+      } else {
+        notificationTitle = `Action Required: ${track.title}`
+        notificationMessage = `Your release "${track.title}" has been rejected. Reason: ${reason || 'Please check the details and resubmit.'}`
+      }
     } else if (status === 'approved') {
+      const wasTakedown = track.status === 'takedown_requested'
+      if (wasTakedown) {
+        notificationType = 'takedown_refused'
+        notificationTitle = `Takedown Refused: ${track.title}`
+        notificationMessage = `Your takedown request for "${track.title}" was reviewed and refused. Your release will remain live. Reason: ${reason || 'No valid reason found for removal.'}`
+      } else {
+        notificationTitle = `Release Approved: ${track.title}`
+        notificationMessage = `Congratulations! Your release "${track.title}" has been approved and sent to stores.${reason ? ` Note: ${reason}` : ''}`
+      }
+    }
+
+    if (notificationTitle) {
       await supabase.from('notifications').insert({
         user_id: track.artist_id,
-        type: 'upload_status',
-        title: `Release Approved: ${track.title}`,
-        message: 'Congratulations! Your release has been approved and sent to stores.',
+        type: notificationType,
+        title: notificationTitle,
+        message: notificationMessage,
         link: '/dashboard/catalog',
         is_read: false
       })
@@ -67,7 +82,7 @@ export async function updateTrackStatus(trackIds: string | string[], status: 'ap
       status === 'approved' ? 'APPROVED_TRACK' : 'REJECTED_TRACK',
       'TRACK',
       track.id,
-      { reason, title: track.title }
+      { reason, title: track.title, previous_status: track.status }
     )
   }
 

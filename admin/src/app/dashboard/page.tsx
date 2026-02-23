@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { Users, Music, Clock, DollarSign, LifeBuoy } from 'lucide-react'
+import { Users, Music, Clock, DollarSign, LifeBuoy, X } from 'lucide-react'
 import { getAnalyticsData } from './analytics-actions'
 import AnalyticsCharts from '@/components/admin/analytics/charts'
 
@@ -19,6 +19,7 @@ export default async function DashboardPage() {
   const [
     { count: totalTracks },
     { count: pendingTracks },
+    { count: takedownTracks },
     { count: totalArtists },
     { count: pendingPayouts },
     { count: openTickets },
@@ -26,6 +27,7 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase.from('tracks').select('*', { count: 'exact', head: true }),
     supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('status', 'takedown_requested'),
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'open'),
@@ -35,6 +37,7 @@ export default async function DashboardPage() {
   const stats = [
     { label: 'Total Uploads', value: totalTracks || 0, icon: Music, color: 'text-blue-600', bgColor: 'bg-blue-50' },
     { label: 'Pending Review', value: pendingTracks || 0, icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+    { label: 'Takedowns', value: takedownTracks || 0, icon: X, color: 'text-rose-600', bgColor: 'bg-rose-50' },
     { label: 'Pending Support', value: openTickets || 0, icon: LifeBuoy, color: 'text-rose-600', bgColor: 'bg-rose-50' },
     { label: 'Active Artists', value: totalArtists || 0, icon: Users, color: 'text-green-600', bgColor: 'bg-green-50' },
     { label: 'Pending Payouts', value: pendingPayouts || 0, icon: DollarSign, color: 'text-purple-600', bgColor: 'bg-purple-50' },
@@ -94,6 +97,15 @@ export default async function DashboardPage() {
                    <div className="space-y-0.5">
                         <span className="block text-xs font-bold text-white">Review Content</span>
                         <span className="block text-[10px] text-zinc-500">{pendingTracks || 0} Pending</span>
+                   </div>
+                </a>
+                <a href="/dashboard/content?status=takedown_requested" className="group rounded-xl bg-zinc-900/50 border border-white/5 p-4 hover:bg-white/5 transition-all text-center flex flex-col items-center justify-center gap-3 hover:border-rose-500/30">
+                   <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform group-hover:bg-rose-500/20 group-hover:text-rose-400">
+                        <X className="w-5 h-5 opacity-70 group-hover:opacity-100" />
+                   </div>
+                   <div className="space-y-0.5">
+                        <span className="block text-xs font-bold text-white">Takedowns</span>
+                        <span className="block text-[10px] text-zinc-500">{takedownTracks || 0} Requests</span>
                    </div>
                 </a>
                 <a href="/dashboard/support?status=open" className="group rounded-xl bg-zinc-900/50 border border-white/5 p-4 hover:bg-white/5 transition-all text-center flex flex-col items-center justify-center gap-3 hover:border-rose-500/30">

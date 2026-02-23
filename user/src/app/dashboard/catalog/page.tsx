@@ -13,7 +13,7 @@ export default async function CatalogPage() {
 
   const { data: tracks, error } = await supabase
     .from('tracks')
-    .select('*, albums(cover_art_url, title, type)')
+    .select('*, albums(cover_art_url, title, type, upc)')
     .eq('artist_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -26,12 +26,12 @@ export default async function CatalogPage() {
     <div className="space-y-8">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="space-y-1">
-                <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Discography Manager</h1>
-                <p className="text-zinc-500 font-medium tracking-wide text-xs uppercase">Master Delivery Ledger & Metadata Control</p>
+                <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Music Catalog</h1>
+                <p className="text-zinc-500 font-medium tracking-wide text-xs uppercase">Manage your songs and metadata</p>
             </div>
             <div className="flex items-center gap-3">
                  <div className="hidden md:flex flex-col items-end mr-4">
-                    <span className="text-[10px] uppercase font-black text-zinc-600 tracking-widest">Total Assets</span>
+                    <span className="text-[10px] uppercase font-black text-zinc-600 tracking-widest">Total Tracks</span>
                     <span className="text-xl font-black text-white tabular-nums leading-none">{tracks?.length || 0}</span>
                  </div>
                  <Link href="/dashboard/upload">

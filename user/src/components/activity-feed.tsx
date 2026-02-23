@@ -78,7 +78,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
             href="/dashboard/activity" 
             className="flex items-center justify-center w-full py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all group"
           >
-            Trace All Activity History
+            View All Activity
             <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
           </Link>
         </div>

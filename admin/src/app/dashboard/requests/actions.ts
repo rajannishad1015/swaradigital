@@ -74,6 +74,39 @@ export async function updateRequestStatus(
         throw new Error(error.message)
     }
 
+    // Notify Artist
+    const { data: request } = await supabase
+        .from(table)
+        .select('*')
+        .eq('id', id)
+        .single()
+
+    if (request) {
+        const typeLabel = type === 'profiling' ? 'Profile Link' : 
+                         type === 'ugc' ? 'UGC Claim' : 
+                         'Channel Whitelist'
+        
+        let message = ''
+        if (status === 'approved') {
+            message = `Your ${typeLabel.toLowerCase()} request has been approved.`
+        } else if (status === 'rejected') {
+            message = `Your ${typeLabel.toLowerCase()} request was rejected. Reason: ${reason || 'Criteria not met.'}`
+        } else if (status === 'processing') {
+            message = `Your ${typeLabel.toLowerCase()} request is now being processed by our team.`
+        } else {
+            message = `Your ${typeLabel.toLowerCase()} request is now ${status}.`
+        }
+
+        await supabase.from('notifications').insert({
+            user_id: request.artist_id,
+            type: 'upload_status',
+            title: `${typeLabel} ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+            message: message,
+            link: '/dashboard/requests',
+            is_read: false
+        })
+    }
+
     revalidatePath('/dashboard/requests')
     return { success: true }
 }

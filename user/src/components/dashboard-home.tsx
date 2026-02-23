@@ -52,11 +52,11 @@ export default function DashboardHome({
                     <div className="w-20 h-20 bg-white/5 backdrop-blur-3xl rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/10 shadow-[0_0_50px_rgba(99,102,241,0.1)]">
                          <Music size={40} className="text-white/20" />
                     </div>
-                    <h2 className="text-3xl font-black mb-4 text-white tracking-tighter">Initialize Your Catalog</h2>
-                    <p className="text-zinc-500 mb-10 max-w-sm mx-auto font-medium">Your artistic journey begins with a single release. Launch your first delivery to track performance intelligence.</p>
+                    <h2 className="text-3xl font-black mb-4 text-white tracking-tighter">Your Catalog is Empty</h2>
+                    <p className="text-zinc-500 mb-10 max-w-sm mx-auto font-medium">Your journey begins with a single release. Upload your first song to start tracking performance.</p>
                     <Link href="/dashboard/upload">
                         <Button className="h-14 px-10 bg-white text-black font-black text-xs uppercase tracking-[0.2em] rounded-full hover:bg-indigo-500 hover:text-white transition-all shadow-2xl">
-                            Launch Your First Release
+                            Upload Your First Song
                         </Button>
                     </Link>
                 </div>
@@ -77,7 +77,7 @@ export default function DashboardHome({
                 {/* Total Releases */}
                 <Card className="bg-white/[0.03] backdrop-blur-2xl border-white/20 shadow-2xl relative overflow-hidden group transition-all hover:border-white/40">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.25em]">Discography</CardTitle>
+                        <CardTitle className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.25em]">Total Releases</CardTitle>
                         <Disc className="h-4 w-4 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
                     </CardHeader>
                     <CardContent className="pt-0 relative z-10">
@@ -158,7 +158,7 @@ export default function DashboardHome({
                 {/* Open Tickets */}
                 <Card className="bg-white/[0.03] backdrop-blur-2xl border-white/20 shadow-2xl relative overflow-hidden group transition-all hover:border-indigo-500/50">
                      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.25em]">Label Support</CardTitle>
+                        <CardTitle className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.25em]">Support Tickets</CardTitle>
                         <Ticket className="h-4 w-4 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
                     </CardHeader>
                     <CardContent className="pt-0 relative z-10">
@@ -272,8 +272,8 @@ export default function DashboardHome({
                                                 <p className="text-[10px] text-zinc-600 font-mono tracking-tighter">#{track.id.slice(0, 8)}</p>
                                             </div>
                                         </div>
-                                        <div className="hidden sm:flex flex-col items-end gap-2">
-                                            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em]">Node Status</span>
+                                         <div className="hidden sm:flex flex-col items-end gap-2">
+                                            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em]">Status</span>
                                             <StatusBadge status={track.status} />
                                         </div>
                                     </div>
@@ -289,7 +289,7 @@ export default function DashboardHome({
                                         href="/dashboard/catalog" 
                                         className="flex items-center justify-center w-full py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all group"
                                     >
-                                        Explore Full Catalog
+                                         View Full Catalog
                                         <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
                                     </Link>
                                 </div>

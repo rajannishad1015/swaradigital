@@ -107,7 +107,7 @@ export async function createWithdrawalRequest(amount: number, paymentMode: strin
   return { success: true }
 }
 
-export async function requestTakedown(trackId: string, reason: string) {
+export async function requestTakedown(trackIds: string | string[], reason: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
@@ -117,18 +117,21 @@ export async function requestTakedown(trackId: string, reason: string) {
         throw new Error("Please provide a valid reason for the takedown request.")
     }
 
-    // Verify ownership and status
-    const { data: track } = await supabase
+    const ids = Array.isArray(trackIds) ? trackIds : [trackIds]
+
+    // Verify ownership and status for all tracks
+    const { data: tracks, error: fetchError } = await supabase
         .from('tracks')
         .select('id, status, artist_id')
-        .eq('id', trackId)
-        .single()
+        .in('id', ids)
 
-    if (!track) throw new Error('Track not found')
-    if (track.artist_id !== user.id) throw new Error('Unauthorized')
-    
-    if (track.status !== 'approved') {
-        throw new Error('Only approved tracks can be taken down')
+    if (fetchError || !tracks || tracks.length === 0) {
+        throw new Error('Some tracks were not found')
+    }
+
+    const invalidTracks = tracks.filter(t => t.artist_id !== user.id || t.status !== 'approved')
+    if (invalidTracks.length > 0) {
+        throw new Error(`Cannot request takedown for ${invalidTracks.length} tracks. Ensure you own them and they are approved.`)
     }
 
     const { error } = await supabase
@@ -137,7 +140,7 @@ export async function requestTakedown(trackId: string, reason: string) {
             status: 'takedown_requested',
             takedown_reason: reason 
         })
-        .eq('id', trackId)
+        .in('id', ids)
 
     if (error) throw new Error(error.message)
 

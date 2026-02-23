@@ -23,7 +23,7 @@ import MetadataEditor from '@/components/admin/metadata-editor'
 import { Pencil } from 'lucide-react'
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Check, X, Download, Search, Music, ExternalLink, Play, Pause, MoreVertical, Disc, ChevronDown, ChevronRight } from 'lucide-react'
+import { Check, X, Download, Search, Music, ExternalLink, Play, Pause, MoreVertical, Disc, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -38,7 +38,8 @@ import { toast } from 'sonner'
 
 export default function ContentList({ initialTracks, status = 'pending' }: { initialTracks: any[], status?: string }) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
+  const [isDecisionDialogOpen, setIsDecisionDialogOpen] = useState(false)
+  const [decisionType, setDecisionType] = useState<'approved' | 'rejected'>('approved')
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingTrack, setEditingTrack] = useState<any>(null)
   const [rejectionReason, setRejectionReason] = useState('')
@@ -115,34 +116,26 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
     }
   }
 
-  const handleApprove = async (ids: string | string[], e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    try {
-        await updateTrackStatus(ids, 'approved')
-        toast.success("Release(s) approved successfully")
-    } catch (err: any) {
-        toast.error(err.message || "Failed to approve")
-    }
-  }
-
-  const handleReject = async () => {
+  const executeStatusUpdate = async () => {
     if (!selectedRelease) return
     const ids = selectedRelease.tracks.map((t: any) => t.id)
     try {
-        await updateTrackStatus(ids, 'rejected', rejectionReason)
-        setIsRejectDialogOpen(false)
+        await updateTrackStatus(ids, decisionType, rejectionReason)
+        setIsDecisionDialogOpen(false)
         setRejectionReason('')
         setSelectedRelease(null)
-        toast.success("Release(s) rejected")
+        const statusLabel = decisionType === 'approved' ? 'Approved' : 'Rejected'
+        toast.success(`Release marked as ${statusLabel}`)
     } catch (err: any) {
-        toast.error(err.message || "Failed to reject")
+        toast.error(err.message || `Failed to update status`)
     }
   }
 
-  const openRejectDialog = (release: any, e?: React.MouseEvent) => {
+  const openDecisionDialog = (release: any, type: 'approved' | 'rejected', e?: React.MouseEvent) => {
       e?.stopPropagation()
       setSelectedRelease(release)
-      setIsRejectDialogOpen(true)
+      setDecisionType(type)
+      setIsDecisionDialogOpen(true)
   }
 
   const handleDownload = (track: any) => {
@@ -307,6 +300,11 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
                         <div className="flex flex-col min-w-0">
                             <span className="font-bold text-white text-sm truncate group-hover:text-indigo-400 transition-colors block max-w-[180px] uppercase">{release.title}</span>
                             <span className="text-xs text-zinc-500 font-medium truncate block max-w-[180px]">{release.profiles?.artist_name || 'Unknown'}</span>
+                            {release.tracks.some((t: any) => t.takedown_reason) && (
+                                <span className="text-[10px] text-rose-400 font-bold mt-1 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20 w-fit">
+                                    Reason: {release.tracks.find((t: any) => t.takedown_reason)?.takedown_reason}
+                                </span>
+                            )}
                         </div>
                       </div>
                     </TableCell>
@@ -362,17 +360,28 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
 
                           {(!status || status === 'pending') && (
                               <>
-                                  <Button size="sm" className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 h-8 rounded-lg font-bold text-xs" onClick={(e) => handleApprove(release.tracks.map((t: any) => t.id), e)}>
+                                  <Button size="sm" className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 h-8 rounded-lg font-bold text-xs" onClick={(e) => openDecisionDialog(release, 'approved', e)}>
                                       Approve {release.tracks.length > 1 ? 'All' : ''}
                                   </Button>
-                                  <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-lg font-bold text-xs" onClick={(e) => openRejectDialog(release, e)}>
+                                  <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-lg font-bold text-xs" onClick={(e) => openDecisionDialog(release, 'rejected', e)}>
                                       Reject {release.tracks.length > 1 ? 'All' : ''}
                                   </Button>
                               </>
                           )}
 
+                          {status === 'takedown_requested' && (
+                              <>
+                                  <Button size="sm" variant="outline" className="text-red-400 border-red-500/20 hover:bg-red-500 hover:text-white h-8 rounded-lg font-bold text-xs" onClick={(e) => openDecisionDialog(release, 'rejected', e)}>
+                                      Approve Takedown
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="text-emerald-400 hover:bg-emerald-500/10 h-8 rounded-lg font-bold text-xs" onClick={(e) => openDecisionDialog(release, 'approved', e)}>
+                                      Keep Live
+                                  </Button>
+                              </>
+                          )}
+
                           {status === 'approved' && (
-                              <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-lg font-bold text-xs" onClick={(e) => openRejectDialog(release, e)}>
+                              <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-lg font-bold text-xs" onClick={(e) => openDecisionDialog(release, 'rejected', e)}>
                                   Take Down
                               </Button>
                           )}
@@ -462,6 +471,11 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
                                     <span className="text-zinc-700 font-bold text-[8px]">•</span>
                                     <span className="text-[9px] text-zinc-500 font-mono">{release.tracks.length} TRACKS</span>
                                 </div>
+                                {release.tracks.some((t: any) => t.takedown_reason) && (
+                                    <div className="mt-2 text-[9px] text-rose-400 font-bold bg-rose-500/10 px-2 py-1 rounded border border-rose-500/20 w-fit">
+                                        Takedown Reason: {release.tracks.find((t: any) => t.takedown_reason)?.takedown_reason}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         
@@ -539,17 +553,17 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
                 <div className="grid grid-cols-2 gap-2 p-4 pt-0">
                      {(!status || status === 'pending') && (
                           <>
-                              <Button className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 h-10 rounded-xl font-bold text-sm transition-all active:scale-95" onClick={(e) => { e.stopPropagation(); handleApprove(release.tracks.map((t: any) => t.id), e); }}>
+                              <Button className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 h-10 rounded-xl font-bold text-sm transition-all active:scale-95" onClick={(e) => { e.stopPropagation(); openDecisionDialog(release, 'approved', e); }}>
                                   Approve {release.tracks.length > 1 ? 'All' : ''}
                               </Button>
-                              <Button variant="ghost" className="bg-red-500/5 text-red-400 hover:text-white hover:bg-red-500 border border-red-500/10 h-10 rounded-xl font-bold text-sm transition-all active:scale-95" onClick={(e) => { e.stopPropagation(); openRejectDialog(release, e); }}>
+                              <Button variant="ghost" className="bg-red-500/5 text-red-400 hover:text-white hover:bg-red-500 border border-red-500/10 h-10 rounded-xl font-bold text-sm transition-all active:scale-95" onClick={(e) => { e.stopPropagation(); openDecisionDialog(release, 'rejected', e); }}>
                                   Reject {release.tracks.length > 1 ? 'All' : ''}
                               </Button>
                           </>
                       )}
                       
                       {status === 'approved' && (
-                           <Button variant="ghost" className="col-span-2 bg-red-500/5 text-red-400 hover:text-white hover:bg-red-500 border border-red-500/10 h-10 rounded-xl font-bold text-sm" onClick={(e) => { e.stopPropagation(); openRejectDialog(release, e); }}>
+                           <Button variant="ghost" className="col-span-2 bg-red-500/5 text-red-400 hover:text-white hover:bg-red-500 border border-red-500/10 h-10 rounded-xl font-bold text-sm" onClick={(e) => { e.stopPropagation(); openDecisionDialog(release, 'rejected', e); }}>
                               Take Down Release
                           </Button>
                       )}
@@ -564,26 +578,53 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
         )}
       </div>
 
-      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent className="bg-zinc-950 border-white/10 text-white sm:rounded-2xl w-[90%] max-w-[400px] rounded-2xl mx-auto">
-            <DialogHeader>
-                <DialogTitle className="text-left">{status === 'approved' ? 'Take Down' : 'Reject'} Release</DialogTitle>
-                <DialogDescription className="text-left text-zinc-400">
-                    Reason for {status === 'approved' ? 'taking down' : 'rejection'}:
-                </DialogDescription>
-            </DialogHeader>
-            <Textarea 
-                placeholder="e.g. Low audio quality, copyright infringement..."
+      <Dialog open={isDecisionDialogOpen} onOpenChange={setIsDecisionDialogOpen}>
+        <DialogContent className="bg-zinc-950 border-white/10 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <AlertTriangle className={`w-5 h-5 ${decisionType === 'approved' ? 'text-emerald-500' : 'text-red-500'}`} />
+              {status === 'takedown_requested' 
+                ? (decisionType === 'rejected' ? 'Approve Takedown' : 'Keep Release Live')
+                : (decisionType === 'approved' ? 'Approve Content' : (status === 'approved' ? 'Take Down Release' : 'Reject Content'))}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              {status === 'takedown_requested'
+                ? (decisionType === 'rejected' 
+                    ? 'This will approve the takedown request and remove the release from stores. The track status will become "Rejected", allowing the artist to edit and resubmit.'
+                    : 'This will refuse the takedown request. The release will remain live in stores.')
+                : (decisionType === 'approved'
+                    ? 'This will approve the release and prepare it for distribution.'
+                    : (status === 'approved' 
+                        ? 'This will remove the release from stores and set it to "Rejected", allowing the artist to edit details.'
+                        : 'This will notify the artist about the rejection and explain what needs to be fixed.'))}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-400">
+                Admin Note (Visible to Artist)
+              </label>
+              <Textarea 
+                placeholder={decisionType === 'approved' 
+                  ? "Optional note for the artist..."
+                  : (status === 'takedown_requested' || status === 'approved' ? "Required explanation for the takedown..." : "Required explanation for the artist...")}
+                className={`min-h-[120px] bg-zinc-900 border-white/10 ${decisionType === 'approved' ? 'focus:border-emerald-500/50' : 'focus:border-red-500/50'}`}
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                className="min-h-[120px] bg-zinc-900/50 border-white/10 focus-visible:ring-indigo-500/50 resize-none rounded-xl"
-            />
-            <DialogFooter className="flex-row gap-2 sm:justify-end">
-                <Button variant="ghost" onClick={() => setIsRejectDialogOpen(false)} className="flex-1 sm:flex-none rounded-xl h-10">Cancel</Button>
-                <Button variant="destructive" onClick={handleReject} className="flex-1 sm:flex-none rounded-xl h-10 bg-red-500 hover:bg-red-600">
-                    {status === 'approved' ? 'Confirm' : 'Reject'}
-                </Button>
-            </DialogFooter>
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" className="text-zinc-400 hover:text-white" onClick={() => setIsDecisionDialogOpen(false)}>Cancel</Button>
+            <Button 
+              className={`${decisionType === 'approved' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'} text-white font-bold px-6`}
+              onClick={executeStatusUpdate}
+            >
+              Confirm {status === 'takedown_requested' && decisionType === 'rejected' ? 'Takedown' : (status === 'approved' && decisionType === 'rejected' ? 'Takedown' : (decisionType === 'approved' ? 'Approval' : 'Rejection'))}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

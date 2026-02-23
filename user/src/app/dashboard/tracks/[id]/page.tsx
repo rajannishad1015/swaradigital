@@ -45,8 +45,8 @@ export default async function EditTrackPage({ params }: PageProps) {
     }
 
 
-    // Only allow editing if draft or rejected
-    if (track.status !== 'draft' && track.status !== 'rejected') {
+    // Only allow editing if draft, rejected, or archived
+    if (track.status !== 'draft' && track.status !== 'rejected' && track.status !== 'archived') {
         return (
             <div className="p-8">
                 <Card>
@@ -54,7 +54,7 @@ export default async function EditTrackPage({ params }: PageProps) {
                         <CardTitle>Cannot Edit Track</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p>This track is {track.status} and cannot be edited. Please contact support if you need changes.</p>
+                        <p>This track is currently {track.status} and cannot be edited. Only Drafts, Rejected, or Archived tracks can be modified.</p>
                     </CardContent>
                 </Card>
             </div>
