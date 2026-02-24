@@ -328,14 +328,20 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                 </CardHeader>
                 <CardContent className="h-[250px] p-6">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data.countryData} barSize={40}>
+                        <BarChart data={data.countryData} barSize={32} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                              <defs>
                                 <linearGradient id="countryBarGrad" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%" stopColor="#fb7185" />
+                                    <stop offset="50%" stopColor="#f43f5e" />
                                     <stop offset="100%" stopColor="#e11d48" />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                            <CartesianGrid 
+                                strokeDasharray="3 3" 
+                                stroke="rgba(255,255,255,0.05)" 
+                                vertical={true} 
+                                horizontal={false}
+                            />
                             <XAxis 
                                 dataKey="name" 
                                 stroke="#71717a" 
@@ -350,24 +356,30 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                                 fontSize={10} 
                                 tickLine={false}
                                 axisLine={false}
-                                tickFormatter={(val) => `$${val}`}
+                                tickFormatter={(val) => `$${val.toLocaleString()}`}
+                                fontWeight={700}
                             />
                             <Tooltip 
-                                cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 4 }}
+                                cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 6 }}
                                 contentStyle={{ 
-                                    backgroundColor: '#09090b', 
+                                    backgroundColor: 'rgba(9, 9, 11, 0.95)', 
                                     border: '1px solid rgba(255,255,255,0.1)', 
-                                    borderRadius: '8px', 
+                                    borderRadius: '12px', 
+                                    padding: '12px',
+                                    backdropFilter: 'blur(8px)',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
                                     color: '#fff' 
                                 }}
-                                itemStyle={{ fontWeight: '800', fontSize: '12px', color: '#fb7185' }}
-                                formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Revenue']}
+                                itemStyle={{ fontWeight: '900', fontSize: '14px', color: '#fb7185' }}
+                                formatter={(value: any) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
                             />
                             <Bar 
                                 dataKey="value" 
                                 fill="url(#countryBarGrad)" 
                                 radius={[6, 6, 0, 0]} 
-                                className="filter drop-shadow-[0_0_5px_rgba(244,63,94,0.3)] transition-all duration-300 hover:brightness-110"
+                                className="filter drop-shadow-[0_0_8px_rgba(244,63,94,0.2)] transition-all duration-300 hover:brightness-110"
+                                animationDuration={1500}
+                                animationBegin={400}
                             />
                         </BarChart>
                     </ResponsiveContainer>
