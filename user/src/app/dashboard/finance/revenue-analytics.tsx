@@ -180,7 +180,7 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                     </CardHeader>
                     <CardContent className="h-[400px] p-6 relative">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data.trackData} layout="vertical" margin={{ left: 0, right: 30, top: 10, bottom: 10 }} barSize={24}>
+                            <BarChart data={data.trackData} layout="vertical" margin={{ left: 0, right: 40, top: 10, bottom: 10 }} barSize={28}>
                                 <XAxis type="number" hide />
                                 <YAxis 
                                     dataKey="name" 
@@ -189,33 +189,38 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                                     fontSize={10} 
                                     tickLine={false}
                                     axisLine={false}
-                                    width={140}
-                                    tickFormatter={(val) => val.length > 22 ? `${val.substring(0, 20)}...` : val}
+                                    width={160}
+                                    tickFormatter={(val) => val.length > 25 ? `${val.substring(0, 23)}...` : val}
                                     className="font-bold text-zinc-400"
                                 />
                                 <Tooltip 
-                                    cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 4 }}
+                                    cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 6 }}
                                     contentStyle={{ 
-                                        backgroundColor: '#09090b', 
+                                        backgroundColor: 'rgba(9, 9, 11, 0.95)', 
                                         border: '1px solid rgba(255,255,255,0.1)', 
-                                        borderRadius: '8px',
-                                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                                        borderRadius: '12px',
+                                        padding: '12px',
+                                        backdropFilter: 'blur(8px)',
+                                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
                                         color: '#fff' 
                                     }}
-                                    itemStyle={{ fontWeight: 'bold', fontSize: '12px', color: '#10b981' }}
-                                    formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Revenue']}
+                                    itemStyle={{ fontWeight: '900', fontSize: '14px', color: '#34d399' }}
+                                    formatter={(value: any) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
                                 />
                                 <defs>
                                     <linearGradient id="barTrackGrad" x1="0" y1="0" x2="1" y2="0">
                                         <stop offset="0%" stopColor="#34d399" />
+                                        <stop offset="50%" stopColor="#10b981" />
                                         <stop offset="100%" stopColor="#059669" />
                                     </linearGradient>
                                 </defs>
                                 <Bar 
                                     dataKey="value" 
                                     fill="url(#barTrackGrad)" 
-                                    radius={[0, 4, 4, 0]}
-                                    className="filter drop-shadow-[0_0_5px_rgba(16,185,129,0.3)] transition-all duration-500 hover:brightness-110" 
+                                    radius={[0, 6, 6, 0]}
+                                    className="filter drop-shadow-[0_0_8px_rgba(16,185,129,0.2)] transition-all duration-500 hover:brightness-110" 
+                                    animationDuration={1500}
+                                    animationBegin={200}
                                 />
                             </BarChart>
                         </ResponsiveContainer>
