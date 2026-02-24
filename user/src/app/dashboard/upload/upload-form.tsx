@@ -922,16 +922,57 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
 
         if (result.success) {
             if (status === 'draft') {
-                // If the server created a new record, save its ID so subsequent saves go to edit mode
-                if (result.trackId && !savedDraftId) {
+                // Update track IDs with real IDs from server for stable synchronization
+                if (result.trackId) {
                     setSavedDraftId(result.trackId)
-                    // Update localStorage with the new server ID
-                    try {
-                        const existing = JSON.parse(localStorage.getItem('upload_draft') || '{}')
-                        localStorage.setItem('upload_draft', JSON.stringify({ ...existing, savedDraftId: result.trackId }))
-                    } catch { /* non-fatal */ }
                 }
-                toast.success("Draft saved successfully! Your track details have been preserved.", { duration: 4000 })
+                
+                // Sync all track IDs if returned (Multi-track support)
+                if (result.allTracks && result.allTracks.length > 0) {
+                    const syncedTracks = tracks.map((track, index) => {
+                        const serverTrack = result.allTracks[index];
+                        if (serverTrack && serverTrack.id) {
+                            return { ...track, id: serverTrack.id };
+                        }
+                        return track;
+                    });
+                    
+                    setTracks(syncedTracks);
+                    
+                    // Re-save to localStorage with the new IDs for persistence across reloads
+                    try {
+                        const updatedDraftData = {
+                            title,
+                            releaseType,
+                            labelName,
+                            primaryArtists,
+                            featuringArtists,
+                            releaseDate,
+                            originalReleaseDate,
+                            pLineText,
+                            pLineYear,
+                            cLineText,
+                            cLineYear,
+                            courtesyLine,
+                            language,
+                            genre,
+                            subGenre,
+                            coverArtUrl,
+                            selectedPlatforms,
+                            upc,
+                            savedDraftId: result.trackId,
+                            tracks: syncedTracks.map(t => ({
+                                ...t,
+                                audioFile: null,
+                            }))
+                        }
+                        localStorage.setItem('upload_draft', JSON.stringify(updatedDraftData))
+                    } catch (e) {
+                        console.warn("Could not update localStorage draft with IDs", e);
+                    }
+                }
+
+                toast.success("Draft saved successfully! (Note: Audio files must be re-selected on reload)", { duration: 5000 })
                 setDraftLoaded(true)
                 setLoading(false)
                 return
