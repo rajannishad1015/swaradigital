@@ -1,5 +1,4 @@
-"use client";
-
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Bar,
@@ -29,9 +28,24 @@ export function AnalyticsCharts({
   statusData = [],
   genreData = [],
 }: AnalyticsChartsProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const totalStatus = statusData.reduce((acc, curr) => acc + (curr?.value || 0), 0);
   const hasStatusData = statusData.length > 0 && totalStatus > 0;
   const hasGenreData = genreData.length > 0 && genreData.some(g => g?.count > 0);
+
+  if (!isMounted) {
+    return (
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+        <Card className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 h-[500px]" />
+        <Card className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 h-[500px]" />
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Sector } from 'recharts'
 import { TrendingUp, Globe, BarChart3, PieChart as PieChartIcon, Activity } from 'lucide-react'
@@ -25,6 +25,11 @@ interface RevenueAnalyticsProps {
 
 export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const onPieEnter = (_: any, index: number) => {
         setActiveIndex(index);
@@ -36,6 +41,18 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
 
     const totalRevenue = data.platformData.reduce((acc, curr) => acc + curr.value, 0);
     const activeItem = activeIndex !== null ? data.platformData[activeIndex] : null;
+
+    if (!isMounted) {
+        return (
+            <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                    <Card className="bg-zinc-950 border-white/10 h-[450px]" />
+                    <Card className="bg-zinc-950 border-white/10 h-[450px]" />
+                </div>
+                <Card className="bg-zinc-950 border-white/10 h-[350px]" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
