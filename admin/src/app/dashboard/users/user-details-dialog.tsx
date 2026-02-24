@@ -589,8 +589,9 @@ function DeleteUserConfirmation({ user }: { user: any }) {
 
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <label className="text-xs font-bold text-zinc-500 uppercase">Type "DELETE" to confirm</label>
+                        <label htmlFor="delete-confirm" className="text-xs font-bold text-zinc-500 uppercase">Type "DELETE" to confirm</label>
                         <Input 
+                            id="delete-confirm"
                             value={confirmation}
                             onChange={(e) => setConfirmation(e.target.value)}
                             className="bg-zinc-900 border-white/10 font-mono"
@@ -684,8 +685,9 @@ function FundsManager({ userId, currentBalance, onSuccess }: { userId: string, c
 
                 <div className="space-y-2.5">
                     <div className="grid gap-1">
-                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest pl-1">Amount ($)</label>
+                        <label htmlFor="wallet-amount" className="text-[9px] font-black text-zinc-500 uppercase tracking-widest pl-1">Amount ($)</label>
                         <Input 
+                            id="wallet-amount"
                             type="number" 
                             step="0.01" 
                             placeholder="0.00" 
@@ -696,8 +698,9 @@ function FundsManager({ userId, currentBalance, onSuccess }: { userId: string, c
                         />
                     </div>
                     <div className="grid gap-1">
-                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest pl-1">Description</label>
+                        <label htmlFor="wallet-description" className="text-[9px] font-black text-zinc-500 uppercase tracking-widest pl-1">Description</label>
                         <Input 
+                            id="wallet-description"
                             type="text" 
                             placeholder={type === 'credit' ? "e.g. Bonus" : "e.g. Correction"}
                             value={description}

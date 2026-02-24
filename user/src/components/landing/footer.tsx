@@ -29,10 +29,9 @@ export function Footer() {
     {
       title: "Legal",
       links: [
-        { name: "Terms", href: "#" },
-        { name: "Privacy", href: "#" },
-        { name: "Cookies", href: "#" },
-        { name: "GDPR", href: "#" },
+        { name: "Terms & Conditions", href: "/terms" },
+        { name: "Refund Policy", href: "/refund-policy" },
+        { name: "Privacy Policy", href: "#" },
       ],
     },
     {

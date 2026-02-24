@@ -48,7 +48,7 @@ export default async function SettingsPage() {
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-4 text-sm font-medium">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-300 backdrop-blur-md shadow-sm hover:bg-white/10 transition-colors">
                     <Lock size={12} className="text-zinc-500" />
-                    <span className="font-mono tracking-wider text-xs">ID: {profile?.id.slice(0, 8).toUpperCase()}</span>
+                    <span className="font-mono tracking-wider text-xs">ID: {profile?.id?.slice(0, 8).toUpperCase() || 'UNKNOWN'}</span>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.1)]">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -164,6 +164,7 @@ export default async function SettingsPage() {
                         <div className="relative z-10">
                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">PayPal Email</div>
                             <div className="font-bold text-white text-lg">{profile?.paypal_email ? `${profile.paypal_email.slice(0, 3)}••••@${profile.paypal_email.split('@')[1]}` : 'Not linked'}</div>
+                                {profile?.paypal_email && !profile.paypal_email.includes('@') && <div className="text-[10px] text-red-500">Invalid format</div>}
                         </div>
                     </div>
                     <div className="bg-zinc-900 border border-white/5 rounded-2xl p-5 relative overflow-hidden group hover:border-indigo-500/30 transition-all duration-300">

@@ -161,7 +161,7 @@ export default function NotificationCenter() {
                                             </div>
                                             <p className="text-[11px] text-zinc-400 leading-normal line-clamp-2 italic">{notification.message}</p>
                                             <div className="flex items-center justify-between pt-2">
-                                                <span className="text-[9px] font-black text-zinc-600 uppercase tracking-tighter">
+                                                <span className="text-[9px] font-black text-zinc-600 uppercase tracking-tighter" suppressHydrationWarning>
                                                     {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                                                 </span>
                                                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">

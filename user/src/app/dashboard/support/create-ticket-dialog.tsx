@@ -83,7 +83,7 @@ export default function CreateTicketDialog() {
                 <div className="space-y-2">
                     <Label htmlFor="category" className="text-[11px] font-bold uppercase text-zinc-500 tracking-wider">Category</Label>
                     <Select name="category" required defaultValue="general">
-                        <SelectTrigger className="bg-zinc-900/50 border-white/10 text-white focus:ring-offset-0 focus:border-indigo-500/50">
+                        <SelectTrigger id="category" className="bg-zinc-900/50 border-white/10 text-white focus:ring-offset-0 focus:border-indigo-500/50">
                             <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-white/10 text-white">
@@ -98,7 +98,7 @@ export default function CreateTicketDialog() {
                 <div className="space-y-2">
                     <Label htmlFor="priority" className="text-[11px] font-bold uppercase text-zinc-500 tracking-wider">Priority</Label>
                      <Select name="priority" required defaultValue="medium">
-                        <SelectTrigger className="bg-zinc-900/50 border-white/10 text-white focus:ring-offset-0 focus:border-indigo-500/50">
+                        <SelectTrigger id="priority" className="bg-zinc-900/50 border-white/10 text-white focus:ring-offset-0 focus:border-indigo-500/50">
                             <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-white/10 text-white">

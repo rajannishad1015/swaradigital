@@ -473,22 +473,23 @@ function MediaStudioContent() {
 
                                 <div className="space-y-6">
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Delivery Size</label>
+                                        <label htmlFor="keepOriginalSize" className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Delivery Size</label>
                                         <div className="flex items-center gap-2 mb-2">
                                              <input 
+                                                id="keepOriginalSize"
                                                 type="checkbox" 
                                                 checked={imageSettings.keepOriginalSize} 
                                                 onChange={(e) => setImageSettings(s => ({ ...s, keepOriginalSize: e.target.checked }))}
                                                 className="w-4 h-4 accent-rose-500 rounded bg-zinc-900 border-zinc-800"
                                             />
-                                            <span className="text-xs text-zinc-400">Keep Original Size</span>
+                                            <label htmlFor="keepOriginalSize" className="text-xs text-zinc-400">Keep Original Size</label>
                                         </div>
                                         <Select 
                                             value={imageSettings.imageSize} 
                                             onValueChange={(v) => setImageSettings(s => ({ ...s, imageSize: v }))}
                                             disabled={imageSettings.keepOriginalSize}
                                         >
-                                            <SelectTrigger className="bg-zinc-900 border-zinc-800 h-12 rounded-xl text-zinc-300 disabled:opacity-50">
+                                            <SelectTrigger id="imageSize" className="bg-zinc-900 border-zinc-800 h-12 rounded-xl text-zinc-300 disabled:opacity-50">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-300">
@@ -498,11 +499,12 @@ function MediaStudioContent() {
                                         </Select>
                                     </div>
 
-                                    <div className="space-y-3">
+                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between">
-                                            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Quality: {imageSettings.quality}%</label>
+                                            <label htmlFor="qualityRange" className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Quality: {imageSettings.quality}%</label>
                                         </div>
                                         <input 
+                                            id="qualityRange"
                                             type="range" 
                                             min="10" 
                                             max="100" 
@@ -754,20 +756,26 @@ function MetadataEditor({ item, imageQueue, onUpdate }: MetadataEditorProps) {
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-4">
-                        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Metadata</label>
+                        <label htmlFor="meta_title" className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Metadata</label>
                         <div className="space-y-3">
-                            <Input placeholder="Title" value={staged.title} onChange={(e) => setStaged(s => ({ ...s, title: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
+                            <Input id="meta_title" placeholder="Title" value={staged.title} onChange={(e) => setStaged(s => ({ ...s, title: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
                             <div className="grid grid-cols-2 gap-3">
-                                <Input placeholder="Artist" value={staged.artist} onChange={(e) => setStaged(s => ({ ...s, artist: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
-                                <Input placeholder="Album" value={staged.album} onChange={(e) => setStaged(s => ({ ...s, album: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
+                                <div className="space-y-1.5">
+                                    <label htmlFor="meta_artist" className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Artist</label>
+                                    <Input id="meta_artist" placeholder="Artist" value={staged.artist} onChange={(e) => setStaged(s => ({ ...s, artist: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label htmlFor="meta_album" className="text-[10px] font-black text-zinc-600 uppercase tracking-widest ml-1">Album</label>
+                                    <Input id="meta_album" placeholder="Album" value={staged.album} onChange={(e) => setStaged(s => ({ ...s, album: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Linked Artwork</label>
+                        <label htmlFor="coverArt" className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Linked Artwork</label>
                         <Select value={staged.coverArtId} onValueChange={(v) => setStaged(s => ({ ...s, coverArtId: v }))}>
-                            <SelectTrigger className="bg-zinc-900 border-zinc-800 h-12 rounded-xl text-zinc-300">
+                            <SelectTrigger id="coverArt" className="bg-zinc-900 border-zinc-800 h-12 rounded-xl text-zinc-300">
                                 <SelectValue placeholder="Automatic (First Completed Image)" />
                             </SelectTrigger>
                             <SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-300">
@@ -784,12 +792,12 @@ function MetadataEditor({ item, imageQueue, onUpdate }: MetadataEditorProps) {
 
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-900">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Trim Start (sec)</label>
-                            <Input placeholder="e.g. 0" value={staged.trimStart} onChange={(e) => setStaged(s => ({ ...s, trimStart: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
+                            <label htmlFor="trimStart" className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Trim Start (sec)</label>
+                            <Input id="trimStart" placeholder="e.g. 0" value={staged.trimStart} onChange={(e) => setStaged(s => ({ ...s, trimStart: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Trim End (sec)</label>
-                            <Input placeholder="e.g. 180" value={staged.trimEnd} onChange={(e) => setStaged(s => ({ ...s, trimEnd: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
+                            <label htmlFor="trimEnd" className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Trim End (sec)</label>
+                            <Input id="trimEnd" placeholder="e.g. 180" value={staged.trimEnd} onChange={(e) => setStaged(s => ({ ...s, trimEnd: e.target.value }))} className="bg-zinc-900 border-zinc-800" />
                         </div>
                     </div>
                 </div>

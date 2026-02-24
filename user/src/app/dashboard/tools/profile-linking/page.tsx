@@ -132,7 +132,7 @@ export default function ProfileLinkingPage() {
                                 
                                 {/* Select Release */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
+                                    <Label htmlFor="release" className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
                                         <Music className="w-3 h-3 text-indigo-500" />
                                         Release <span className="text-rose-500">*</span>
                                     </Label>
@@ -140,7 +140,7 @@ export default function ProfileLinkingPage() {
                                         value={formData.album_id} 
                                         onValueChange={(val) => setFormData(prev => ({ ...prev, album_id: val }))}
                                     >
-                                        <SelectTrigger className="h-10 bg-black/40 border-white/5 text-white rounded-lg focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all font-bold text-[11px] uppercase tracking-wider">
+                                        <SelectTrigger id="release" className="h-10 bg-black/40 border-white/5 text-white rounded-lg focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all font-bold text-[11px] uppercase tracking-wider">
                                             <SelectValue placeholder="CHOOSE" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-[#0c0c0e] border-white/10 text-white max-h-60 w-[var(--radix-select-trigger-width)]">
@@ -155,7 +155,7 @@ export default function ProfileLinkingPage() {
 
                                 {/* Select Audio */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
+                                    <Label htmlFor="audio" className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
                                         <PlayCircle className="w-3 h-3 text-indigo-500" />
                                         Audio <span className="text-rose-500">*</span>
                                     </Label>
@@ -163,7 +163,7 @@ export default function ProfileLinkingPage() {
                                         value={formData.track_id} 
                                         onValueChange={(val) => setFormData(prev => ({ ...prev, track_id: val }))}
                                     >
-                                        <SelectTrigger className="h-10 bg-black/40 border-white/5 text-white rounded-lg focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all font-bold text-[11px] uppercase tracking-wider">
+                                        <SelectTrigger id="audio" className="h-10 bg-black/40 border-white/5 text-white rounded-lg focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all font-bold text-[11px] uppercase tracking-wider">
                                             <SelectValue placeholder="CHOOSE" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-[#0c0c0e] border-white/10 text-white max-h-60 w-[var(--radix-select-trigger-width)]">
@@ -180,11 +180,12 @@ export default function ProfileLinkingPage() {
 
                                 {/* Artist Name */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
+                                    <Label htmlFor="artist_name" className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
                                         <User className="w-3 h-3 text-indigo-500" />
                                         Artist Name <span className="text-rose-500">*</span>
                                     </Label>
                                     <Input
+                                        id="artist_name"
                                         placeholder="REQUIRED"
                                         value={formData.artist_name}
                                         onChange={(e) => setFormData(prev => ({ ...prev, artist_name: e.target.value.toUpperCase() }))}
@@ -194,11 +195,12 @@ export default function ProfileLinkingPage() {
 
                                 {/* Facebook Link */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
+                                    <Label htmlFor="facebook_url" className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
                                         <Facebook className="w-3 h-3 text-[#1877F2]" />
                                         Facebook Link
                                     </Label>
                                     <Input
+                                        id="facebook_url"
                                         placeholder="URL"
                                         value={formData.facebook_url}
                                         onChange={(e) => setFormData(prev => ({ ...prev, facebook_url: e.target.value }))}
@@ -208,11 +210,12 @@ export default function ProfileLinkingPage() {
 
                                 {/* Instagram Link */}
                                 <div className="space-y-1.5 md:col-span-2">
-                                    <Label className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
+                                    <Label htmlFor="instagram_url" className="text-[8px] uppercase font-black text-zinc-500 tracking-[0.2em] ml-1 flex items-center gap-2">
                                         <Instagram className="w-3 h-3 text-[#E4405F]" />
                                         Instagram Link
                                     </Label>
                                     <Input
+                                        id="instagram_url"
                                         placeholder="URL"
                                         value={formData.instagram_url}
                                         onChange={(e) => setFormData(prev => ({ ...prev, instagram_url: e.target.value }))}

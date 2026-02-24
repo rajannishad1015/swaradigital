@@ -1057,12 +1057,12 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">Release Title <span className="text-red-500">*</span></Label>
-                                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Release Title" className="bg-white/5 border-white/10 text-white h-12" />
+                                <Label htmlFor="releaseTitle" className="text-xs uppercase font-bold text-zinc-400">Release Title <span className="text-red-500">*</span></Label>
+                                <Input id="releaseTitle" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Release Title" className="bg-white/5 border-white/10 text-white h-12" />
                             </div>
                              <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">Label Name <span className="text-red-500">*</span></Label>
-                                <Input value={labelName} onChange={(e) => setLabelName(e.target.value)} placeholder="Label Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                <Label htmlFor="labelName" className="text-xs uppercase font-bold text-zinc-400">Label Name <span className="text-red-500">*</span></Label>
+                                <Input id="labelName" value={labelName} onChange={(e) => setLabelName(e.target.value)} placeholder="Label Name" className="bg-white/5 border-white/10 text-white h-12" />
                             </div>
                         </div>
                         
@@ -1099,10 +1099,10 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">Genre <span className="text-red-500">*</span></Label>
+                                <Label htmlFor="genre" className="text-xs uppercase font-bold text-zinc-400">Genre <span className="text-red-500">*</span></Label>
                                 <Popover open={genreOpen} onOpenChange={setGenreOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" aria-expanded={genreOpen} className="w-full bg-white/5 border-white/10 text-white h-12 justify-between hover:bg-white/10 font-normal">
+                                        <Button id="genre" variant="outline" role="combobox" aria-expanded={genreOpen} className="w-full bg-white/5 border-white/10 text-white h-12 justify-between hover:bg-white/10 font-normal">
                                             {genre ? GENRE_OPTIONS.find(g => g.value === genre)?.label : "Select Genre"}
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -1131,23 +1131,23 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                 </Popover>
                             </div>
                              <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">Sub Genre <span className="text-red-500">*</span></Label>
-                                <Input value={subGenre} onChange={(e) => setSubGenre(e.target.value)} placeholder="Enter sub genre" className="bg-white/5 border-white/10 text-white h-12" />
+                                <Label htmlFor="subGenre" className="text-xs uppercase font-bold text-zinc-400">Sub Genre <span className="text-red-500">*</span></Label>
+                                <Input id="subGenre" value={subGenre} onChange={(e) => setSubGenre(e.target.value)} placeholder="Enter sub genre" className="bg-white/5 border-white/10 text-white h-12" />
                             </div>
                         </div>
 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">Release Date <span className="text-red-500">*</span></Label>
+                                <Label htmlFor="releaseDate" className="text-xs uppercase font-bold text-zinc-400">Release Date <span className="text-red-500">*</span></Label>
                                 <div className="relative">
-                                    <Input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="bg-white/5 border-white/10 text-white h-12 pl-10" />
+                                    <Input id="releaseDate" type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="bg-white/5 border-white/10 text-white h-12 pl-10" />
                                     <Calendar className="absolute left-3 top-3.5 text-zinc-500 h-5 w-5 pointer-events-none" />
                                 </div>
                             </div>
                              <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">Original Release Date</Label>
+                                <Label htmlFor="originalReleaseDate" className="text-xs uppercase font-bold text-zinc-400">Original Release Date</Label>
                                 <div className="relative">
-                                    <Input type="date" value={originalReleaseDate} onChange={(e) => setOriginalReleaseDate(e.target.value)} className="bg-white/5 border-white/10 text-white h-12 pl-10" />
+                                    <Input id="originalReleaseDate" type="date" value={originalReleaseDate} onChange={(e) => setOriginalReleaseDate(e.target.value)} className="bg-white/5 border-white/10 text-white h-12 pl-10" />
                                     <Calendar className="absolute left-3 top-3.5 text-zinc-500 h-5 w-5 pointer-events-none" />
                                 </div>
                             </div>
@@ -1155,11 +1155,11 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">UPC/EAN (Optional)</Label>
-                                <Input value={upc} onChange={(e) => setUpc(e.target.value)} placeholder="UPC/EAN" className="bg-white/5 border-white/10 text-white h-12" />
+                                <Label htmlFor="upc" className="text-xs uppercase font-bold text-zinc-400">UPC/EAN (Optional)</Label>
+                                <Input id="upc" value={upc} onChange={(e) => setUpc(e.target.value)} placeholder="UPC/EAN" className="bg-white/5 border-white/10 text-white h-12" />
                             </div>
                              <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">P-Line <span className="text-red-500">*</span></Label>
+                                <Label htmlFor="pLineText" className="text-xs uppercase font-bold text-zinc-400">P-Line <span className="text-red-500">*</span></Label>
                                 <div className="flex gap-2">
                                     <Popover open={pLineYearOpen} onOpenChange={setPLineYearOpen}>
                                         <PopoverTrigger asChild>
@@ -1190,18 +1190,18 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                             </Command>
                                         </PopoverContent>
                                     </Popover>
-                                    <Input value={pLineText} onChange={(e) => setPLineText(e.target.value)} placeholder="Owner" className="flex-1 bg-white/5 border-white/10 text-white h-12" />
+                                    <Input id="pLineText" value={pLineText} onChange={(e) => setPLineText(e.target.value)} placeholder="Owner" className="flex-1 bg-white/5 border-white/10 text-white h-12" />
                                 </div>
                             </div>
                         </div>
                         
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">Courtesy Line</Label>
-                                <Input value={courtesyLine} onChange={(e) => setCourtesyLine(e.target.value)} placeholder="Courtesy of Your Label Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                <Label htmlFor="courtesyLine" className="text-xs uppercase font-bold text-zinc-400">Courtesy Line</Label>
+                                <Input id="courtesyLine" value={courtesyLine} onChange={(e) => setCourtesyLine(e.target.value)} placeholder="Courtesy of Your Label Name" className="bg-white/5 border-white/10 text-white h-12" />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-zinc-400">C-Line <span className="text-red-500">*</span></Label>
+                                <Label htmlFor="cLineText" className="text-xs uppercase font-bold text-zinc-400">C-Line <span className="text-red-500">*</span></Label>
                                 <div className="flex gap-2">
                                     <Popover open={cLineYearOpen} onOpenChange={setCLineYearOpen}>
                                         <PopoverTrigger asChild>
@@ -1232,14 +1232,15 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                             </Command>
                                         </PopoverContent>
                                     </Popover>
-                                    <Input value={cLineText} onChange={(e) => setCLineText(e.target.value)} placeholder="Owner" className="flex-1 bg-white/5 border-white/10 text-white h-12" />
+                                    <Input id="cLineText" value={cLineText} onChange={(e) => setCLineText(e.target.value)} placeholder="Owner" className="flex-1 bg-white/5 border-white/10 text-white h-12" />
                                 </div>
                             </div>
                         </div>
 
                          <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Additional Information & Requests</Label>
+                            <Label htmlFor="description" className="text-xs uppercase font-bold text-zinc-400">Additional Information & Requests</Label>
                             <Textarea 
+                                id="description"
                                 value={description} onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Enter any additional information or special requests here..."
                                 className="bg-white/5 border-white/10 text-white min-h-[100px]"
@@ -1411,13 +1412,13 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                          </div>
                          
                          <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Title <span className="text-red-500">*</span></Label>
-                            <Input value={currentTrack.title} onChange={(e) => updateCurrentTrack({ title: e.target.value })} placeholder="Song Title" className="bg-white/5 border-white/10 text-white h-12" />
+                            <Label htmlFor="trackTitle" className="text-xs uppercase font-bold text-zinc-400">Title <span className="text-red-500">*</span></Label>
+                            <Input id="trackTitle" value={currentTrack.title} onChange={(e) => updateCurrentTrack({ title: e.target.value })} placeholder="Song Title" className="bg-white/5 border-white/10 text-white h-12" />
                         </div>
                         
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Version/Subtitle</Label>
-                            <Input value={currentTrack.versionSubtitle} onChange={(e) => updateCurrentTrack({ versionSubtitle: e.target.value })} placeholder="Remix, Edit, etc." className="bg-white/5 border-white/10 text-white h-12" />
+                            <Label htmlFor="versionSubtitle" className="text-xs uppercase font-bold text-zinc-400">Version/Subtitle</Label>
+                            <Input id="versionSubtitle" value={currentTrack.versionSubtitle} onChange={(e) => updateCurrentTrack({ versionSubtitle: e.target.value })} placeholder="Remix, Edit, etc." className="bg-white/5 border-white/10 text-white h-12" />
                         </div>
                         
                         <div className="space-y-2">
@@ -1451,10 +1452,10 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         </div>
                         
                                 <div className="space-y-3">
-                                     <Label className="text-xs uppercase font-bold text-zinc-400">Lyricist <span className="text-red-500">*</span></Label>
+                                     <Label htmlFor="lyricistFirst" className="text-xs uppercase font-bold text-zinc-400">Lyricist <span className="text-red-500">*</span></Label>
                                      <div className="flex gap-2">
-                                        <Input value={newLyricistFirst} onChange={(e) => setNewLyricistFirst(e.target.value)} placeholder="First Name" className="bg-white/5 border-white/10 text-white h-12" />
-                                        <Input value={newLyricistLast} onChange={(e) => setNewLyricistLast(e.target.value)} placeholder="Last Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                        <Input id="lyricistFirst" value={newLyricistFirst} onChange={(e) => setNewLyricistFirst(e.target.value)} placeholder="First Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                        <Input id="lyricistLast" value={newLyricistLast} onChange={(e) => setNewLyricistLast(e.target.value)} placeholder="Last Name" className="bg-white/5 border-white/10 text-white h-12" aria-label="Lyricist Last Name" />
                                      </div>
                                      <Button type="button" onClick={addLyricist} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10">+ Add Lyricist</Button>
                                      {/* Display Lists */}
@@ -1471,10 +1472,10 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                 </div>
 
                                 <div className="space-y-3">
-                                     <Label className="text-xs uppercase font-bold text-zinc-400">Composer <span className="text-red-500">*</span></Label>
+                                     <Label htmlFor="composerFirst" className="text-xs uppercase font-bold text-zinc-400">Composer <span className="text-red-500">*</span></Label>
                                      <div className="flex gap-2">
-                                        <Input value={newComposerFirst} onChange={(e) => setNewComposerFirst(e.target.value)} placeholder="First Name" className="bg-white/5 border-white/10 text-white h-12" />
-                                        <Input value={newComposerLast} onChange={(e) => setNewComposerLast(e.target.value)} placeholder="Last Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                        <Input id="composerFirst" value={newComposerFirst} onChange={(e) => setNewComposerFirst(e.target.value)} placeholder="First Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                        <Input id="composerLast" value={newComposerLast} onChange={(e) => setNewComposerLast(e.target.value)} placeholder="Last Name" className="bg-white/5 border-white/10 text-white h-12" aria-label="Composer Last Name" />
                                      </div>
                                      <Button type="button" onClick={addComposer} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10">+ Add Composer</Button>
                                       {currentTrack.composers.length > 0 && (
@@ -1490,9 +1491,9 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                 </div>
                                 
                                 <div className="space-y-3">
-                                    <Label className="text-xs uppercase font-bold text-zinc-400">Music Producer(s) <span className="text-red-500">*</span></Label>
+                                    <Label htmlFor="producerName" className="text-xs uppercase font-bold text-zinc-400">Music Producer(s) <span className="text-red-500">*</span></Label>
                                     <div className="flex gap-2">
-                                        <Input value={newProducerName} onChange={(e) => setNewProducerName(e.target.value)} placeholder="Producer Name" className="bg-white/5 border-white/10 text-white h-12" />
+                                        <Input id="producerName" value={newProducerName} onChange={(e) => setNewProducerName(e.target.value)} placeholder="Producer Name" className="bg-white/5 border-white/10 text-white h-12" />
                                     </div>
                                     <Button type="button" onClick={addProducer} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10">+ Add Producer</Button>
                                     {currentTrack.producers.length > 0 && (
@@ -1508,10 +1509,11 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                 </div>
                                 
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-zinc-400">Lyrics</Label>
+                                    <Label htmlFor="lyricsFileUpload" className="text-xs uppercase font-bold text-zinc-400">Lyrics</Label>
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center gap-2">
                                             <Input 
+                                                id="lyricsFileUpload"
                                                 type="file" 
                                                 accept=".lrc,.txt" 
                                                 className="bg-white/5 border-white/10 text-white text-xs h-9 w-full file:bg-zinc-800 file:text-zinc-300 file:border-0 file:rounded-md file:px-2 file:py-1 file:mr-4 file:text-xs"
@@ -1530,7 +1532,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                             />
                                             <span className="text-[10px] text-zinc-500 whitespace-nowrap uppercase tracking-wider font-bold">Upload .LRC</span>
                                         </div>
-                                        <Textarea value={currentTrack.lyrics} onChange={(e) => updateCurrentTrack({ lyrics: e.target.value })} placeholder="Lyrics text..." className="bg-white/5 border-white/10 text-white min-h-[120px]" />
+                                        <Textarea id="lyricsText" value={currentTrack.lyrics} onChange={(e) => updateCurrentTrack({ lyrics: e.target.value })} placeholder="Lyrics text..." className="bg-white/5 border-white/10 text-white min-h-[120px]" aria-label="Lyrics Content" />
                                     </div>
                                 </div>
                              </div>
@@ -1539,23 +1541,23 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                              <div className="space-y-6">
                                  
                                   <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-zinc-400">P Line <span className="text-red-500">*</span></Label>
-                                    <Input value={currentTrack.pLine} onChange={(e) => updateCurrentTrack({ pLine: e.target.value })} placeholder="Phonographic Copyright Line" className="bg-white/5 border-white/10 text-white h-12" />
+                                    <Label htmlFor="trackPLine" className="text-xs uppercase font-bold text-zinc-400">P Line <span className="text-red-500">*</span></Label>
+                                    <Input id="trackPLine" value={currentTrack.pLine} onChange={(e) => updateCurrentTrack({ pLine: e.target.value })} placeholder="Phonographic Copyright Line" className="bg-white/5 border-white/10 text-white h-12" />
                                 </div>
                                 
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-zinc-400">Production Year <span className="text-red-500">*</span></Label>
-                                    <Input value={currentTrack.productionYear} onChange={(e) => updateCurrentTrack({ productionYear: e.target.value })} placeholder="2026" className="bg-white/5 border-white/10 text-white h-12" />
+                                    <Label htmlFor="trackProductionYear" className="text-xs uppercase font-bold text-zinc-400">Production Year <span className="text-red-500">*</span></Label>
+                                    <Input id="trackProductionYear" value={currentTrack.productionYear} onChange={(e) => updateCurrentTrack({ productionYear: e.target.value })} placeholder="2026" className="bg-white/5 border-white/10 text-white h-12" />
                                 </div>
                                 
                                  <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-zinc-400">Publisher</Label>
-                                    <Input value={currentTrack.publisher} onChange={(e) => updateCurrentTrack({ publisher: e.target.value })} placeholder="Publisher" className="bg-white/5 border-white/10 text-white h-12" />
+                                    <Label htmlFor="trackPublisher" className="text-xs uppercase font-bold text-zinc-400">Publisher</Label>
+                                    <Input id="trackPublisher" value={currentTrack.publisher} onChange={(e) => updateCurrentTrack({ publisher: e.target.value })} placeholder="Publisher" className="bg-white/5 border-white/10 text-white h-12" />
                                 </div>
                                 
                                  <div className="space-y-3">
-                                     <Label className="text-xs uppercase font-bold text-zinc-400">Have Your Own ISRC? <span className="text-red-500">*</span></Label>
-                                     <div className="flex gap-4">
+                                     <Label htmlFor="trackHasISRC" className="text-xs uppercase font-bold text-zinc-400">Have Your Own ISRC? <span className="text-red-500">*</span></Label>
+                                     <div id="trackHasISRC" className="flex gap-4">
                                          {['yes', 'no'].map((opt) => (
                                              <label key={opt} className="flex items-center gap-2 cursor-pointer group">
                                                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${currentTrack.hasISRC === opt ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
@@ -1567,15 +1569,15 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                          ))}
                                      </div>
                                      {currentTrack.hasISRC === 'yes' && (
-                                        <Input value={currentTrack.isrc} onChange={(e) => updateCurrentTrack({ isrc: e.target.value })} placeholder="Enter ISRC" className="bg-white/5 border-white/10 text-white h-12 mt-2" />
+                                        <Input id="trackISRC" value={currentTrack.isrc} onChange={(e) => updateCurrentTrack({ isrc: e.target.value })} placeholder="Enter ISRC" className="bg-white/5 border-white/10 text-white h-12 mt-2" aria-label="ISRC Number" />
                                      )}
                                  </div>
 
                                 <div className="space-y-2">
-                                     <Label className="text-xs uppercase font-bold text-zinc-400">Genre <span className="text-red-500">*</span></Label>
+                                     <Label htmlFor="trackGenre" className="text-xs uppercase font-bold text-zinc-400">Genre <span className="text-red-500">*</span></Label>
                                      <Popover open={trackGenreOpen} onOpenChange={setTrackGenreOpen}>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox" aria-expanded={trackGenreOpen} className="w-full bg-white/5 border-white/10 text-white h-12 justify-between hover:bg-white/10 font-normal">
+                                            <Button id="trackGenre" variant="outline" role="combobox" aria-expanded={trackGenreOpen} className="w-full bg-white/5 border-white/10 text-white h-12 justify-between hover:bg-white/10 font-normal">
                                                 {currentTrack.genre ? GENRE_OPTIONS.find(g => g.value === currentTrack.genre)?.label : "Select Genre"}
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
@@ -1604,14 +1606,14 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                     </Popover>
                                 </div>
                                  <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-zinc-400">Sub Genre <span className="text-red-500">*</span></Label>
-                                    <Input value={currentTrack.subGenre} onChange={(e) => updateCurrentTrack({ subGenre: e.target.value })} placeholder="Sub Genre" className="bg-white/5 border-white/10 text-white h-12" />
+                                    <Label htmlFor="trackSubGenre" className="text-xs uppercase font-bold text-zinc-400">Sub Genre <span className="text-red-500">*</span></Label>
+                                    <Input id="trackSubGenre" value={currentTrack.subGenre} onChange={(e) => updateCurrentTrack({ subGenre: e.target.value })} placeholder="Sub Genre" className="bg-white/5 border-white/10 text-white h-12" />
                                 </div>
                                 
                                  <div className="space-y-2">
-                                     <Label className="text-xs uppercase font-bold text-zinc-400">Price Tier <span className="text-red-500">*</span></Label>
+                                     <Label htmlFor="trackPriceTier" className="text-xs uppercase font-bold text-zinc-400">Price Tier <span className="text-red-500">*</span></Label>
                                      <Select value={currentTrack.priceTier} onValueChange={(val) => updateCurrentTrack({ priceTier: val })}>
-                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Select Price Tier" /></SelectTrigger>
+                                        <SelectTrigger id="trackPriceTier" className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Select Price Tier" /></SelectTrigger>
                                         <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
                                             <SelectItem value="low">Low</SelectItem>
                                             <SelectItem value="mid">Mid</SelectItem>
@@ -1622,8 +1624,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                 </div>
                                 
                                  <div className="space-y-3">
-                                     <Label className="text-xs uppercase font-bold text-zinc-400">Explicit Version <span className="text-red-500">*</span></Label>
-                                     <div className="flex gap-4">
+                                     <Label htmlFor="trackExplicitType" className="text-xs uppercase font-bold text-zinc-400">Explicit Version <span className="text-red-500">*</span></Label>
+                                     <div id="trackExplicitType" className="flex gap-4">
                                          {['yes', 'no', 'cleaned'].map((opt) => (
                                              <label key={opt} className="flex items-center gap-2 cursor-pointer group">
                                                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${currentTrack.explicitType === opt ? 'border-indigo-500' : 'border-zinc-600 group-hover:border-zinc-500'}`}>
@@ -1637,9 +1639,9 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                  </div>
                                  
                                  <div className="space-y-2">
-                                     <Label className="text-xs uppercase font-bold text-zinc-400">Track Title Language <span className="text-red-500">*</span></Label>
+                                     <Label htmlFor="trackTitleLanguage" className="text-xs uppercase font-bold text-zinc-400">Track Title Language <span className="text-red-500">*</span></Label>
                                      <Select value={currentTrack.titleLanguage} onValueChange={(val) => updateCurrentTrack({ titleLanguage: val })}>
-                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Track Title Language" /></SelectTrigger>
+                                        <SelectTrigger id="trackTitleLanguage" className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Track Title Language" /></SelectTrigger>
                                         <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
                                             <SelectItem value="english">English</SelectItem>
                                             <SelectItem value="spanish">Spanish</SelectItem>
@@ -1650,9 +1652,9 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                 </div>
                                 
                                 <div className="space-y-2">
-                                     <Label className="text-xs uppercase font-bold text-zinc-400">Lyrics Language <span className="text-red-500">*</span></Label>
+                                     <Label htmlFor="trackLyricsLanguage" className="text-xs uppercase font-bold text-zinc-400">Lyrics Language <span className="text-red-500">*</span></Label>
                                      <Select value={currentTrack.lyricsLanguage} onValueChange={(val) => updateCurrentTrack({ lyricsLanguage: val })}>
-                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Lyrics Language" /></SelectTrigger>
+                                        <SelectTrigger id="trackLyricsLanguage" className="bg-white/5 border-white/10 text-white h-12"><SelectValue placeholder="Lyrics Language" /></SelectTrigger>
                                         <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
                                             <SelectItem value="english">English</SelectItem>
                                             <SelectItem value="spanish">Spanish</SelectItem>
@@ -1663,8 +1665,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                 </div>
                                 
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-zinc-400">Caller Tune Timing <span className="text-red-500">*</span></Label>
-                                    <Input value={currentTrack.callerTuneTiming} onChange={(e) => updateCurrentTrack({ callerTuneTiming: e.target.value })} placeholder="HH:MM:SS" className="bg-white/5 border-white/10 text-white h-12" />
+                                    <Label htmlFor="callerTuneTiming" className="text-xs uppercase font-bold text-zinc-400">Caller Tune Timing <span className="text-red-500">*</span></Label>
+                                    <Input id="callerTuneTiming" value={currentTrack.callerTuneTiming} onChange={(e) => updateCurrentTrack({ callerTuneTiming: e.target.value })} placeholder="HH:MM:SS" className="bg-white/5 border-white/10 text-white h-12" />
                                 </div>
                              </div>
                          </div>
@@ -1829,7 +1831,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                     <DialogHeader>
                         <DialogTitle>Add Artist Details</DialogTitle>
                         <DialogDescription className="text-zinc-400">
-                            Enter the artist's name and platform links.
+                            Enter the artist&apos;s name and platform links.
                         </DialogDescription>
                         {userProfile?.artist_name && (
                             <Button 
@@ -1849,16 +1851,16 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Artist Name <span className="text-red-500">*</span></Label>
-                            <Input value={artistDialogName} onChange={(e) => setArtistDialogName(e.target.value)} placeholder="Artist Name" className="bg-white/5 border-white/10 text-white" />
+                            <Label htmlFor="artistName" className="text-xs uppercase font-bold text-zinc-400">Artist Name <span className="text-red-500">*</span></Label>
+                            <Input id="artistName" value={artistDialogName} onChange={(e) => setArtistDialogName(e.target.value)} placeholder="Artist Name" className="bg-white/5 border-white/10 text-white" />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Spotify Artist ID/Link (Optional)</Label>
-                            <Input value={artistDialogSpotify} onChange={(e) => setArtistDialogSpotify(e.target.value)} placeholder="Spotify Link" className="bg-white/5 border-white/10 text-white" />
+                            <Label htmlFor="artistSpotify" className="text-xs uppercase font-bold text-zinc-400">Spotify Artist ID/Link (Optional)</Label>
+                            <Input id="artistSpotify" value={artistDialogSpotify} onChange={(e) => setArtistDialogSpotify(e.target.value)} placeholder="Spotify Link" className="bg-white/5 border-white/10 text-white" />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-zinc-400">Apple Music Artist ID/Link (Optional)</Label>
-                            <Input value={artistDialogApple} onChange={(e) => setArtistDialogApple(e.target.value)} placeholder="Apple Music Link" className="bg-white/5 border-white/10 text-white" />
+                            <Label htmlFor="artistApple" className="text-xs uppercase font-bold text-zinc-400">Apple Music Artist ID/Link (Optional)</Label>
+                            <Input id="artistApple" value={artistDialogApple} onChange={(e) => setArtistDialogApple(e.target.value)} placeholder="Apple Music Link" className="bg-white/5 border-white/10 text-white" />
                         </div>
                     </div>
                     <DialogFooter>

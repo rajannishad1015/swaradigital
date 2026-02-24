@@ -191,7 +191,9 @@ export default function NotificationsPage() {
                                         <div className="text-right shrink-0 lg:block hidden">
                                             <span className="text-[10px] font-black text-zinc-700 uppercase tracking-widest block mb-1">Received</span>
                                             <span className="text-xs font-bold text-zinc-500">
-                                                {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                                <span suppressHydrationWarning>
+                                                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                                </span>
                                             </span>
                                         </div>
                                     </div>
@@ -199,7 +201,9 @@ export default function NotificationsPage() {
                                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
                                         <div className="flex items-center gap-6">
                                             <span className="text-[10px] text-zinc-600 font-bold block lg:hidden">
-                                                {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                                <span suppressHydrationWarning>
+                                                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                                </span>
                                             </span>
                                             <div className="flex items-center gap-2">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500/20" />

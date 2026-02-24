@@ -59,7 +59,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
                 <div className="flex-1 space-y-1">
                   <div className="flex justify-between items-start">
                     <p className="text-sm font-bold text-white leading-none">{item.title}</p>
-                    <span className="text-[10px] text-zinc-500 font-mono">
+                    <span className="text-[10px] text-zinc-500 font-mono" suppressHydrationWarning>
                       {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
                     </span>
                   </div>

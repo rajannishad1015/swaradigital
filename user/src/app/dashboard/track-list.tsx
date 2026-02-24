@@ -437,16 +437,16 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start mb-1">
-                                    <div className="pr-2">
+                                <div className="flex justify-between items-start mb-1 gap-2">
+                                    <div className="flex-1 min-w-0">
                                         <h3 className="font-bold text-white text-sm truncate uppercase leading-tight">{release.title}</h3>
-                                         <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase">
+                                         <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase truncate">
                                             {(release.type || 'SINGLE').toUpperCase()}
                                             {release.albumData?.upc && ` • UPC: ${release.albumData.upc}`}
                                             {release.tracks.length === 1 && release.tracks[0].isrc && ` • ISRC: ${release.tracks[0].isrc}`}
                                          </p>
                                     </div>
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 shrink-0">
                                         {release.tracks.some((t: any) => t.status === 'approved') && (
                                             <Button 
                                                 variant="ghost" 
