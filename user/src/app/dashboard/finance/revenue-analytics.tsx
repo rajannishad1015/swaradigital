@@ -238,7 +238,7 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                 </CardHeader>
                 <CardContent className="h-[300px] p-0 pt-6">
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data.monthlyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                        <AreaChart data={data.monthlyData} margin={{ top: 20, right: 30, left: 10, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3}/>
@@ -249,45 +249,64 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                                      <stop offset="100%" stopColor="#4f46e5" />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                            <CartesianGrid 
+                                strokeDasharray="3 3" 
+                                stroke="rgba(255,255,255,0.05)" 
+                                vertical={true} 
+                                verticalFill={['rgba(255,255,255,0.01)', 'transparent']}
+                                fillOpacity={0.2}
+                            />
                             <XAxis 
                                 dataKey="month" 
-                                stroke="#52525b" 
+                                stroke="#71717a" 
                                 fontSize={10} 
                                 tickLine={false} 
                                 axisLine={false} 
                                 dy={10}
                                 fontWeight={700}
+                                minTickGap={30}
                             />
                             <YAxis 
-                                stroke="#52525b" 
+                                stroke="#71717a" 
                                 fontSize={10} 
                                 tickLine={false} 
                                 axisLine={false}
-                                tickFormatter={(val) => `$${val}`}
+                                tickFormatter={(val) => `$${val.toLocaleString()}`}
                                 fontWeight={700}
-                                dx={-10}
+                                dx={-5}
+                                domain={['auto', 'auto']}
                             />
                             <Tooltip 
                                 contentStyle={{ 
-                                    backgroundColor: '#09090b', 
+                                    backgroundColor: 'rgba(9, 9, 11, 0.95)', 
                                     border: '1px solid rgba(255,255,255,0.1)', 
-                                    borderRadius: '8px', 
+                                    borderRadius: '12px', 
                                     color: '#fff',
-                                    padding: '8px 12px'
+                                    padding: '12px',
+                                    backdropFilter: 'blur(8px)',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                                 }}
-                                itemStyle={{ fontWeight: '800', fontSize: '13px', color: '#818cf8' }}
-                                labelStyle={{ color: '#a1a1aa', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '4px' }}
-                                formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Revenue']}
+                                itemStyle={{ fontWeight: '900', fontSize: '14px', color: '#818cf8' }}
+                                labelStyle={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.15em', marginBottom: '6px' }}
+                                formatter={(value: any) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
+                                cursor={{ stroke: 'rgba(99, 102, 241, 0.2)', strokeWidth: 2 }}
                             />
                             <Area 
                                 type="monotone" 
                                 dataKey="revenue" 
                                 stroke="url(#strokeGradient)" 
-                                strokeWidth={3}
+                                strokeWidth={4}
                                 fillOpacity={1} 
                                 fill="url(#colorRevenue)" 
-                                activeDot={{ r: 6, strokeWidth: 0, fill: '#fff', className: 'animate-ping' }}
+                                connectNulls={true}
+                                activeDot={{ 
+                                    r: 6, 
+                                    stroke: '#6366f1', 
+                                    strokeWidth: 2, 
+                                    fill: '#fff',
+                                    className: 'filter drop-shadow-[0_0_8px_rgba(99,102,241,0.8)]'
+                                }}
+                                animationDuration={1500}
                             />
                         </AreaChart>
                     </ResponsiveContainer>
