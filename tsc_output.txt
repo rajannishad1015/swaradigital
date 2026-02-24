@@ -1,0 +1,106 @@
+user/node_modules/next/dist/build/templates/app-page.d.ts(3,25): error TS2307: Cannot find module 'VAR_MODULE_GLOBAL_ERROR' or its corresponding type declarations.
+user/node_modules/next/dist/build/webpack-config.d.ts(10,104): error TS2694: Namespace '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/next/dist/compiled/webpack/webpack".webpack' has no exported member 'RuleSetUseItem'.
+user/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.d.ts(1,13): error TS2613: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/next/dist/compiled/webpack/webpack"' has no default export. Did you mean to use 'import { webpack } from "C:/Users/rajan/Downloads/MusicFlow/user/node_modules/next/dist/compiled/webpack/webpack"' instead?
+user/node_modules/next/dist/client/components/error-boundary.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/client/components/http-access-fallback/error-boundary.d.ts(11,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/client/components/layout-router.d.ts(2,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/client/link.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/client/with-router.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/lib/metadata/metadata.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/next-devtools/userspace/pages/pages-dev-overlay-setup.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/server/app-render/entry-base.d.ts(1,114): error TS2307: Cannot find module 'react-server-dom-webpack/server' or its corresponding type declarations.
+user/node_modules/next/dist/server/app-render/entry-base.d.ts(2,27): error TS2307: Cannot find module 'react-server-dom-webpack/static' or its corresponding type declarations.
+user/node_modules/next/dist/server/web/spec-extension/adapters/headers.d.ts(39,16): error TS2304: Cannot find name 'HeadersIterator'.
+user/node_modules/next/dist/server/web/spec-extension/adapters/headers.d.ts(40,13): error TS2304: Cannot find name 'HeadersIterator'.
+user/node_modules/next/dist/server/web/spec-extension/adapters/headers.d.ts(41,15): error TS2304: Cannot find name 'HeadersIterator'.
+user/node_modules/next/dist/server/web/spec-extension/adapters/headers.d.ts(42,26): error TS2304: Cannot find name 'HeadersIterator'.
+user/node_modules/next/dist/shared/lib/app-router-context.shared-runtime.d.ts(4,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/shared/lib/app-router-types.d.ts(7,13): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/shared/lib/head-manager-context.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/shared/lib/image-config-context.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/shared/lib/loadable-context.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/shared/lib/loadable.shared-runtime.d.ts(21,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/shared/lib/router-context.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/shared/lib/server-inserted-html.shared-runtime.d.ts(1,8): error TS1259: Module '"C:/Users/rajan/Downloads/MusicFlow/user/node_modules/@types/react/index"' can only be default-imported using the 'esModuleInterop' flag
+user/node_modules/next/dist/shared/lib/utils.d.ts(10,13): error TS1192: Module '"fs"' has no default export.
+user/src/app/dashboard/finance/page.tsx(1,30): error TS2307: Cannot find module '@/utils/supabase/server' or its corresponding type declarations.
+user/src/app/dashboard/finance/page.tsx(3,33): error TS6142: Module '../settings/profile-editor-dialog' was resolved to 'C:/Users/rajan/Downloads/MusicFlow/user/src/app/dashboard/settings/profile-editor-dialog.tsx', but '--jsx' is not set.
+user/src/app/dashboard/finance/page.tsx(5,24): error TS2307: Cannot find module '@/components/ui/button' or its corresponding type declarations.
+user/src/app/dashboard/finance/page.tsx(7,25): error TS2307: Cannot find module '@/components/revenue-card' or its corresponding type declarations.
+user/src/app/dashboard/finance/page.tsx(8,22): error TS2307: Cannot find module '@/components/bank-card' or its corresponding type declarations.
+user/src/app/dashboard/finance/page.tsx(9,75): error TS2307: Cannot find module '@/components/ui/card' or its corresponding type declarations.
+user/src/app/dashboard/finance/page.tsx(10,33): error TS6142: Module './withdraw-request-form' was resolved to 'C:/Users/rajan/Downloads/MusicFlow/user/src/app/dashboard/finance/withdraw-request-form.tsx', but '--jsx' is not set.
+user/src/app/dashboard/finance/page.tsx(11,29): error TS6142: Module './transaction-list' was resolved to 'C:/Users/rajan/Downloads/MusicFlow/user/src/app/dashboard/finance/transaction-list.tsx', but '--jsx' is not set.
+user/src/app/dashboard/finance/page.tsx(12,24): error TS6142: Module './payout-list' was resolved to 'C:/Users/rajan/Downloads/MusicFlow/user/src/app/dashboard/finance/payout-list.tsx', but '--jsx' is not set.
+user/src/app/dashboard/finance/page.tsx(13,58): error TS2307: Cannot find module '@/components/ui/tabs' or its corresponding type declarations.
+user/src/app/dashboard/finance/page.tsx(14,30): error TS6142: Module './revenue-analytics' was resolved to 'C:/Users/rajan/Downloads/MusicFlow/user/src/app/dashboard/finance/revenue-analytics.tsx', but '--jsx' is not set.
+user/src/app/dashboard/finance/page.tsx(16,28): error TS2307: Cannot find module '@/components/finance/finance-filters' or its corresponding type declarations.
+user/src/app/dashboard/finance/page.tsx(17,33): error TS2307: Cannot find module '@/components/finance/finance-export-button' or its corresponding type declarations.
+user/src/app/dashboard/finance/page.tsx(152,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(155,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(156,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(157,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(158,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(161,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(163,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(164,18): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(167,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(168,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(176,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(179,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(180,14): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(181,18): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(193,14): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(194,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(202,14): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(203,18): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(204,22): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(205,26): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(207,22): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(208,26): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(209,26): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(211,22): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(212,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(219,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(220,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(221,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(222,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(223,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(224,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(228,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(229,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(232,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(233,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(234,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(235,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(236,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(237,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(238,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(240,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(243,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(244,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(253,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(254,18): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(255,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(256,26): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(257,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(258,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(259,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(263,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/finance/page.tsx(264,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(1,30): error TS2307: Cannot find module '@/utils/supabase/server' or its corresponding type declarations.
+user/src/app/dashboard/page.tsx(3,58): error TS2307: Cannot find module '@/components/ui/card' or its corresponding type declarations.
+user/src/app/dashboard/page.tsx(4,24): error TS2307: Cannot find module '@/components/ui/button' or its corresponding type declarations.
+user/src/app/dashboard/page.tsx(7,23): error TS6142: Module './track-list' was resolved to 'C:/Users/rajan/Downloads/MusicFlow/user/src/app/dashboard/track-list.tsx', but '--jsx' is not set.
+user/src/app/dashboard/page.tsx(8,25): error TS2307: Cannot find module '@/components/revenue-card' or its corresponding type declarations.
+user/src/app/dashboard/page.tsx(9,27): error TS2307: Cannot find module '@/components/dashboard-home' or its corresponding type declarations.
+user/src/app/dashboard/page.tsx(138,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(140,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(141,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(142,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(145,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(148,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(149,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(150,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(151,29): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+user/src/app/dashboard/page.tsx(158,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
