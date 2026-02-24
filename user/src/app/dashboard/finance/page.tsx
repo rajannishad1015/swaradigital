@@ -19,7 +19,14 @@ import FinanceExportButton from '@/components/finance/finance-export-button'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function FinancePage({ searchParams }: { searchParams: Promise<{ artistId?: string, range?: string, search?: string }> }) {
+export default async function FinancePage({ searchParams }: { 
+    searchParams: Promise<{ 
+        artistId?: string, 
+        range?: string, 
+        search?: string,
+        page?: string
+    }> 
+}) {
   const awaitedParams = await searchParams
   const artistId = awaitedParams.artistId as string
   const range = awaitedParams.range || 'all'
@@ -52,7 +59,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
 
   // Setup queries
   let revenueQuery = supabase.from('revenue_logs').select('*, tracks(title)')
-  let transQuery = supabase.from('transactions').select('*').order('created_at', { ascending: false })
+  let transQuery = supabase.from('transactions').select('*', { count: 'exact' }).order('created_at', { ascending: false })
   let payoutQuery = supabase.from('payout_requests').select('*').order('created_at', { ascending: false })
 
   // 1. Time Range Filter
@@ -90,15 +97,23 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
 
   // Fetch data with error handling
   let revenueLogs: any[] = []
+  
+  const page = Number(awaitedParams?.page || 1)
+  const pageSize = 20
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+  
   let transactions: any[] = []
+  let totalPages = 1
   let payoutRequests: any[] = []
 
   try {
     const { data: revenueData } = await revenueQuery.order('period', { ascending: true })
     revenueLogs = revenueData || []
 
-    const { data: transData } = await transQuery
+    const { data: transData, count: totalTransactions } = await transQuery.range(from, to)
     transactions = transData || []
+    totalPages = Math.ceil((totalTransactions || 0) / pageSize)
 
     const { data: payoutData } = await payoutQuery
     payoutRequests = payoutData || []
@@ -107,56 +122,27 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     // Continue with empty arrays
   }
 
-  // Process data for charts
-  const platformMap = new Map<string, number>()
-  const trackMap = new Map<string, number>()
-  const monthlyMap = new Map<string, number>()
-  const countryMap = new Map<string, number>()
+  // Process analytics data using the new optimized RPC
+  const userIdsForAnalytics = artistId ? [artistId] : (isLabel ? artistIds : [user.id])
+  const dateLimit = range !== 'all' 
+    ? subDays(new Date(), range === '7d' ? 7 : range === '90d' ? 90 : range === '12m' ? 365 : 30).toISOString().split('T')[0]
+    : null
 
-  revenueLogs?.forEach(log => {
-      const amount = Number(log?.amount || 0)
-      if (isNaN(amount) || amount === 0) return
-      
-      // Platform logic
-      if (log?.platform) {
-        platformMap.set(log.platform, (platformMap.get(log.platform) || 0) + amount)
-      }
-      
-      // Track logic
-      const trackTitle = (log?.tracks as any)?.title || 'Unknown Track'
-      trackMap.set(trackTitle, (trackMap.get(trackTitle) || 0) + amount)
-      
-      // Monthly logic
-      if (log?.period) {
-        try {
-          const monthStr = format(new Date(log.period), 'MMM yyyy')
-          monthlyMap.set(monthStr, (monthlyMap.get(monthStr) || 0) + amount)
-        } catch (e) {
-          // Skip invalid dates
-        }
-      }
-
-      // Country logic
-      const country = log?.country_code || 'US'
-      countryMap.set(country, (countryMap.get(country) || 0) + amount)
+  const { data: analyticsResult, error: analyticsError } = await supabase.rpc('get_revenue_analytics_v2', {
+    p_user_ids: userIdsForAnalytics,
+    p_start_date: dateLimit
   })
 
-  // Format data for charts
-  const platformData = Array.from(platformMap.entries()).map(([name, value]) => ({ name, value }))
-  const trackData = Array.from(trackMap.entries())
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5) // Top 5
-  
-  const monthlyData = Array.from(monthlyMap.entries())
-    .map(([month, revenue]) => ({ month, revenue }))
-    // Note: Assuming date sorting is handled by input order (which is ordered by period) 
-    // If not, would need proper date object parsing.
-  
-  const countryData = Array.from(countryMap.entries())
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5) // Top 5 countries
+  if (analyticsError) {
+    console.error('Error fetching analytics via RPC:', analyticsError)
+  }
+
+  const { platformData, trackData, monthlyData, countryData } = analyticsResult || {
+    platformData: [],
+    trackData: [],
+    monthlyData: [],
+    countryData: []
+  }
 
   const calculatedBalance = artistId || !isLabel 
     ? Number(profile?.balance || 0) 
@@ -255,7 +241,11 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                        <TransactionList transactions={transactions || []} />
+                        <TransactionList 
+                            transactions={transactions || []} 
+                            currentPage={page}
+                            totalPages={totalPages}
+                        />
                     </CardContent>
                 </Card>
             </TabsContent>

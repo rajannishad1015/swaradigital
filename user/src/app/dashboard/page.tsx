@@ -37,75 +37,62 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     artistIds = managedArtists.map(a => a.id)
   }
 
-  // Setup queries
-  let trackQuery = supabase.from('tracks').select('*, albums(cover_art_url, title, type, upc)')
-  let ticketQuery = supabase.from('tickets').select('*', { count: 'exact', head: true }).in('status', ['open', 'in_progress'])
+  // 1. Fetch Optimized Dashboard Data via RPC
+  const { data: dashboardData, error: dashboardError } = await supabase.rpc('get_user_dashboard_data_v2', {
+    p_user_id: artistId || user.id // If artistId is provided, use it, otherwise use current user
+  })
 
-  if (artistId) {
-      trackQuery = trackQuery.eq('artist_id', artistId)
-      ticketQuery = ticketQuery.eq('user_id', artistId)
-  } else if (isLabel) {
-      trackQuery = trackQuery.in('artist_id', artistIds)
-      ticketQuery = ticketQuery.in('user_id', artistIds)
-  } else {
-      trackQuery = trackQuery.eq('artist_id', user.id)
-      ticketQuery = ticketQuery.eq('user_id', user.id)
+  if (dashboardError) {
+    console.error('Error fetching dashboard data via RPC:', dashboardError)
   }
 
-  // Wrap database queries in try-catch for safety
-  let payouts: any[] = []
-  let tracks: any[] = []
-  let ticketCount = 0
-  let tickets: any[] = []
+  // 2. Fetch Payouts & Tickets separately as they are simpler
+  const [payoutsResponse, ticketsResponse] = await Promise.all([
+    supabase
+      .from('payout_requests')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('tickets')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5)
+  ])
 
-  try {
-    const { data: payoutData } = await supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
-    payouts = payoutData || []
+  const { data: payouts } = payoutsResponse
+  const { data: tickets } = ticketsResponse
 
-    const { data: trackData } = await trackQuery.order('created_at', { ascending: false })
-    tracks = trackData || []
-
-    const { count, data: ticketData } = await ticketQuery
-    ticketCount = count || 0
-    tickets = ticketData || []
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error)
-    // Continue with empty arrays - dashboard will show empty states
-  }
-
-  // 3. Aggregate Stats & Activity Generation
-  // Only process if we have data to minimize overhead
-  const totalReleases = tracks?.length || 0
-  const approvedCount = tracks?.filter(t => t?.status === 'approved').length || 0
-  
-  // Status Counts (Consolidate filtering to single pass if possible, but stay simple for now)
+  // 3. Process Data for UI
+  const statusCountsRaw = dashboardData?.statusCounts || []
   const statusCounts = [
-      { status: 'approved', count: approvedCount },
-      { status: 'rejected', count: tracks?.filter(t => t?.status === 'rejected').length || 0 },
-      { status: 'pending', count: tracks?.filter(t => t?.status === 'pending').length || 0 },
-      { status: 'draft', count: tracks?.filter(t => t?.status === 'draft').length || 0 },
+    { status: 'approved', count: statusCountsRaw.find((s: any) => s.status === 'approved')?.count || 0 },
+    { status: 'rejected', count: statusCountsRaw.find((s: any) => s.status === 'rejected')?.count || 0 },
+    { status: 'pending', count: statusCountsRaw.find((s: any) => s.status === 'pending')?.count || 0 },
+    { status: 'draft', count: statusCountsRaw.find((s: any) => s.status === 'draft')?.count || 0 },
   ]
 
-  // Genre Counts (Top 5)
-  const genreMap = new Map<string, number>()
-  tracks?.forEach(t => {
-      if (t?.genre) genreMap.set(t.genre, (genreMap.get(t.genre) || 0) + 1)
-  })
-  
-  const genres = Array.from(genreMap.entries())
-    .map(([genre, count]) => ({ genre, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
+  const totalReleases = statusCounts.reduce((acc: number, curr: any) => acc + curr.count, 0)
+  const approvedCount = statusCounts[0].count
+
+  // Genre Counts
+  const genres = dashboardData?.topGenres?.map((g: any) => ({
+    genre: g.genre,
+    count: g.count
+  })) || []
 
   if (genres.length === 0) {
-      genres.push({ genre: 'Upload tracks for analytics', count: 0 })
+    genres.push({ genre: 'Upload tracks for analytics', count: 0 })
   }
 
-  // Generate Activity Feed efficiently
+  // Recent Activity Generation
+  const recentTracks = dashboardData?.recentTracks || []
   const activities = [
-      ...(tracks?.slice(0, 5).map(t => ({ 
+      ...recentTracks.map((t: any) => ({ 
         id: `t-${t.id}`, type: 'upload' as const, title: `Release: ${t.title}`, status: t.status, date: t.created_at 
-      })) || []),
+      })),
       ...(payouts?.slice(0, 5).map(p => ({ 
         id: `p-${p.id}`, type: 'payout' as const, title: `Payout: $${p.amount}`, status: p.status, date: p.created_at 
       })) || []),
@@ -114,24 +101,30 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       })) || [])
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
 
-  // Calculate Aggregate Revenue safely
-  let totalRevenue = (profile?.balance || 0)
-  if (isLabel && !artistId) {
-      totalRevenue += managedArtists.reduce((acc, curr) => acc + (curr.balance || 0), 0)
-  } else if (artistId) {
-      const selectedArtist = managedArtists.find(a => a.id === artistId)
-      totalRevenue = selectedArtist ? selectedArtist.balance : (profile?.balance || 0)
+  // 4. Additional Data for Lists & Stats logic
+  const ticketCount = dashboardData?.statusCounts?.find((s: any) => s.status === 'open' || s.status === 'in_progress')?.count || 0
+  
+  let trackQuery = supabase.from('tracks').select('*, albums(cover_art_url, title, type, upc)')
+  if (artistId) {
+      trackQuery = trackQuery.eq('artist_id', artistId)
+  } else if (isLabel) {
+      trackQuery = trackQuery.in('artist_id', artistIds)
+  } else {
+      trackQuery = trackQuery.eq('artist_id', user.id)
   }
+  
+  const { data: tracks } = await trackQuery.order('created_at', { ascending: false })
+
+  const totalRevenue = (profile?.balance || 0) + (isLabel && !artistId ? managedArtists.reduce((acc, curr) => acc + (curr.balance || 0), 0) : 0)
 
   const stats = {
       total: totalReleases,
       approved: approvedCount,
       revenue: totalRevenue,
-      tickets: ticketCount || 0,
+      tickets: ticketCount,
       statusCounts,
       genres,
       activities,
-      // Safe success rate calculation - prevent division by zero
       successRate: totalReleases > 0 ? Math.round((approvedCount / totalReleases) * 100) : 0
   }
 

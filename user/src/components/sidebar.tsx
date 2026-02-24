@@ -86,7 +86,7 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
 
                 {/* Dropdowns */}
                 <NavGroup icon={Wrench} label="Tools" items={[
-                    { href: "/dashboard/tools/audio-converter", label: "Audio Converter" },
+                    { href: "/dashboard/tools/media-studio", label: "Media Studio" },
                     { href: "/dashboard/tools/profile-linking", label: "Profile Linking" },
                     { href: "/dashboard/tools/advanced-options", label: "Advanced Options" }
                 ]} />

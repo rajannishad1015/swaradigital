@@ -89,6 +89,10 @@ export async function submitTrack(formData: any) {
                     description: formData.description,
                     upc: formData.upc,
                     target_platforms: formData.selectedPlatforms,
+                    primary_artist_spotify_id: formData.primaryArtists?.[0]?.spotifyId || '',
+                    primary_artist_apple_id: formData.primaryArtists?.[0]?.appleId || '',
+                    featuring_artist_spotify_id: formData.featuringArtists?.[0]?.spotifyId || '',
+                    featuring_artist_apple_id: formData.featuringArtists?.[0]?.appleId || ''
                 })
                 .eq('id', albumId)
                 .eq('artist_id', user.id)
@@ -139,9 +143,9 @@ export async function submitTrack(formData: any) {
                     featuring_artist: JSON.stringify(track.featuringArtists),
                     genre: track.genre || formData.genre,
                     sub_genre: track.subGenre || formData.subGenre,
-                    lyricists: track.lyricists,
-                    composers: track.composers,
-                    producers: track.producers,
+                    lyricists: JSON.stringify(track.lyricists),
+                    composers: JSON.stringify(track.composers),
+                    producers: JSON.stringify(track.producers),
                     production_year: track.productionYear || null,
                     publisher: track.publisher,
                     isrc: track.isrc,
@@ -152,6 +156,12 @@ export async function submitTrack(formData: any) {
                     distribute_video: track.distributeVideo === 'yes',
                     title_language: track.titleLanguage,
                     lyrics_language: track.lyricsLanguage,
+                    
+                    // Artist IDs (first entry for backward compat)
+                    primary_artist_spotify_id: track.primaryArtists?.[0]?.spotifyId || '',
+                    primary_artist_apple_id: track.primaryArtists?.[0]?.appleId || '',
+                    featuring_artist_spotify_id: track.featuringArtists?.[0]?.spotifyId || '',
+                    featuring_artist_apple_id: track.featuringArtists?.[0]?.appleId || '',
                     
                     // Tech
                     bitrate: track.audioAnalysis?.bitrate,
@@ -255,9 +265,9 @@ export async function submitTrack(formData: any) {
                 sub_genre: track.subGenre || formData.subGenre,
                 genre: track.genre || formData.genre, 
                 
-                lyricists: track.lyricists,
-                composers: track.composers,
-                producers: track.producers,
+                lyricists: JSON.stringify(track.lyricists),
+                composers: JSON.stringify(track.composers),
+                producers: JSON.stringify(track.producers),
                 production_year: track.productionYear || null,
                 publisher: track.publisher,
                 isrc: track.isrc,

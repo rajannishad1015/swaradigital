@@ -9,9 +9,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ArrowDownLeft, ArrowUpRight, Clock, AlertCircle, CheckCircle2, ArrowUpDown } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import { useRouter, useSearchParams } from 'next/navigation'
+import { ArrowDownLeft, ArrowUpRight, Clock, AlertCircle, CheckCircle2, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
 
-export default function TransactionList({ transactions }: { transactions: any[] }) {
+interface TransactionListProps {
+  transactions: any[]
+  currentPage: number
+  totalPages: number
+}
+
+export default function TransactionList({ transactions, currentPage, totalPages }: TransactionListProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
 
   const sortedTransactions = useMemo(() => {
@@ -29,6 +39,13 @@ export default function TransactionList({ transactions }: { transactions: any[] 
     }
     return sortable
   }, [transactions, sortConfig])
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('page', newPage.toString())
+    router.push(`?${params.toString()}`)
+  }
 
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc'
@@ -170,6 +187,34 @@ export default function TransactionList({ transactions }: { transactions: any[] 
                 </div>
             ))}
         </div>
+        {/* Pagination Footer */}
+        {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-white/5 bg-white/[0.02] flex items-center justify-between">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                    Page <span className="text-white">{currentPage}</span> of <span className="text-white">{totalPages}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 border-white/10 hover:bg-white/5 disabled:opacity-20"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                    >
+                        <ChevronLeft size={16} />
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 border-white/10 hover:bg-white/5 disabled:opacity-20"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage >= totalPages}
+                    >
+                        <ChevronRight size={16} />
+                    </Button>
+                </div>
+            </div>
+        )}
     </div>
   )
 }

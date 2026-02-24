@@ -28,6 +28,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import React, { useState, useMemo } from "react"
 import { Play, Pause, AlertCircle, Edit2, Trash2, ShieldAlert, ClipboardCheck, ChevronDown, ChevronRight, Disc } from 'lucide-react'
 import { bulkDeleteTracks, requestTakedown, deleteTrack, requestCorrection } from "./actions"
@@ -49,6 +59,11 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
   const [correctionValue, setCorrectionValue] = useState('')
   const [correctionReason, setCorrectionReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Delete Confirmation State
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [trackToDelete, setTrackToDelete] = useState<string | null>(null)
+  const [isBulkDelete, setIsBulkDelete] = useState(false)
 
   // Grouping Logic
   const groupedReleases = useMemo(() => {
@@ -121,8 +136,12 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
 
   const handleBulkDelete = async () => {
       if (selectedIds.length === 0) return
-      if (!confirm(`Are you sure you want to delete ${selectedIds.length} tracks? This cannot be undone.`)) return
+      setIsBulkDelete(true)
+      setTrackToDelete(null)
+      setIsDeleteDialogOpen(true)
+  }
 
+  const confirmBulkDelete = async () => {
       setIsSubmitting(true)
       try {
           await bulkDeleteTracks(selectedIds)
@@ -132,18 +151,27 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
           toast.error(err.message || "Bulk delete failed")
       } finally {
           setIsSubmitting(false)
+          setIsDeleteDialogOpen(false)
       }
   }
 
   // Individual Action Handlers
   const handleDelete = async (id: string) => {
-      if (!confirm("Are you sure you want to delete this track? This action cannot be undone.")) return
+      setIsBulkDelete(false)
+      setTrackToDelete(id)
+      setIsDeleteDialogOpen(true)
+  }
 
+  const confirmSingleDelete = async () => {
+      if (!trackToDelete) return
       try {
-          await deleteTrack(id)
+          await deleteTrack(trackToDelete)
           toast.success("Track deleted successfully")
       } catch (err: any) {
           toast.error(err.message || "Failed to delete track")
+      } finally {
+          setIsDeleteDialogOpen(false)
+          setTrackToDelete(null)
       }
   }
 
@@ -670,6 +698,35 @@ export default function TrackList({ tracks }: { tracks: any[] }) {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent className="bg-zinc-950 border-white/10 text-white">
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="text-red-500">
+                        {isBulkDelete ? `Delete ${selectedIds.length} Tracks?` : "Delete Track?"}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-zinc-400">
+                        {isBulkDelete 
+                            ? "This action cannot be undone. All selected tracks, their metadata, and audio files will be permanently removed from our servers."
+                            : "This action cannot be undone. This track, its metadata, and audio file will be permanently removed from our servers."
+                        }
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isSubmitting} className="border-white/10 text-white hover:bg-white/5">Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={(e) => {
+                            e.preventDefault();
+                            isBulkDelete ? confirmBulkDelete() : confirmSingleDelete();
+                        }}
+                        disabled={isSubmitting}
+                        className="bg-red-600 hover:bg-red-500 text-white border-none"
+                    >
+                        {isSubmitting ? "Deleting..." : "Delete Permanently"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
   )
 }

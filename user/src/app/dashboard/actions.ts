@@ -164,8 +164,8 @@ export async function deleteTrack(trackId: string) {
     if (!track) throw new Error('Track not found')
     if (track.artist_id !== user.id) throw new Error('Unauthorized')
     
-    if (track.status !== 'draft' && track.status !== 'rejected') {
-        throw new Error('Only draft or rejected tracks can be deleted')
+    if (track.status !== 'draft' && track.status !== 'rejected' && track.status !== 'archived') {
+        throw new Error('Only draft, rejected, or archived tracks can be deleted')
     }
 
     const { error } = await supabase
@@ -202,11 +202,11 @@ export async function bulkDeleteTracks(trackIds: string[]) {
     // 2. Security Check: Ownership & Status
     const invalidTracks = tracks.filter(t => 
         t.artist_id !== user.id || 
-        (t.status !== 'draft' && t.status !== 'rejected')
+        (t.status !== 'draft' && t.status !== 'rejected' && t.status !== 'archived')
     )
 
     if (invalidTracks.length > 0) {
-        throw new Error(`Cannot delete ${invalidTracks.length} tracks. Ensure you own them and they are Drafts or Rejected.`)
+        throw new Error(`Cannot delete ${invalidTracks.length} tracks. Ensure you own them and they are Drafts, Rejected, or Archived.`)
     }
 
     // 3. Delete

@@ -104,6 +104,18 @@ function parseProducerEntries(value: any): {name: string}[] {
     return [{name: String(value)}];
 }
 
+function parseJSONEntries(value: any): any[] {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    try {
+        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        console.error("Failed to parse JSON entries:", e);
+        return [];
+    }
+}
+
 interface UploadFormProps {
     initialData?: Record<string, any>
     isFirstUpload?: boolean
@@ -186,8 +198,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
             titleLanguage: t.title_language || 'english',
             lyricsLanguage: t.lyrics_language || 'english',
             lyrics: t.lyrics || '',
-            lyricists: t.lyricists || [],
-            composers: t.composers || [],
+            lyricists: parseJSONEntries(t.lyricists),
+            composers: parseJSONEntries(t.composers),
             producers: parseProducerEntries(t.producers),
             productionYear: t.production_year || currentYear,
             publisher: t.publisher || '',
@@ -653,7 +665,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
         // Wait briefly for save to process
         await new Promise(resolve => setTimeout(resolve, 1500))
       }
-      router.push('/dashboard/tools/audio-converter?tab=image')
+      router.push('/dashboard/tools/media-studio?tab=image')
     } catch {
       toast.error('Failed to save draft. Please save manually and try again.')
     }
