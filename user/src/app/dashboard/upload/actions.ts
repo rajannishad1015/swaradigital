@@ -56,6 +56,8 @@ export async function submitTrack(formData: any) {
         
         if (!profile) return { success: false, error: 'Profile not found' }
 
+        let albumId: string | null = null;
+
         // 1. Check if Editing (Single Track/Album Update)
         if (formData.id) {
             // First, get the current track and it's album_id
@@ -66,7 +68,7 @@ export async function submitTrack(formData: any) {
                 .single()
 
             if (!currentTrack) throw new Error("Track not found")
-            const albumId = currentTrack.album_id
+            albumId = currentTrack.album_id
 
             // Update Album Metadata
             const { error: albumUpdateError } = await supabase
@@ -179,152 +181,133 @@ export async function submitTrack(formData: any) {
                     await supabase.from('tracks').update(trackPayload).eq('id', track.id).eq('artist_id', user.id)
                 }
             }
+        } else {
+            // 2. Create Album (New Upload)
+            const { data: album, error: albumError } = await supabase
+                .from('albums')
+                .insert({
+                    artist_id: user.id,
+                    title: formData.title + (formData.releaseType === 'single' ? ' - Single' : ''),
+                    type: formData.releaseType || 'single',
+                    cover_art_url: formData.coverArtUrl,
+                    release_date: formData.releaseDate || null,
+                    total_tracks: formData.tracks ? formData.tracks.length : 1,
+                    label_name: formData.labelName,
+                    primary_artist: JSON.stringify(formData.primaryArtists),
+                    featuring_artist: JSON.stringify(formData.featuringArtists),
+                    genre: formData.genre,
+                    sub_genre: formData.subGenre,
+                    original_release_date: formData.originalReleaseDate || null,
+                    p_line: formData.pLine,
+                    c_line: formData.cLine,
+                    courtesy_line: formData.courtesyLine,
+                    description: formData.description,
+                    target_platforms: formData.selectedPlatforms,
+                    upc: formData.upc,
+                    primary_artist_spotify_id: formData.primaryArtists?.[0]?.spotifyId || '',
+                    primary_artist_apple_id: formData.primaryArtists?.[0]?.appleId || '',
+                    featuring_artist_spotify_id: formData.featuringArtists?.[0]?.spotifyId || '',
+                    featuring_artist_apple_id: formData.featuringArtists?.[0]?.appleId || ''
+                })
+                .select()
+                .single()
 
-            revalidatePath('/dashboard')
-            return { success: true }
-        }
+            if (albumError) throw new Error(albumError.message)
+            albumId = album.id
 
+            // 3. Create Tracks (Multi-track support)
+            const tracksToInsert = [];
+            const tracksData = Array.isArray(formData.tracks) ? formData.tracks : [];
 
-        // 2. Create Album (New Upload)
-        const { data: album, error: albumError } = await supabase
-            .from('albums')
-            .insert({
-                artist_id: user.id,
-                title: formData.title + (formData.releaseType === 'single' ? ' - Single' : ''),
-                type: formData.releaseType || 'single',
-                cover_art_url: formData.coverArtUrl,
-                release_date: formData.releaseDate || null,
-                total_tracks: formData.tracks ? formData.tracks.length : 1,
-                label_name: formData.labelName,
-                primary_artist: JSON.stringify(formData.primaryArtists),
-                featuring_artist: JSON.stringify(formData.featuringArtists),
-                genre: formData.genre,
-                sub_genre: formData.subGenre,
-                original_release_date: formData.originalReleaseDate || null,
-                p_line: formData.pLine,
-                c_line: formData.cLine,
-                courtesy_line: formData.courtesyLine,
-                description: formData.description,
-                target_platforms: formData.selectedPlatforms,
-                upc: formData.upc,
-                primary_artist_spotify_id: formData.primaryArtists?.[0]?.spotifyId || '',
-                primary_artist_apple_id: formData.primaryArtists?.[0]?.appleId || '',
-                featuring_artist_spotify_id: formData.featuringArtists?.[0]?.spotifyId || '',
-                featuring_artist_apple_id: formData.featuringArtists?.[0]?.appleId || ''
-            })
-            .select()
-            .single()
-
-        if (albumError) throw new Error(albumError.message)
-
-        // 3. Create Tracks (Multi-track support)
-        const tracksToInsert = [];
-        
-        // Ensure formData.tracks exists and is an array
-        const tracksData = Array.isArray(formData.tracks) ? formData.tracks : [];
-
-        if (tracksData.length === 0) {
-           return { success: false, error: "No tracks provided for upload." }
-        }
-
-        for (const track of tracksData) {
-            // Validate required fields (skip audio check for drafts)
-            if (!track.audioUrl && formData.status !== 'draft') {
-                return { success: false, error: `Missing audio file for track: ${track.title}` };
+            if (tracksData.length === 0) {
+               return { success: false, error: "No tracks provided for upload." }
             }
 
-            // Check Fingerprinting & Transcoding for each track (skip for drafts without audio)
-            let isMatched = false, fingerprintId = null, standardUrl = null, previewUrl = null;
-            if (track.audioUrl) {
-                const fpResult = await checkAudioFingerprint(track.audioUrl, track.title || '');
-                isMatched = fpResult.isMatched;
-                fingerprintId = fpResult.fingerprintId;
-                const tcResult = await simulateTranscode(track.audioUrl);
-                standardUrl = tcResult.standardUrl;
-                previewUrl = tcResult.previewUrl;
+            for (const track of tracksData) {
+                if (!track.audioUrl && formData.status !== 'draft') {
+                    return { success: false, error: `Missing audio file for track: ${track.title}` };
+                }
+
+                let isMatched = false, fingerprintId = null, standardUrl = null, previewUrl = null;
+                if (track.audioUrl) {
+                    const fpResult = await checkAudioFingerprint(track.audioUrl, track.title || '');
+                    isMatched = fpResult.isMatched;
+                    fingerprintId = fpResult.fingerprintId;
+                    const tcResult = await simulateTranscode(track.audioUrl);
+                    standardUrl = tcResult.standardUrl;
+                    previewUrl = tcResult.previewUrl;
+                }
+
+                tracksToInsert.push({
+                    artist_id: user.id,
+                    album_id: albumId,
+                    title: track.title, 
+                    file_url: track.audioUrl || null,
+                    duration: track.duration || 0,
+                    is_explicit: track.explicit,
+                    lyrics: track.lyrics,
+                    copyright_line: formData.cLine,
+                    publishing_line: formData.pLine,
+                    version_type: track.trackVersion || 'original',
+                    is_instrumental: track.isInstrumental || 'no',
+                    version_subtitle: track.versionSubtitle,
+                    primary_artist: JSON.stringify(track.primaryArtists || formData.primaryArtists), 
+                    featuring_artist: JSON.stringify(track.featuringArtists),
+                    sub_genre: track.subGenre || formData.subGenre,
+                    genre: track.genre || formData.genre, 
+                    lyricists: JSON.stringify(track.lyricists),
+                    composers: JSON.stringify(track.composers),
+                    producers: JSON.stringify(track.producers),
+                    production_year: track.productionYear || null,
+                    publisher: track.publisher,
+                    isrc: track.isrc,
+                    price_tier: track.priceTier,
+                    explicit_type: track.explicitType,
+                    track_p_line: track.pLine,
+                    caller_tune_timing: track.callerTuneTiming,
+                    distribute_video: track.distributeVideo === 'yes',
+                    title_language: track.titleLanguage,
+                    lyrics_language: track.lyricsLanguage,
+                    primary_artist_spotify_id: track.primaryArtists?.[0]?.spotifyId || '',
+                    primary_artist_apple_id: track.primaryArtists?.[0]?.appleId || '',
+                    featuring_artist_spotify_id: track.featuringArtists?.[0]?.spotifyId || '',
+                    featuring_artist_apple_id: track.featuringArtists?.[0]?.appleId || '',
+                    bitrate: track.audioAnalysis?.bitrate,
+                    sample_rate: track.audioAnalysis?.sampleRate,
+                    channels: track.audioAnalysis?.channels,
+                    encoding: track.audioAnalysis?.format,
+                    preview_url: previewUrl,
+                    standard_url: standardUrl,
+                    fingerprint_id: fingerprintId,
+                    is_flagged: isMatched,
+                    status: isMatched ? 'flagged' : (formData.status || 'pending'),
+                    file_size: 0 
+                });
             }
 
-            tracksToInsert.push({
-                artist_id: user.id,
-                album_id: album.id,
-                title: track.title, 
-                file_url: track.audioUrl || null,
-                duration: track.duration || 0,
-                is_explicit: track.explicit,
-                lyrics: track.lyrics,
-                copyright_line: formData.cLine, // Inherit from album release
-                publishing_line: formData.pLine, // Inherit from album release
-                
-                // New Detailed Fields
-                version_type: track.trackVersion || 'original',
-                is_instrumental: track.isInstrumental || 'no',
-                version_subtitle: track.versionSubtitle,
-                // Track specific overrides
-                primary_artist: JSON.stringify(track.primaryArtists || formData.primaryArtists), 
-                featuring_artist: JSON.stringify(track.featuringArtists),
-                sub_genre: track.subGenre || formData.subGenre,
-                genre: track.genre || formData.genre, 
-                
-                lyricists: JSON.stringify(track.lyricists),
-                composers: JSON.stringify(track.composers),
-                producers: JSON.stringify(track.producers),
-                production_year: track.productionYear || null,
-                publisher: track.publisher,
-                isrc: track.isrc,
-                price_tier: track.priceTier,
-                explicit_type: track.explicitType,
-                caller_tune_timing: track.callerTuneTiming,
-                distribute_video: track.distributeVideo === 'yes',
-                title_language: track.titleLanguage,
-                lyrics_language: track.lyricsLanguage,
-                track_p_line: track.pLine,
-                 // Artist IDs (first entry for backward compat)
-                primary_artist_spotify_id: track.primaryArtists?.[0]?.spotifyId || '',
-                primary_artist_apple_id: track.primaryArtists?.[0]?.appleId || '',
-                featuring_artist_spotify_id: track.featuringArtists?.[0]?.spotifyId || '',
-                featuring_artist_apple_id: track.featuringArtists?.[0]?.appleId || '',
-
-                // Tech Metadata
-                bitrate: track.audioAnalysis?.bitrate,
-                sample_rate: track.audioAnalysis?.sampleRate,
-                channels: track.audioAnalysis?.channels,
-                encoding: track.audioAnalysis?.format, // e.g., 'MP3'
-                
-                // Phase 2: Transcoding & Fingerprinting
-                preview_url: previewUrl,
-                standard_url: standardUrl,
-                fingerprint_id: fingerprintId,
-                is_flagged: isMatched,
-                status: isMatched ? 'flagged' : (formData.status || 'pending'),
-
-                file_size: 0 
-            });
-        }
-
-        const { error: tracksError } = await supabase
-            .from('tracks')
-            .insert(tracksToInsert);
-        
-        if (tracksError) {
-            // CLEANUP: Delete orphaned album to avoid stale data
-            await supabase.from('albums').delete().eq('id', album.id)
-            throw new Error(tracksError.message)
+            const { error: tracksError } = await supabase.from('tracks').insert(tracksToInsert);
+            if (tracksError) {
+                await supabase.from('albums').delete().eq('id', albumId)
+                throw new Error(tracksError.message)
+            }
         }
 
         revalidatePath('/dashboard')
-        // Return the first track's ID so clients can switch to edit mode on subsequent saves
-        const firstTrackId = tracksToInsert.length > 0
-            ? (await supabase.from('tracks').select('id').eq('album_id', album.id).order('created_at').limit(1).single()).data?.id
-            : undefined
-        return { success: true, trackId: firstTrackId }
         
-    } catch (error: unknown) {
-        // Check if it's a Supabase error (often has details/hint)
-        const err = error as Record<string, string> | null
-        const detailedError = err?.details || err?.hint || err?.message || (error instanceof Error ? error.message : 'Unknown error');
+        // Fetch all track IDs for this album to return to the client for syncing
+        const { data: albumTracks } = await supabase
+            .from('tracks')
+            .select('id, title')
+            .eq('album_id', albumId)
+            .order('created_at')
+
         return { 
-            success: false, 
-            error: `Upload Failed: ${detailedError}` 
+            success: true, 
+            trackId: albumTracks?.[0]?.id, 
+            allTracks: albumTracks || [] 
         }
+    } catch (error: any) {
+        const detailedError = error?.message || "Internal server error";
+        return { success: false, error: `Upload Failed: ${detailedError}` }
     }
 }
