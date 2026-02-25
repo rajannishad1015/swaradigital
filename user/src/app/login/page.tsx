@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Disc, Music, Radio, Headphones, Mic2, PlayCircle } from 'lucide-react'
 import { AuthMessages } from '@/components/auth/auth-messages'
 import { SignupSuccessDialog } from '@/components/auth/signup-success-dialog'
+import { ResendVerificationLink } from '@/components/auth/resend-verification-link'
 import { Suspense } from 'react'
 
 export const metadata: Metadata = {
@@ -102,9 +103,6 @@ export default function LoginPage() {
                   Enter your credentials to access the platform
                 </p>
                 <AuthMessages />
-                <Suspense fallback={null}>
-                  <SignupSuccessDialog />
-                </Suspense>
               </div>
 
               {/* Login Form */}
@@ -171,6 +169,14 @@ export default function LoginPage() {
                   </Link>
                 </div>
               </form>
+
+              <div className="text-center pt-6">
+                <ResendVerificationLink />
+              </div>
+
+              <Suspense fallback={null}>
+                <SignupSuccessDialog />
+              </Suspense>
 
               {/* Trust Badge */}
               <div className="mt-6 sm:mt-10 pt-4 sm:pt-6 border-t border-gray-100">
