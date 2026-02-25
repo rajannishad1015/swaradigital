@@ -24,9 +24,13 @@ export default function ChangePasswordDialog({ trigger }: { trigger?: React.Reac
   const handleSubmit = async (formData: FormData) => {
     setLoading(true)
     try {
-        await changePassword(formData)
-        toast.success("Password updated successfully")
-        setOpen(false)
+        const result = await changePassword(formData)
+        if (result.success) {
+            toast.success(result.message)
+            setOpen(false)
+        } else {
+            toast.error(result.message)
+        }
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : 'An unknown error occurred'
         toast.error("Failed to update password: " + message)

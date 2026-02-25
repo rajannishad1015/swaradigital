@@ -25,9 +25,13 @@ export default function EditProfileDialog({ profile, trigger }: { profile: any, 
   const handleSubmit = async (formData: FormData) => {
     setLoading(true)
     try {
-        await updateProfile(formData)
-        toast.success("Profile updated successfully")
-        setOpen(false)
+        const result = await updateProfile(formData)
+        if (result.success) {
+            toast.success(result.message)
+            setOpen(false)
+        } else {
+            toast.error(result.message)
+        }
     } catch (e: unknown) {
         toast.error("Failed to update profile: " + (e instanceof Error ? e.message : 'Unknown error'))
     } finally {
