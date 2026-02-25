@@ -154,7 +154,7 @@ export default function SignupPage() {
                     className="w-4 h-4 border-gray-300 bg-white text-black focus:ring-black rounded-none mt-1" 
                   />
                   <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
-                    I agree to the <Link href="/terms" className="font-bold text-black border-b border-black">Terms & Conditions</Link>
+                    I agree to the <Link href="/terms" className="font-bold text-black border-b border-black">Terms & Conditions</Link> and <Link href="/privacy-policy" className="font-bold text-black border-b border-black">Privacy Policy</Link>
                   </label>
                 </div>
 
