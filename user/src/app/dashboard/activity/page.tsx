@@ -13,15 +13,15 @@ export default async function ActivityPage() {
     return <div>Log in required</div>
   }
 
-  // Fetch all activity types
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  // Fetch profile and managed artists in parallel
+  const [profileRes, managedRes] = await Promise.all([
+    supabase.from('profiles').select('role').eq('id', user.id).single(),
+    supabase.from('profiles').select('id').eq('label_id', user.id)
+  ])
+
+  const profile = profileRes.data
   const isLabel = profile?.role === 'label'
-  
-  let artistIds: string[] = []
-  if (isLabel) {
-    const { data: managed } = await supabase.from('profiles').select('id').eq('label_id', user.id)
-    artistIds = managed?.map(a => a.id) || []
-  }
+  const artistIds = managedRes.data?.map(a => a.id) || []
 
   // Setup queries
   let trackQuery = supabase.from('tracks').select('*, albums(title, type)')
@@ -35,9 +35,16 @@ export default async function ActivityPage() {
     ticketQuery = ticketQuery.eq('user_id', user.id)
   }
 
-  const { data: tracks } = await trackQuery.order('created_at', { ascending: false })
-  const { data: payouts } = await supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
-  const { data: tickets } = await ticketQuery.order('created_at', { ascending: false })
+  // Fetch all activity data in parallel
+  const [tracksRes, payoutsRes, ticketsRes] = await Promise.all([
+    trackQuery.order('created_at', { ascending: false }),
+    supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    ticketQuery.order('created_at', { ascending: false })
+  ])
+
+  const tracks = tracksRes.data || []
+  const payouts = payoutsRes.data || []
+  const tickets = ticketsRes.data || []
 
   const activities = [
     ...(tracks?.map(t => ({ id: t.id, type: 'upload' as const, title: `Uploaded ${t.title}`, status: t.status, date: t.created_at, description: t.artist })) || []),

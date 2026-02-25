@@ -37,33 +37,34 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     artistIds = managedArtists.map(a => a.id)
   }
 
-  // 1. Fetch Optimized Dashboard Data via RPC
-  const { data: dashboardData, error: dashboardError } = await supabase.rpc('get_user_dashboard_data_v2', {
-    p_user_id: artistId || user.id // If artistId is provided, use it, otherwise use current user
-  })
-
-  if (dashboardError) {
-    console.error('Error fetching dashboard data via RPC:', dashboardError)
+  // 1. Prepare Filter Logic Early
+  let trackQuery = supabase.from('tracks').select('*, albums(cover_art_url, title, type, upc)')
+  if (artistId) {
+      trackQuery = trackQuery.eq('artist_id', artistId)
+  } else if (isLabel) {
+      trackQuery = trackQuery.in('artist_id', artistIds)
+  } else {
+      trackQuery = trackQuery.eq('artist_id', user.id)
   }
 
-  // 2. Fetch Payouts & Tickets separately as they are simpler
-  const [payoutsResponse, ticketsResponse] = await Promise.all([
-    supabase
-      .from('payout_requests')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(5),
-    supabase
-      .from('tickets')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(5)
+  // 2. Fetch All Dashboard Data in Parallel
+  const [dashboardRes, payoutsRes, ticketsRes, tracksRes] = await Promise.all([
+    supabase.rpc('get_user_dashboard_data_v2', {
+        p_user_id: artistId || user.id
+    }),
+    supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+    supabase.from('tickets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+    trackQuery.order('created_at', { ascending: false })
   ])
 
-  const { data: payouts } = payoutsResponse
-  const { data: tickets } = ticketsResponse
+  const dashboardData = dashboardRes.data
+  if (dashboardRes.error) {
+    console.error('Error fetching dashboard data via RPC:', dashboardRes.error)
+  }
+
+  const payouts = payoutsRes.data
+  const tickets = ticketsRes.data
+  const tracks = tracksRes.data
 
   // 3. Process Data for UI
   const statusCountsRaw = dashboardData?.statusCounts || []
@@ -101,19 +102,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       })) || [])
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
 
-  // 4. Additional Data for Lists & Stats logic
   const ticketCount = dashboardData?.statusCounts?.find((s: any) => s.status === 'open' || s.status === 'in_progress')?.count || 0
-  
-  let trackQuery = supabase.from('tracks').select('*, albums(cover_art_url, title, type, upc)')
-  if (artistId) {
-      trackQuery = trackQuery.eq('artist_id', artistId)
-  } else if (isLabel) {
-      trackQuery = trackQuery.in('artist_id', artistIds)
-  } else {
-      trackQuery = trackQuery.eq('artist_id', user.id)
-  }
-  
-  const { data: tracks } = await trackQuery.order('created_at', { ascending: false })
 
   const totalRevenue = (profile?.balance || 0) + (isLabel && !artistId ? managedArtists.reduce((acc, curr) => acc + (curr.balance || 0), 0) : 0)
 

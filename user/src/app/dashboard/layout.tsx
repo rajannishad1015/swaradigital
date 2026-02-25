@@ -25,11 +25,20 @@ export default async function DashboardLayout({
         redirect('/login')
     }
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role, id, status')
-        .eq('id', user.id)
-        .single()
+    // Fetch profile, pending tickets, and activity counts in parallel
+    const [
+        { data: profile },
+        { count: pendingTickets },
+        [trackCountRes, payoutCountRes, ticketCountRes]
+    ] = await Promise.all([
+        supabase.from('profiles').select('role, id, status, label_id').eq('id', user.id).single(),
+        supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id).neq('status', 'resolved').neq('status', 'closed'),
+        Promise.all([
+            supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
+            supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+            supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+        ])
+    ])
 
     if (profile?.status === 'banned' || profile?.status === 'suspended') {
         await supabase.auth.signOut()
@@ -46,29 +55,17 @@ export default async function DashboardLayout({
         artists = data || []
     }
 
+    const trackCount = trackCountRes.count
+    const payoutCount = payoutCountRes.count
+    const ticketCount = ticketCountRes.count
+    const hasActivity = (trackCount || 0) > 0 || (payoutCount || 0) > 0 || (ticketCount || 0) > 0
+
     async function signOut() {
         'use server'
         const supabase = await createClient()
         await supabase.auth.signOut()
         redirect('/login')
     }
-
-    // Fetch Pending Tickets Count for User
-    const { count: pendingTickets } = await supabase
-        .from('tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .neq('status', 'resolved')
-        .neq('status', 'closed')
-
-    // Check for any activity (New User Logic)
-    const [{ count: trackCount }, { count: payoutCount }, { count: ticketCount }] = await Promise.all([
-        supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
-        supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
-    ])
-
-    const hasActivity = (trackCount || 0) > 0 || (payoutCount || 0) > 0 || (ticketCount || 0) > 0
 
   return (
     <div className="flex h-screen w-full overflow-hidden">

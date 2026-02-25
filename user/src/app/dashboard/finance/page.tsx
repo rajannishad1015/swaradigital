@@ -38,24 +38,15 @@ export default async function FinancePage({ searchParams }: {
   if (!user) {
     redirect('/login')
   }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, balance, bank_name, account_number, ifsc_code, paypal_email, upi_id')
-    .eq('id', user.id)
-    .single()
+  const [profileRes, artistsRes] = await Promise.all([
+    supabase.from('profiles').select('role, balance, bank_name, account_number, ifsc_code, paypal_email, upi_id').eq('id', user.id).single(),
+    supabase.from('profiles').select('id, balance').eq('label_id', user.id)
+  ])
 
+  const profile = profileRes.data
   const isLabel = profile?.role === 'label'
-
-  let artistIds: string[] = []
-  let managedArtists: { id: string, balance: number }[] = []
-  if (isLabel) {
-    const { data: artistList } = await supabase
-        .from('profiles')
-        .select('id, balance')
-        .eq('label_id', user.id)
-    managedArtists = artistList?.map(a => ({ id: a.id, balance: Number(a.balance || 0) })) || []
-    artistIds = managedArtists.map(a => a.id)
-  }
+  const managedArtists = artistsRes.data?.map(a => ({ id: a.id, balance: Number(a.balance || 0) })) || []
+  const artistIds = managedArtists.map(a => a.id)
 
   // Setup queries
   let revenueQuery = supabase.from('revenue_logs').select('*, tracks(title)')
@@ -69,10 +60,10 @@ export default async function FinancePage({ searchParams }: {
       if (range === '90d') days = 90
       if (range === '12m') days = 365
       
-      const dateLimit = subDays(new Date(), days).toISOString()
-      revenueQuery = revenueQuery.gte('period', dateLimit)
-      transQuery = transQuery.gte('created_at', dateLimit)
-      payoutQuery = payoutQuery.gte('created_at', dateLimit)
+      const dateLimitFilter = subDays(new Date(), days).toISOString()
+      revenueQuery = revenueQuery.gte('period', dateLimitFilter)
+      transQuery = transQuery.gte('created_at', dateLimitFilter)
+      payoutQuery = payoutQuery.gte('created_at', dateLimitFilter)
   }
 
   // 2. Search Filter (Transactions) — escape SQL wildcards
@@ -95,49 +86,39 @@ export default async function FinancePage({ searchParams }: {
       payoutQuery = payoutQuery.eq('user_id', user.id)
   }
 
-  // Fetch data with error handling
-  let revenueLogs: any[] = []
-  
   const page = Number(awaitedParams?.page || 1)
   const pageSize = 20
-  const from = (page - 1) * pageSize
-  const to = from + pageSize - 1
-  
-  let transactions: any[] = []
-  let totalPages = 1
-  let payoutRequests: any[] = []
+  const fromOffset = (page - 1) * pageSize
+  const toOffset = fromOffset + pageSize - 1
 
-  try {
-    const { data: revenueData } = await revenueQuery.order('period', { ascending: true })
-    revenueLogs = revenueData || []
-
-    const { data: transData, count: totalTransactions } = await transQuery.range(from, to)
-    transactions = transData || []
-    totalPages = Math.ceil((totalTransactions || 0) / pageSize)
-
-    const { data: payoutData } = await payoutQuery
-    payoutRequests = payoutData || []
-  } catch (error) {
-    console.error('Error fetching finance data:', error)
-    // Continue with empty arrays
-  }
-
-  // Process analytics data using the new optimized RPC
+  // Process analytics filter
   const userIdsForAnalytics = artistId ? [artistId] : (isLabel ? artistIds : [user.id])
-  const dateLimit = range !== 'all' 
+  const analyticsDateLimit = range !== 'all' 
     ? subDays(new Date(), range === '7d' ? 7 : range === '90d' ? 90 : range === '12m' ? 365 : 30).toISOString().split('T')[0]
     : null
 
-  const { data: analyticsResult, error: analyticsError } = await supabase.rpc('get_revenue_analytics_v2', {
-    p_user_ids: userIdsForAnalytics,
-    p_start_date: dateLimit
-  })
+  // Fetch all main data in parallel
+  const [revenueRes, transRes, payoutRes, analyticsRes] = await Promise.all([
+    revenueQuery.order('period', { ascending: true }),
+    transQuery.range(fromOffset, toOffset),
+    payoutQuery,
+    supabase.rpc('get_revenue_analytics_v2', {
+      p_user_ids: userIdsForAnalytics,
+      p_start_date: analyticsDateLimit
+    })
+  ])
 
-  if (analyticsError) {
-    console.error('Error fetching analytics via RPC:', analyticsError)
+  const revenueLogs = revenueRes.data || []
+  const transactions = transRes.data || []
+  const totalTransactionsCount = transRes.count || 0
+  const totalPages = Math.ceil(totalTransactionsCount / pageSize)
+  const payoutRequests = payoutRes.data || []
+
+  if (analyticsRes.error) {
+    console.error('Error fetching analytics via RPC:', analyticsRes.error)
   }
 
-  const { platformData, trackData, monthlyData, countryData } = analyticsResult || {
+  const { platformData, trackData, monthlyData, countryData } = analyticsRes.data || {
     platformData: [],
     trackData: [],
     monthlyData: [],
