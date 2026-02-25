@@ -57,7 +57,7 @@ export default async function DashboardLayout({
     const { count: pendingTickets } = await supabase
         .from('tickets')
         .select('*', { count: 'exact', head: true })
-        .eq('artist_id', user.id)
+        .eq('user_id', user.id)
         .neq('status', 'resolved')
         .neq('status', 'closed')
 
@@ -65,7 +65,7 @@ export default async function DashboardLayout({
     const [{ count: trackCount }, { count: payoutCount }, { count: ticketCount }] = await Promise.all([
         supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
         supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('artist_id', user.id)
+        supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
     ])
 
     const hasActivity = (trackCount || 0) > 0 || (payoutCount || 0) > 0 || (ticketCount || 0) > 0

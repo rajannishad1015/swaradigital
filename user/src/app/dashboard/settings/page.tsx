@@ -163,7 +163,7 @@ export default async function SettingsPage() {
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="relative z-10">
                             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">PayPal Email</div>
-                            <div className="font-bold text-white text-lg">{profile?.paypal_email ? `${profile.paypal_email.slice(0, 3)}••••@${profile.paypal_email.split('@')[1]}` : 'Not linked'}</div>
+                            <div className="font-bold text-white text-lg">{profile?.paypal_email ? `${profile.paypal_email.slice(0, 3)}••••@${(profile.paypal_email.split('@')[1] || '••••')}` : 'Not linked'}</div>
                                 {profile?.paypal_email && !profile.paypal_email.includes('@') && <div className="text-[10px] text-red-500">Invalid format</div>}
                         </div>
                     </div>

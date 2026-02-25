@@ -25,7 +25,7 @@ export async function createTicket(formData: FormData) {
   const { data: ticket, error: ticketError } = await supabase
     .from('tickets')
     .insert({
-      artist_id: user.id,
+      user_id: user.id,
       subject,
       category,
       priority,
@@ -78,11 +78,11 @@ export async function replyTx(formData: FormData) {
   // Verify ownership
   const { data: ticket } = await supabase
     .from('tickets')
-    .select('artist_id')
+    .select('user_id')
     .eq('id', ticketId)
     .single()
   
-  if (!ticket || ticket.artist_id !== user.id) throw new Error('Unauthorized')
+  if (!ticket || ticket.user_id !== user.id) throw new Error('Unauthorized')
 
   // Upload Attachment (if present)
   let attachmentUrl = null

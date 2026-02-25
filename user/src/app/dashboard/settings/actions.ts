@@ -102,6 +102,8 @@ export async function updateProfile(formData: FormData) {
   }
 
   revalidatePath('/dashboard/settings')
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/activity')
 }
 
 export async function changePassword(formData: FormData) {
