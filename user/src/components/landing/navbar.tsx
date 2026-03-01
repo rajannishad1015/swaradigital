@@ -2,160 +2,119 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
 
 export function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const navLinks = [
     { name: "Features", href: "#features" },
-    { name: "Pricing", href: "#pricing" },
+    { name: "Pricing",  href: "#pricing" },
     { name: "Workflow", href: "#workflow" },
   ];
 
   return (
-    <header className="fixed top-0 w-full z-50 flex justify-center pt-2 md:pt-6 px-2 md:px-4 pointer-events-none transition-all duration-500">
-      <motion.nav
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className={`pointer-events-auto relative flex items-center justify-between px-4 md:px-8 py-2 md:py-3 rounded-full border transition-all duration-500 ${
-          isScrolled
-            ? "bg-black/60 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] w-full max-w-5xl border-white/10"
-            : "bg-white/[0.02] backdrop-blur-md w-full max-w-7xl border-white/5"
-        }`}
+    <nav
+      style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
+        height: "62px",
+        background: scrolled ? "rgba(7,7,7,0.95)" : "rgba(7,7,7,0.8)",
+        backdropFilter: "blur(24px) saturate(1.5)",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        transition: "background 0.3s",
+      }}
+    >
+      {/* Inner wrapper uses sl-nav-inner for responsive padding */}
+      <div
+        className="sl-nav-inner"
+        style={{
+          height: "100%", display: "flex",
+          alignItems: "center", justifyContent: "space-between",
+        }}
       >
-        {/* Glass Reflection Effect */}
-        <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/10 to-transparent opacity-20 pointer-events-none" />
-
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group relative z-10">
-          <div className="relative w-8 h-8 md:w-9 md:h-9 transition-transform duration-500 group-hover:rotate-12">
-             <Image 
-               src="/logo.png" 
-               alt="Swara Digital Logo" 
-               fill
-               className="object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]"
-               priority
-             />
-          </div>
-          <span className="font-bold text-lg tracking-wider text-white hidden sm:block">
-            Swara<span className="text-[#00FF88] font-light">Digital</span>
-          </span>
+        <Link
+          href="/"
+          style={{
+            display: "flex", alignItems: "center", gap: "9px",
+            fontSize: "16px", fontWeight: 800, letterSpacing: "-0.03em",
+            color: "#EFEFEF", textDecoration: "none",
+            fontFamily: "'Syne', sans-serif",
+          }}
+        >
+          <div style={{
+            width: "28px", height: "28px", background: "#C8F135",
+            borderRadius: "7px", display: "flex", alignItems: "center",
+            justifyContent: "center", fontSize: "13px", flexShrink: 0,
+            boxShadow: "0 0 16px rgba(200,241,53,0.35)",
+          }}>♪</div>
+          SwaraDigital
         </Link>
-        
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
-          <div className="flex items-center gap-1 bg-white/5 rounded-full p-1 border border-white/5 backdrop-blur-sm">
-            {navLinks.map((link) => (
+
+        {/* Center links — desktop */}
+        <ul className="hidden md:flex" style={{ gap: "32px", listStyle: "none", margin: 0, padding: 0 }}>
+          {navLinks.map((link) => (
+            <li key={link.name}>
               <Link
-                key={link.name}
                 href={link.href}
-                className="relative px-5 py-2 rounded-full text-xs font-medium text-white/70 hover:text-white transition-colors duration-300 group overflow-hidden"
-              >
-                <span className="relative z-10">{link.name}</span>
-                <span className="absolute inset-0 bg-white/10 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300 ease-out origin-center" />
-              </Link>
-            ))}
-          </div>
-          
-          <div className="flex items-center gap-4 pl-4 border-l border-white/10">
-            <Link href="/login" className="group">
-              <span className="text-xs font-bold text-white/80 hover:text-[#00FF88] transition-colors relative">
-                LOGIN
-                <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[#00FF88] transition-all duration-300 group-hover:w-full" />
-              </span>
-            </Link>
-            <Link href="/signup">
-              <Button 
-                size="sm" 
-                className="h-10 px-6 bg-[#00FF88] text-black hover:bg-[#00E078] hover:scale-105 rounded-full text-xs font-bold tracking-wide transition-all duration-300 shadow-[0_0_20px_rgba(0,255,136,0.3)] hover:shadow-[0_0_30px_rgba(0,255,136,0.5)]"
-              >
-                JOIN NOW
-              </Button>
-            </Link>
-          </div>
+                style={{ fontSize: "13px", fontWeight: 500, color: "#777", textDecoration: "none", transition: "color 0.2s", fontFamily: "'Syne', sans-serif" }}
+                onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.color = "#EFEFEF"}
+                onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.color = "#777"}
+              >{link.name}</Link>
+            </li>
+          ))}
+        </ul>
+
+        {/* Right — desktop */}
+        <div className="hidden md:flex" style={{ gap: "10px", alignItems: "center" }}>
+          <Link href="/login"
+            style={{ fontSize: "13px", fontWeight: 500, color: "#777", textDecoration: "none", padding: "7px 14px", transition: "color 0.2s", fontFamily: "'Syne', sans-serif" }}
+            onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.color = "#EFEFEF"}
+            onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.color = "#777"}
+          >LOGIN</Link>
+          <Link href="/signup"
+            style={{ fontSize: "13px", fontWeight: 700, color: "#070707", background: "#C8F135", padding: "9px 20px", borderRadius: "7px", textDecoration: "none", transition: "box-shadow 0.25s, transform 0.2s", fontFamily: "'Syne', sans-serif" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 0 20px rgba(200,241,53,0.4)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none"; }}
+          >JOIN NOW</Link>
         </div>
 
-        {/* Mobile Toggle */}
+        {/* Hamburger — mobile */}
         <button
-          className="md:hidden w-10 h-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors z-50 relative"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
+          className="md:hidden"
+          onClick={() => setMenuOpen(!menuOpen)}
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "8px 10px", cursor: "pointer", color: "#EFEFEF", fontSize: "18px", lineHeight: 1 }}
+        >{menuOpen ? "✕" : "☰"}</button>
+      </div>
 
-        {/* Mobile Menu Overlay */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -20, filter: "blur(10px)" }}
-              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 0.95, y: -20, filter: "blur(10px)" }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute top-0 left-0 right-0 p-6 bg-[#0A0A0A]/95 backdrop-blur-3xl border border-white/10 rounded-[2rem] md:hidden shadow-2xl z-40 overflow-hidden flex flex-col gap-6"
-              style={{ minHeight: "400px" }}
-            >
-              {/* Background Glow */}
-              <div className="absolute -top-20 -right-20 w-60 h-60 bg-[#00FF88]/20 blur-[80px] rounded-full pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/10 blur-[60px] rounded-full pointer-events-none" />
-
-              <div className="flex items-center justify-between pointer-events-none opacity-0">
-                  {/* Placeholder for layout balance behind absolute close button */}
-                  <div className="w-10 h-10" />
-              </div>
-              
-              <div className="flex flex-col gap-2 mt-8 z-10">
-                {navLinks.map((link, i) => (
-                  <motion.div
-                    key={link.name}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + i * 0.1 }}
-                  >
-                    <Link
-                      href={link.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="text-3xl font-bold text-white/50 hover:text-white transition-colors tracking-tight flex items-center gap-4 group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00FF88] opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {link.name}
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="mt-auto flex flex-col gap-4 z-10">
-                 <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent w-full" />
-                 <div className="grid grid-cols-2 gap-4">
-                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold">
-                      Login
-                    </Button>
-                  </Link>
-                  <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full h-12 rounded-xl bg-[#00FF88] hover:bg-[#00E078] text-black font-bold shadow-[0_0_20px_rgba(0,255,136,0.2)]">
-                      Join Now
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
-    </header>
+      {/* Mobile dropdown */}
+      {menuOpen && (
+        <div style={{ position: "absolute", top: "62px", left: 0, right: 0, background: "rgba(7,7,7,0.98)", backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "24px 20px", zIndex: 199 }}>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
+            {navLinks.map((link) => (
+              <li key={link.name}>
+                <Link href={link.href} onClick={() => setMenuOpen(false)}
+                  style={{ fontSize: "18px", fontWeight: 600, color: "#EFEFEF", textDecoration: "none", fontFamily: "'Syne', sans-serif" }}
+                >{link.name}</Link>
+              </li>
+            ))}
+          </ul>
+          <div style={{ display: "flex", gap: "10px", marginTop: "24px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            <Link href="/login" onClick={() => setMenuOpen(false)}
+              style={{ display: "block", flex: 1, textAlign: "center", padding: "10px", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", color: "#EFEFEF", textDecoration: "none", fontSize: "14px", fontWeight: 600, fontFamily: "'Syne', sans-serif" }}
+            >Login</Link>
+            <Link href="/signup" onClick={() => setMenuOpen(false)}
+              style={{ display: "block", flex: 1, textAlign: "center", padding: "10px", background: "#C8F135", borderRadius: "8px", color: "#070707", textDecoration: "none", fontSize: "14px", fontWeight: 700, fontFamily: "'Syne', sans-serif" }}
+            >Join Now</Link>
+          </div>
+        </div>
+      )}
+    </nav>
   );
 }

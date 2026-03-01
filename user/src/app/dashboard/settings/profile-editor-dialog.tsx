@@ -21,8 +21,42 @@ import { Loader2 } from 'lucide-react'
 export default function EditProfileDialog({ profile, trigger }: { profile: any, trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [ifscError, setIfscError] = useState('')
+  const [panError, setPanError]   = useState('')
 
-  const handleSubmit = async (formData: FormData) => {
+  const validateIfsc = (val: string) => {
+    if (!val || val.trim() === '') return true
+    return /^[A-Z]{4}0[A-Z0-9]{6}$/i.test(val.trim())
+  }
+  const validatePan = (val: string) => {
+    if (!val || val.trim() === '') return true
+    return /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(val.trim())
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()          // ← prevents native form reset
+    const form = e.currentTarget
+    const formData = new FormData(form)
+
+    // Client-side validation before hitting the server
+    const ifsc = formData.get('ifscCode') as string
+    const pan  = formData.get('panNumber') as string
+    let hasError = false
+
+    if (!validateIfsc(ifsc)) {
+      setIfscError('Invalid IFSC code format (e.g. ABCD0123456)')
+      hasError = true
+    } else {
+      setIfscError('')
+    }
+    if (!validatePan(pan)) {
+      setPanError('Invalid PAN format (e.g. ABCDE1234F)')
+      hasError = true
+    } else {
+      setPanError('')
+    }
+    if (hasError) return    // stop here — all other field data is still in the form
+
     setLoading(true)
     try {
         const result = await updateProfile(formData)
@@ -51,7 +85,7 @@ export default function EditProfileDialog({ profile, trigger }: { profile: any, 
             Make changes to your profile here. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
-        <form action={handleSubmit} className="space-y-6 py-4">
+        <form onSubmit={handleSubmit} className="space-y-6 py-4">
             <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
@@ -141,11 +175,25 @@ export default function EditProfileDialog({ profile, trigger }: { profile: any, 
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="ifscCode" className="text-zinc-300">IFSC Code</Label>
-                        <Input id="ifscCode" name="ifscCode" defaultValue={profile?.ifsc_code || ''} placeholder="e.g. HDFC0001234" className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600" />
+                        <Input
+                          id="ifscCode" name="ifscCode"
+                          defaultValue={profile?.ifsc_code || ''}
+                          placeholder="e.g. HDFC0001234"
+                          className={`bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600 ${ifscError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                          onChange={() => ifscError && setIfscError('')}
+                        />
+                        {ifscError && <p className="text-xs text-red-400 mt-1">{ifscError}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="panNumber" className="text-zinc-300">PAN Number</Label>
-                        <Input id="panNumber" name="panNumber" defaultValue={profile?.pan_number || ''} placeholder="ABCDE1234F" className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600" />
+                        <Input
+                          id="panNumber" name="panNumber"
+                          defaultValue={profile?.pan_number || ''}
+                          placeholder="ABCDE1234F"
+                          className={`bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600 ${panError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                          onChange={() => panError && setPanError('')}
+                        />
+                        {panError && <p className="text-xs text-red-400 mt-1">{panError}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="paypalEmail" className="text-zinc-300">PayPal Email</Label>

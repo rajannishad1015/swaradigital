@@ -1,65 +1,71 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Image from "next/image";
 
-// Define the platform logos with paths and dimensions
-// Users will upload custom images to public/assets/logos/
-const platforms: { name: string; logo: string; width: number; height: number }[] = [
-  { name: "Spotify", logo: "/assets/logos/66af509c1da979ff4ba09e63_spotify.webp", width: 100, height: 35 },
-  { name: "Apple Music", logo: "/assets/logos/66af509cd3076ed98e01769c_apple.webp", width: 100, height: 35 },
-  { name: "YouTube Music", logo: "/assets/logos/66af509cdba6c4f6a06ce615_youtube.webp", width: 100, height: 35 },
-  { name: "JioSaavn", logo: "/assets/logos/66af509ce30b267f537d7dbc_jio.webp", width: 100, height: 35 },
-  { name: "Amazon Music", logo: "/assets/logos/66af509ce30b267f537d7e28_amazon.webp", width: 100, height: 35 },
-  { name: "Deezer", logo: "/assets/logos/66af509c531437b23665284c_deezer.webp", width: 100, height: 35 },
-  { name: "Instagram", logo: "/assets/logos/66af509c7661e5c27bada11d_instagram.webp", width: 100, height: 35 },
-  { name: "Anghami", logo: "/assets/logos/66af509ceb7eaac4d19cd557_anghami.webp", width: 100, height: 35 },
+const platforms = [
+  { name: "Spotify",       logo: "/assets/logos/66af509c1da979ff4ba09e63_spotify.webp" },
+  { name: "Apple Music",   logo: "/assets/logos/66af509cd3076ed98e01769c_apple.webp" },
+  { name: "YouTube Music", logo: "/assets/logos/66af509cdba6c4f6a06ce615_youtube.webp" },
+  { name: "JioSaavn",      logo: "/assets/logos/66af509ce30b267f537d7dbc_jio.webp" },
+  { name: "Amazon Music",  logo: "/assets/logos/66af509ce30b267f537d7e28_amazon.webp" },
+  { name: "Deezer",        logo: "/assets/logos/66af509c531437b23665284c_deezer.webp" },
+  { name: "Instagram",     logo: "/assets/logos/66af509c7661e5c27bada11d_instagram.webp" },
+  { name: "Anghami",       logo: "/assets/logos/66af509ceb7eaac4d19cd557_anghami.webp" },
+];
+
+const doubled = [...platforms, ...platforms];
+
+const stats = [
+  { n: "150", suffix: "+",   label: "Platforms" },
+  { n: "170", suffix: "K+",  label: "Artists" },
+  { n: "100", suffix: "%",   label: "Royalties Kept" },
+  { n: "24",  suffix: "hr",  label: "Avg. Delivery" },
 ];
 
 export function PlatformLogos() {
   return (
-    <div className="py-8 bg-black border-y border-white/10 relative z-20 overflow-hidden">
-      <div className="container mx-auto px-4 mb-6">
-        <p className="text-center text-[10px] font-bold text-white/40 uppercase tracking-[0.3em]">
-          Trusted Delivery To 150+ Networks
+    <>
+      {/* Trusted Delivery Strip */}
+      <div className="sl-trusted-pad" style={{ background: "var(--off-black)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", overflow: "hidden" }}>
+        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", letterSpacing: "0.2em", color: "#444", textTransform: "uppercase", textAlign: "center", marginBottom: "28px", padding: "0 20px" }}>
+          Trusted Delivery to 150+ Networks
         </p>
-      </div>
-      
-      <div className="flex relative overflow-hidden mask-gradient-x">
-        <div className="absolute left-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 z-10 bg-gradient-to-l from-black via-black/90 to-transparent pointer-events-none" />
 
-        <motion.div
-          animate={{ x: ["0%", "-50%"] }}
-          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-          className="flex gap-12 md:gap-24 items-center whitespace-nowrap min-w-max px-4 md:px-12"
-        >
-          {/* Double the array for seamless loop */}
-          {[...platforms, ...platforms].map((platform, i) => (
-            <div
-              key={`${platform.name}-${i}`}
-              className="relative flex items-center justify-center px-4"
-            >
-              <div className="relative h-10 w-auto min-w-[100px] flex items-center justify-center">
-                 {/* Fallback to text if image fails to load (user needs to upload) */}
-                 <Image
-                    src={platform.logo}
-                    alt={platform.name}
-                    width={120}
-                    height={40}
-                    className="object-contain h-8 w-auto max-w-[120px] opacity-80 hover:opacity-100 transition-opacity duration-300"
-                    onError={(e) => {
-                      // If image fails, hide it and show text fallback logic (conceptually)
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement?.classList.add('fallback-text');
-                    }}
-                 />
-                 <span className="hidden fallback-text:block text-white/50 font-bold text-xl uppercase tracking-widest absolute inset-0 flex items-center justify-center">{platform.name}</span>
+        {/* Scrolling logo row */}
+        <div style={{ position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "100px", zIndex: 10, background: "linear-gradient(to right, var(--off-black), transparent)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "100px", zIndex: 10, background: "linear-gradient(to left, var(--off-black), transparent)", pointerEvents: "none" }} />
+
+          <div style={{ display: "flex", gap: "60px", width: "max-content", alignItems: "center", animation: "logoScroll 35s linear infinite", padding: "0 60px" }}>
+            {doubled.map((p, i) => (
+              <div key={`${p.name}-${i}`} style={{ position: "relative", height: "36px", minWidth: "110px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Image
+                  src={p.logo} alt={p.name} width={120} height={36}
+                  style={{ objectFit: "contain", height: "32px", width: "auto", maxWidth: "120px", opacity: 0.6, filter: "brightness(0) invert(1)", transition: "opacity 0.3s" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLImageElement).style.opacity = "1"}
+                  onMouseLeave={e => (e.currentTarget as HTMLImageElement).style.opacity = "0.6"}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Row */}
+      <div className="sl-stats-pad" style={{ background: "var(--off-black)", borderBottom: "1px solid var(--border)" }}>
+        <div className="stats-grid">
+          {stats.map((s, i) => (
+            <div key={s.label} style={{ padding: "0 32px", borderRight: i < stats.length - 1 ? "1px solid var(--border)" : "none" }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(36px,5vw,56px)", lineHeight: 1, color: "#EFEFEF" }}>
+                {s.n}<span style={{ color: "#C8F135" }}>{s.suffix}</span>
+              </div>
+              <div style={{ fontSize: "12px", letterSpacing: "0.06em", textTransform: "uppercase", color: "#777", marginTop: "6px", fontFamily: "'JetBrains Mono', monospace" }}>
+                {s.label}
               </div>
             </div>
           ))}
-        </motion.div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

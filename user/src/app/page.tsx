@@ -6,6 +6,7 @@ import { Distribution } from "@/components/landing/distribution";
 import { Features } from "@/components/landing/features";
 import { Pricing } from "@/components/landing/pricing";
 import { Footer } from "@/components/landing/footer";
+import { LandingStyles } from "@/components/landing/landing-styles";
 
 export const metadata: Metadata = {
   title: "SwaraDigital — Music Distribution Platform | Keep 100% Royalties",
@@ -138,7 +139,8 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-      <main className="min-h-screen bg-background">
+      <LandingStyles />
+      <main className="swara-landing" style={{ minHeight: "100vh", background: "#070707" }}>
         <Navbar />
         <Hero />
         <PlatformLogos />
