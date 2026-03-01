@@ -3,6 +3,7 @@ import { signup } from './actions'
 import { Input } from '@/components/ui/input'
 import { SubmitButton } from '@/components/ui/submit-button'
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { Disc, Music, Radio, Headphones, Mic2, PlayCircle } from 'lucide-react'
 import { AuthMessages } from '@/components/auth/auth-messages'
 
@@ -68,11 +69,11 @@ export default function SignupPage() {
             <div className="pt-8 border-t border-white/5">
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em] mb-6 opacity-60">Global Distribution Network</p>
               <div className="flex items-center gap-8 opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700">
-                <img src="/stores/spotify.png" alt="Spotify" className="h-4 object-contain" />
-                <img src="/stores/apple.png" alt="Apple Music" className="h-4 object-contain" />
-                <img src="/stores/amazon.png" alt="Amazon Music" className="h-4 object-contain" />
-                <img src="/stores/youtube.png" alt="YouTube Music" className="h-5 object-contain" />
-                <img src="/stores/deezer.png" alt="Deezer" className="h-4 object-contain" />
+                <NextImage unoptimized width={80} height={16} src="/stores/spotify.png" alt="Spotify" className="h-4 w-auto object-contain" />
+                <NextImage unoptimized width={80} height={16} src="/stores/apple.png" alt="Apple Music" className="h-4 w-auto object-contain" />
+                <NextImage unoptimized width={80} height={16} src="/stores/amazon.png" alt="Amazon Music" className="h-4 w-auto object-contain" />
+                <NextImage unoptimized width={80} height={20} src="/stores/youtube.png" alt="YouTube Music" className="h-5 w-auto object-contain" />
+                <NextImage unoptimized width={80} height={16} src="/stores/deezer.png" alt="Deezer" className="h-4 w-auto object-contain" />
               </div>
             </div>
           </div>
