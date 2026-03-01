@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swara Digital — Music Distribution</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --lime: #C8F135;
+  --lime-glow: rgba(200,241,53,0.15);
+  --black: #070707;
+  --off-black: #0d0d0d;
+  --card: #101010;
+  --card2: #141414;
+  --card3: #181818;
+  --white: #EFEFEF;
+  --muted: #444;
+  --muted2: #777;
+  --muted3: #aaa;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(200,241,53,0.18);
+  --border3: rgba(255,255,255,0.04);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--black);
+  color: var(--white);
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 4px; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 56px; height: 62px;
+  background: rgba(7,7,7,0.8);
+  backdrop-filter: blur(24px) saturate(1.5);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 16px; font-weight: 800; letter-spacing: -0.03em;
+  color: var(--white); text-decoration: none;
+}
+.nav-logo-icon {
+  width: 28px; height: 28px; background: var(--lime); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(200,241,53,0.35);
+}
+.nav-links { display: flex; gap: 32px; list-style: none; }
+.nav-links a {
+  font-size: 13px; font-weight: 500; color: var(--muted2);
+  text-decoration: none; transition: color 0.2s;
+  position: relative;
+}
+.nav-links a::after {
+  content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+  height: 1px; background: var(--lime);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.25s ease;
+}
+.nav-links a:hover { color: var(--white); }
+.nav-links a:hover::after { transform: scaleX(1); }
+.nav-right { display: flex; gap: 10px; align-items: center; }
+.btn-login {
+  font-size: 13px; font-weight: 500; color: var(--muted2);
+  text-decoration: none; padding: 7px 14px; transition: color 0.2s;
+}
+.btn-login:hover { color: var(--white); }
+.btn-join {
+  font-size: 13px; font-weight: 700; color: var(--black);
+  background: var(--lime); padding: 9px 20px;
+  border-radius: 7px; text-decoration: none;
+  transition: box-shadow 0.25s, transform 0.2s;
+}
+.btn-join:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(200,241,53,0.4); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 120px 48px 80px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0; z-index: 0; opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+.hero-grid {
+  position: absolute; inset: 0; z-index: 0;
+  background-image: linear-gradient(rgba(200,241,53,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(200,241,53,0.035) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, black 20%, transparent 100%);
+}
+.hero-orb {
+  position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 500px; z-index: 0;
+  background: radial-gradient(ellipse at center, rgba(200,241,53,0.06) 0%, rgba(200,241,53,0.02) 40%, transparent 70%);
+  animation: breathe 6s ease-in-out infinite;
+}
+@keyframes breathe { 0%,100%{transform:translateX(-50%) scale(1);opacity:0.8} 50%{transform:translateX(-50%) scale(1.08);opacity:1} }
+.sound-rings { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 0; pointer-events: none; }
+.ring { position: absolute; border-radius: 50%; border: 1px solid rgba(200,241,53,0.06); top: 50%; left: 50%; transform: translate(-50%,-50%); animation: ringPulse 4s ease-out infinite; }
+.ring:nth-child(1){width:300px;height:300px;animation-delay:0s}
+.ring:nth-child(2){width:500px;height:500px;animation-delay:1s}
+.ring:nth-child(3){width:700px;height:700px;animation-delay:2s}
+.ring:nth-child(4){width:900px;height:900px;animation-delay:3s}
+@keyframes ringPulse { 0%{opacity:0.6;transform:translate(-50%,-50%) scale(0.9)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)} }
+.hero-content { position: relative; z-index: 2; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--border2); background: rgba(200,241,53,0.06);
+  padding: 6px 16px 6px 8px; border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.08em; color: var(--lime);
+  text-transform: uppercase; margin-bottom: 40px;
+  animation: fadeUp 0.7s ease both; backdrop-filter: blur(8px);
+}
+.badge-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(200,241,53,0.15); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+}
+.badge-dot::after { content: ''; width: 7px; height: 7px; background: var(--lime); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+.hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(88px,12vw,172px); line-height: 0.88; letter-spacing: 0.015em; animation: fadeUp 0.8s 0.1s ease both; }
+.hero-title .t1{display:block;color:var(--white)}
+.hero-title .t2{display:block;color:rgba(240,240,240,0.28)}
+.hero-title .t3{display:block;color:transparent;-webkit-text-stroke:1.5px var(--lime);text-shadow:0 0 60px rgba(200,241,53,0.3)}
+.hero-sub { font-size: 16px; line-height: 1.75; color: var(--muted2); max-width: 500px; margin: 32px auto 0; animation: fadeUp 0.8s 0.2s ease both; }
+.hero-sub strong { color: var(--white); font-weight: 600; }
+.hero-actions { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 48px; animation: fadeUp 0.8s 0.3s ease both; }
+.btn-primary { display: inline-flex; align-items: center; gap: 8px; background: var(--lime); color: var(--black); font-size: 14px; font-weight: 700; padding: 13px 30px; border-radius: 8px; text-decoration: none; transition: transform 0.2s, box-shadow 0.25s; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(200,241,53,0.35); }
+.btn-ghost { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.04); color: var(--white); font-size: 14px; font-weight: 500; padding: 13px 26px; border-radius: 8px; text-decoration: none; border: 1px solid var(--border); transition: background 0.2s, transform 0.2s; }
+.btn-ghost:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+.play-icon-wrap { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.hero-proof { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 60px; animation: fadeUp 0.8s 0.4s ease both; }
+.avatars { display: flex; }
+.av { width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid var(--black); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.av + .av { margin-left: -10px; }
+.av1{background:#7C6FF7}.av2{background:#F76F6F}.av3{background:#4BBF87}.av4{background:#F7A84B}
+.av-more { width: 34px; height: 34px; border-radius: 50%; margin-left: -10px; background: var(--lime); color: var(--black); font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2.5px solid var(--black); }
+.proof-info { display: flex; flex-direction: column; gap: 2px; }
+.proof-stars { color: var(--lime); font-size: 11px; letter-spacing: 2px; }
+.proof-text { font-size: 13px; color: var(--muted2); }
+.proof-text b { color: var(--white); }
+.proof-divider { width: 1px; height: 30px; background: var(--border); }
+
+/* ── TRUSTED ── */
+.trusted { background: var(--off-black); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 32px 56px; }
+.trusted-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; text-align: center; margin-bottom: 28px; }
+.logo-row { display: flex; align-items: center; justify-content: center; gap: 52px; flex-wrap: wrap; }
+.logo-item { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--muted); opacity: 0.6; transition: opacity 0.2s; white-space: nowrap; }
+.logo-item:hover { opacity: 1; }
+.logo-item .li { font-size: 17px; }
+
+/* ── SECTIONS ── */
+.sec { padding: 110px 56px; }
+.sec-inner { max-width: 1160px; margin: 0 auto; }
+.big-heading { font-family: 'Bebas Neue', sans-serif; font-size: clamp(54px,6vw,90px); line-height: 0.9; letter-spacing: 0.01em; margin-bottom: 22px; }
+.big-heading .accent { color: var(--lime); }
+.sec-body { font-size: 15px; line-height: 1.8; color: var(--muted2); margin-bottom: 30px; max-width: 400px; }
+.sec-body b { color: var(--white); font-weight: 600; }
+
+/* ── DISTRIBUTION ── */
+.distro-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(200,241,53,0.07); border: 1px solid var(--border2); padding: 5px 14px; border-radius: 100px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lime); margin-bottom: 24px; }
+.chip-dot { width: 5px; height: 5px; background: var(--lime); border-radius: 50%; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 36px; }
+.tag { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 7px; background: rgba(200,241,53,0.06); border: 1px solid var(--border2); font-size: 12px; font-weight: 600; color: var(--lime); }
+.btn-cta { display: inline-flex; align-items: center; gap: 8px; background: var(--lime); color: var(--black); font-size: 14px; font-weight: 700; padding: 12px 26px; border-radius: 8px; text-decoration: none; transition: transform 0.2s, box-shadow 0.25s; }
+.btn-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(200,241,53,0.3); }
+.pgrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.pcard { background: var(--card2); border: 1px solid var(--border); border-radius: 14px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s; cursor: default; }
+.pcard:hover { border-color: rgba(200,241,53,0.25); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
+.pcard .pi { font-size: 30px; }
+.pcard .pn { font-size: 11px; font-weight: 600; color: var(--muted2); }
+.pmore { background: rgba(200,241,53,0.04); border: 1px dashed rgba(200,241,53,0.2); border-radius: 14px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.pmore .pm-n { font-family: 'Bebas Neue'; font-size: 26px; color: var(--lime); line-height: 1; }
+.pmore .pm-l { font-size: 10px; color: var(--lime); font-weight: 600; }
+
+/* ── MARQUEE ── */
+.mq { background: var(--lime); overflow: hidden; padding: 16px 0; }
+.mq-track { display: flex; width: max-content; animation: mqscroll 28s linear infinite; }
+.mq-item { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.06em; color: var(--black); padding: 0 36px; display: flex; align-items: center; gap: 36px; white-space: nowrap; }
+.mq-sep { font-size: 8px; color: rgba(0,0,0,0.25); }
+@keyframes mqscroll { to { transform: translateX(-50%); } }
+
+/* ═══════════════════════════════════════════
+   IMPROVED FEATURES SECTION
+═══════════════════════════════════════════ */
+.features-sec {
+  padding: 120px 56px;
+  background: var(--off-black);
+  position: relative; overflow: hidden;
+}
+.features-sec::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 100% 60% at 50% 0%, black 30%, transparent 80%);
+}
+
+.feat-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* Split header */
+.feat-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 72px; gap: 40px;
+}
+.feat-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(200,241,53,0.07); border: 1px solid var(--border2);
+  padding: 5px 14px; border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.14em; color: var(--lime);
+  text-transform: uppercase; margin-bottom: 20px;
+}
+.chip-pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--lime); animation: pulse 2s ease-in-out infinite; }
+.feat-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px,6vw,86px); line-height: 0.9; letter-spacing: 0.01em; }
+.feat-title .hl { color: var(--lime); }
+.feat-header-right { max-width: 300px; flex-shrink: 0; }
+.feat-desc { font-size: 15px; line-height: 1.75; color: var(--muted3); margin-bottom: 20px; }
+.feat-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; border: 1px solid var(--border2);
+  color: var(--lime); font-size: 13px; font-weight: 600;
+  padding: 10px 20px; border-radius: 8px; text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+.feat-link:hover { background: rgba(200,241,53,0.08); transform: translateY(-1px); }
+
+/* ── Bento Grid ── */
+.feat-bento {
+  display: grid;
+  grid-template-columns: 1.15fr 0.92fr 0.92fr;
+  grid-template-rows: auto auto;
+  gap: 12px;
+}
+
+/* ── Base Card ── */
+.fc-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.35s, transform 0.35s, box-shadow 0.35s;
+  opacity: 0; transform: translateY(28px);
+  transition: border-color 0.35s, transform 0.35s, box-shadow 0.35s, opacity 0.6s ease;
+}
+.fc-card.visible {
+  opacity: 1; transform: translateY(0);
+}
+.fc-card:hover {
+  border-color: rgba(200,241,53,0.22);
+  transform: translateY(-4px) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(200,241,53,0.05);
+}
+.fc-card::after {
+  content: ''; position: absolute; inset: 0; border-radius: 20px; z-index: 0;
+  background: radial-gradient(400px circle at var(--cx,50%) var(--cy,50%), rgba(200,241,53,0.05), transparent 60%);
+  opacity: 0; transition: opacity 0.35s; pointer-events: none;
+}
+.fc-card:hover::after { opacity: 1; }
+.fc-card > * { position: relative; z-index: 1; }
+.fc-card:nth-child(1){ transition-delay: 0s; }
+.fc-card:nth-child(2){ transition-delay: 0.08s; }
+.fc-card:nth-child(3){ transition-delay: 0.16s; }
+.fc-card:nth-child(4){ transition-delay: 0.24s; }
+.fc-card:nth-child(5){ transition-delay: 0.32s; }
+.fc-span-r2 { grid-row: span 2; }
+.fc-span-c2 { grid-column: span 2; }
+
+.fc-icon {
+  width: 50px; height: 50px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 22px; border: 1px solid;
+}
+.ic-lime  { background: rgba(200,241,53,0.08);  border-color: rgba(200,241,53,0.15);  }
+.ic-sky   { background: rgba(56,189,248,0.08);  border-color: rgba(56,189,248,0.15);  }
+.ic-amber { background: rgba(251,191,36,0.08);  border-color: rgba(251,191,36,0.15);  }
+.ic-violet{ background: rgba(167,139,250,0.08); border-color: rgba(167,139,250,0.15); }
+.ic-rose  { background: rgba(251,113,133,0.08); border-color: rgba(251,113,133,0.15); }
+
+.fc-card h3 { font-size: 19px; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 10px; line-height: 1.2; }
+.fc-card p  { font-size: 14px; line-height: 1.75; color: var(--muted3); }
+
+/* ─ Card 1: World map + stats ─ */
+.world-map {
+  margin-top: 28px; background: var(--card2);
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 18px; position: relative; overflow: hidden; height: 130px;
+}
+.map-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--muted2); text-transform: uppercase; margin-bottom: 10px; }
+.map-dots { position: absolute; inset: 0; pointer-events: none; }
+.dot-ping {
+  position: absolute; border-radius: 50%; background: var(--lime);
+  animation: pingDot 3s ease-in-out infinite;
+}
+.dot-ping::before {
+  content: ''; position: absolute; inset: -4px; border-radius: 50%;
+  border: 1px solid rgba(200,241,53,0.4);
+  animation: pingRing 3s ease-in-out infinite;
+}
+@keyframes pingDot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.3);opacity:0.7} }
+@keyframes pingRing { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(2.5);opacity:0} }
+.stat-row { display: flex; gap: 12px; margin-top: 16px; }
+.stat-box { flex: 1; background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.stat-box-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; line-height: 1; color: var(--white); }
+.stat-box-num span { color: var(--lime); }
+.stat-box-label { font-size: 11px; color: var(--muted2); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; margin-top: 3px; }
+
+/* ─ Card 2: Analytics widget ─ */
+.aw { margin-top: 24px; background: var(--card2); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+.aw-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.aw-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--muted2); text-transform: uppercase; }
+.aw-val { font-family: 'Bebas Neue', sans-serif; font-size: 28px; line-height: 1; color: var(--lime); display: flex; align-items: center; gap: 6px; }
+.aw-badge { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; background: rgba(200,241,53,0.12); border: 1px solid var(--border2); color: var(--lime); padding: 2px 7px; border-radius: 5px; }
+.sparkline { width: 100%; height: 48px; }
+.spark-line { fill: none; stroke: var(--lime); stroke-width: 1.5; }
+.spark-area { fill: url(#sg); stroke: none; }
+.lb { margin-top: 12px; }
+.lb-top { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted2); margin-bottom: 6px; }
+.lb-top span:last-child { color: var(--lime); }
+.lb-track { height: 3px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+.lb-fill { height: 100%; background: linear-gradient(90deg, var(--lime), #a8f040); border-radius: 4px; animation: fillAnim 2s 0.5s ease both; }
+@keyframes fillAnim { from{width:0%} to{width:78%} }
+
+/* ─ Card 3: Royalties ─ */
+.rd { margin-top: 22px; background: var(--card2); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+.rd-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.rd-num { font-family: 'Bebas Neue', sans-serif; font-size: 52px; line-height: 1; }
+.rd-num span { color: var(--lime); }
+.pie-ring { width: 66px; height: 66px; border-radius: 50%; background: conic-gradient(var(--lime) 0% 100%, rgba(255,255,255,0.05) 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(200,241,53,0.2); }
+.pie-inner { width: 46px; height: 46px; border-radius: 50%; background: var(--card2); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue'; font-size: 16px; color: var(--lime); }
+.rd-divider { height: 1px; background: var(--border); margin: 12px 0; }
+.rd-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted2); margin-bottom: 8px; }
+.rd-row .v { color: var(--white); font-weight: 600; }
+.rd-row .v.red { color: #f87171; }
+
+/* ─ Card 4: Fast uploads (wide) ─ */
+.fast-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+.steps-list { display: flex; flex-direction: column; gap: 9px; }
+.f-step { display: flex; align-items: center; gap: 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: 13px; color: var(--muted3); transition: border-color 0.25s, background 0.25s; }
+.f-step:hover { border-color: rgba(200,241,53,0.18); background: rgba(200,241,53,0.02); }
+.f-sn { width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; border: 1px solid; }
+.f-sn.done { background: rgba(200,241,53,0.1); border-color: rgba(200,241,53,0.3); color: var(--lime); }
+.f-sn.todo { background: rgba(255,255,255,0.03); border-color: var(--border); color: var(--muted2); }
+.timer-box { background: var(--card3); border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; }
+.timer-emoji { font-size: 30px; }
+.timer-val { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; color: var(--lime); letter-spacing: 0.04em; }
+.timer-lbl { font-size: 10px; color: var(--muted2); font-family: 'JetBrains Mono'; letter-spacing: 0.08em; text-transform: uppercase; }
+.timer-sub { font-size: 11px; color: var(--muted); }
+
+/* ─ Card 5: Secure badges ─ */
+.badges { margin-top: 24px; display: flex; flex-direction: column; gap: 9px; }
+.v-row { display: flex; align-items: center; gap: 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; transition: border-color 0.25s, transform 0.25s; }
+.v-row:hover { border-color: rgba(200,241,53,0.2); transform: translateX(4px); }
+.v-icon { font-size: 18px; flex-shrink: 0; }
+.v-info {}
+.v-title { font-size: 13px; font-weight: 600; color: var(--white); }
+.v-sub { font-size: 11px; color: var(--muted2); margin-top: 1px; }
+.v-check { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; background: rgba(200,241,53,0.1); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--lime); font-weight: 700; flex-shrink: 0; }
+
+/* ── PRICING ── */
+.pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 860px; margin: 60px auto 0; }
+.pc { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 44px 38px; position: relative; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
+.pc:hover { transform: translateY(-5px); box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
+.pc.hot { background: var(--card2); border-color: rgba(200,241,53,0.35); box-shadow: 0 0 0 1px rgba(200,241,53,0.08), inset 0 0 60px rgba(200,241,53,0.03); }
+.pc.hot::after { content: 'MOST POPULAR'; position: absolute; top: 20px; right: -32px; background: var(--lime); color: var(--black); font-size: 9px; font-weight: 800; letter-spacing: 0.08em; padding: 5px 52px; transform: rotate(45deg); }
+.pn { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted2); }
+.pt { font-size: 13px; color: var(--muted); margin: 8px 0 28px; line-height: 1.6; }
+.pp { font-family: 'Bebas Neue', sans-serif; font-size: 68px; line-height: 1; color: var(--white); display: flex; align-items: flex-start; gap: 2px; }
+.pp sup { font-size: 30px; margin-top: 10px; }
+.pp sub { font-size: 16px; color: var(--muted2); align-self: flex-end; padding-bottom: 6px; }
+.pp.custom { font-size: 60px; color: var(--lime); }
+.pdiv { height: 1px; background: var(--border); margin: 24px 0; }
+.pfl { list-style: none; display: flex; flex-direction: column; gap: 11px; margin-bottom: 32px; }
+.pfl li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted2); }
+.pfl li .ck { color: var(--lime); font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.btn-filled { display: block; width: 100%; text-align: center; background: var(--white); color: var(--black); font-size: 14px; font-weight: 700; padding: 14px; border-radius: 10px; text-decoration: none; transition: background 0.2s, transform 0.2s; }
+.btn-filled:hover { background: #e4e4e4; transform: translateY(-1px); }
+.btn-lined { display: block; width: 100%; text-align: center; background: transparent; color: var(--white); font-size: 14px; font-weight: 600; padding: 14px; border-radius: 10px; text-decoration: none; border: 1px solid var(--border); transition: border-color 0.2s, transform 0.2s; }
+.btn-lined:hover { border-color: var(--muted2); transform: translateY(-1px); }
+
+/* ── STATS ROW ── */
+.stats-row { background: var(--off-black); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 56px; }
+.stats-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(4,1fr); text-align: center; }
+.stat-item { padding: 0 32px; border-right: 1px solid var(--border); }
+.stat-item:last-child { border-right: none; }
+.stat-n { font-family: 'Bebas Neue', sans-serif; font-size: 56px; line-height: 1; color: var(--white); }
+.stat-n span { color: var(--lime); }
+.stat-l { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted2); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+
+/* ── FOOTER ── */
+footer { background: var(--off-black); border-top: 1px solid var(--border); padding: 80px 56px 36px; }
+.ft { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 60px; }
+.fb-logo { display: flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; }
+.fb p { font-size: 13px; line-height: 1.8; color: var(--muted2); max-width: 270px; margin-bottom: 24px; }
+.nl { display: flex; gap: 8px; }
+.nl input { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--white); font-family: 'Syne', sans-serif; outline: none; transition: border-color 0.2s; }
+.nl input::placeholder { color: var(--muted); }
+.nl input:focus { border-color: rgba(200,241,53,0.3); }
+.nl button { background: var(--lime); color: var(--black); border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Syne', sans-serif; transition: box-shadow 0.2s; }
+.nl button:hover { box-shadow: 0 0 16px rgba(200,241,53,0.4); }
+.fc h5 { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--white); margin-bottom: 18px; }
+.fc ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.fc a { font-size: 13px; color: var(--muted2); text-decoration: none; transition: color 0.2s; }
+.fc a:hover { color: var(--white); }
+.fb-bot { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 1px solid var(--border); }
+.fb-bot p { font-size: 12px; color: var(--muted); }
+.socials { display: flex; gap: 10px; }
+.social-a { width: 34px; height: 34px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; text-decoration: none; transition: border-color 0.2s, background 0.2s, transform 0.2s; }
+.social-a:hover { border-color: rgba(200,241,53,0.3); background: rgba(200,241,53,0.06); transform: translateY(-2px); }
+
+/* ── Reveal ── */
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+.reveal.in { opacity: 1; transform: translateY(0); }
+.reveal-d1 { transition-delay: 0.1s; }
+.reveal-d2 { transition-delay: 0.2s; }
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  nav { padding: 0 24px; }
+  .hero,.sec,.features-sec,.stats-row,footer { padding-left: 24px; padding-right: 24px; }
+  .distro-wrap,.pricing-grid,.feat-bento { grid-template-columns: 1fr; }
+  .fc-span-r2,.fc-span-c2 { grid-row: auto; grid-column: auto; }
+  .stats-inner { grid-template-columns: repeat(2,1fr); gap: 32px; }
+  .stat-item { border-right: none; }
+  .ft { grid-template-columns: 1fr 1fr; }
+  .feat-header { flex-direction: column; align-items: flex-start; }
+  .fast-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">♪</div>
+    SwaraDigital
+  </a>
+  <ul class="nav-links">
+    <li><a href="#">Features</a></li>
+    <li><a href="#">Pricing</a></li>
+    <li><a href="#">Workflow</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="#" class="btn-login">LOGIN</a>
+    <a href="#" class="btn-join">JOIN NOW</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-orb"></div>
+  <div class="sound-rings">
+    <div class="ring"></div><div class="ring"></div>
+    <div class="ring"></div><div class="ring"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <div class="badge-dot"></div>
+      Global Reach, Local Control
+    </div>
+    <h1 class="hero-title">
+      <span class="t1">Get Discovered.</span>
+      <span class="t2">Monetise.</span>
+      <span class="t3">Grow.</span>
+    </h1>
+    <p class="hero-sub">The all-in-one music distribution platform. Release on Spotify, Apple Music, and 100+ stores while keeping <strong>100% of your earnings</strong></p>
+    <div class="hero-actions">
+      <a href="#" class="btn-primary">Start for Free →</a>
+      <a href="#" class="btn-ghost"><span class="play-icon-wrap">▶</span> View Demo</a>
+    </div>
+    <div class="hero-proof">
+      <div class="avatars">
+        <div class="av av1">A</div>
+        <div class="av av2">K</div>
+        <div class="av av3">R</div>
+        <div class="av av4">S</div>
+        <div class="av-more">17k</div>
+      </div>
+      <div class="proof-divider"></div>
+      <div class="proof-info">
+        <div class="proof-stars">★★★★★</div>
+        <div class="proof-text">Joined by <b>170k+</b> artists</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TRUSTED ── -->
+<div class="trusted">
+  <p class="trusted-label">Trusted Delivery to 150+ Networks</p>
+  <div class="logo-row">
+    <div class="logo-item"><span class="li">🍎</span> Apple Music</div>
+    <div class="logo-item"><span class="li">▶️</span> YouTube</div>
+    <div class="logo-item"><span class="li">🎵</span> JioSaavn</div>
+    <div class="logo-item"><span class="li">📦</span> Amazon Music</div>
+    <div class="logo-item"><span class="li">🎧</span> Deezer</div>
+    <div class="logo-item"><span class="li">📸</span> Instagram</div>
+  </div>
+</div>
+
+<!-- ── STATS ── -->
+<div class="stats-row reveal">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="stat-n">150<span>+</span></div><div class="stat-l">Platforms</div></div>
+    <div class="stat-item"><div class="stat-n">170<span>K+</span></div><div class="stat-l">Artists</div></div>
+    <div class="stat-item"><div class="stat-n">100<span>%</span></div><div class="stat-l">Royalties Kept</div></div>
+    <div class="stat-item"><div class="stat-n">24<span>hr</span></div><div class="stat-l">Avg. Delivery</div></div>
+  </div>
+</div>
+
+<!-- ── DISTRIBUTION ── -->
+<section class="sec">
+  <div class="sec-inner">
+    <div class="distro-wrap reveal">
+      <div>
+        <div class="chip"><span class="chip-dot"></span> Global Distribution</div>
+        <h2 class="big-heading">One upload.<br><span class="accent">Everywhere.</span></h2>
+        <p class="sec-body">Manage your entire music catalog from one beautiful dashboard. We push your tracks to <b>Spotify, Apple Music, Instagram</b> and 150+ others instantly.</p>
+        <div class="tags">
+          <span class="tag">✓ 100% Royalties</span>
+          <span class="tag">✓ Monthly Payouts</span>
+          <span class="tag">✓ Content ID</span>
+        </div>
+        <a href="#" class="btn-cta">Start Distributing →</a>
+      </div>
+      <div class="pgrid">
+        <div class="pcard"><span class="pi">🎵</span><span class="pn">Spotify</span></div>
+        <div class="pcard"><span class="pi">🍎</span><span class="pn">Apple Music</span></div>
+        <div class="pcard"><span class="pi">🎶</span><span class="pn">TikTok</span></div>
+        <div class="pcard"><span class="pi">🎼</span><span class="pn">Pandora</span></div>
+        <div class="pcard"><span class="pi">📦</span><span class="pn">Amazon</span></div>
+        <div class="pcard"><span class="pi">📸</span><span class="pn">Instagram</span></div>
+        <div class="pcard"><span class="pi">▶️</span><span class="pn">YouTube</span></div>
+        <div class="pcard"><span class="pi">📻</span><span class="pn">iHeart</span></div>
+        <div class="pmore"><span class="pm-n">+142</span><span class="pm-l">more stores</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MARQUEE ── -->
+<div class="mq">
+  <div class="mq-track">
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+    <div class="mq-item">INDEPENDENT NOT ALONE <span class="mq-sep">◆</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     IMPROVED FEATURES SECTION
+══════════════════════════════════════ -->
+<section class="features-sec">
+  <div class="feat-inner">
+
+    <!-- Split Header -->
+    <div class="feat-header" id="featHeader">
+      <div>
+        <div class="feat-chip"><span class="chip-pulse"></span> Why Swara Digital</div>
+        <h2 class="feat-title">Everything you need<br>to <span class="hl">succeed.</span></h2>
+      </div>
+      <div class="feat-header-right">
+        <p class="feat-desc">Powerful tools and global reach, designed for the modern independent artist.</p>
+        <a href="#" class="feat-link">Explore all features →</a>
+      </div>
+    </div>
+
+    <!-- Bento Grid -->
+    <div class="feat-bento" id="featBento">
+
+      <!-- CARD 1: Global Distribution (tall) -->
+      <div class="fc-card fc-span-r2">
+        <div class="fc-icon ic-lime">🌐</div>
+        <h3>Global Distribution</h3>
+        <p>Get your music on Spotify, Apple Music, TikTok, and 150+ other stores worldwide. One upload, everywhere.</p>
+        <div class="world-map">
+          <div class="map-label">Live Delivery Network</div>
+          <div class="map-dots" id="mapDots"></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-box-num">150<span>+</span></div>
+            <div class="stat-box-label">Platforms</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-num">200<span>+</span></div>
+            <div class="stat-box-label">Countries</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: Real-time Analytics -->
+      <div class="fc-card">
+        <div class="fc-icon ic-sky">📊</div>
+        <h3>Real-time Analytics</h3>
+        <p>Detailed insights on streams, listeners, and earnings — all live.</p>
+        <div class="aw">
+          <div class="aw-head">
+            <div class="aw-label">Monthly Streams</div>
+            <div class="aw-val" id="streamCount">0 <span class="aw-badge">↑ 34%</span></div>
+          </div>
+          <svg class="sparkline" viewBox="0 0 200 48" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#C8F135" stop-opacity="0.14"/>
+                <stop offset="100%" stop-color="#C8F135" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path class="spark-area" id="sArea" d="M0,43 L28,36 L56,28 L84,20 L112,26 L140,13 L168,6 L200,1 L200,48 L0,48 Z"/>
+            <path class="spark-line" id="sLine" d="M0,43 L28,36 L56,28 L84,20 L112,26 L140,13 L168,6 L200,1"/>
+          </svg>
+          <div class="lb">
+            <div class="lb-top"><span>Listener Growth</span><span>+17k this week</span></div>
+            <div class="lb-track"><div class="lb-fill"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3: 100% Royalties -->
+      <div class="fc-card">
+        <div class="fc-icon ic-amber">💰</div>
+        <h3>100% Royalties</h3>
+        <p>Keep every cent you earn. We believe artists should be paid fairly for their work.</p>
+        <div class="rd">
+          <div class="rd-top">
+            <div class="rd-num"><span>100</span>%</div>
+            <div class="pie-ring"><div class="pie-inner">100%</div></div>
+          </div>
+          <div class="rd-divider"></div>
+          <div class="rd-row"><span>Platform cut</span><span class="v red">$0.00</span></div>
+          <div class="rd-row"><span>Your earnings</span><span class="v">Everything</span></div>
+        </div>
+      </div>
+
+      <!-- CARD 4: Ultra-Fast Uploads (wide) -->
+      <div class="fc-card fc-span-c2">
+        <div class="fc-icon ic-violet">⚡</div>
+        <h3>Ultra-Fast Uploads</h3>
+        <p>Our streamlined process gets your music live faster than ever before.</p>
+        <div class="fast-grid">
+          <div class="steps-list">
+            <div class="f-step"><span class="f-sn done">✓</span> Upload your track & artwork</div>
+            <div class="f-step"><span class="f-sn done">✓</span> Set release date & metadata</div>
+            <div class="f-step"><span class="f-sn todo">3</span> Review & confirm details</div>
+            <div class="f-step"><span class="f-sn todo">4</span> Go live on all platforms</div>
+          </div>
+          <div class="timer-box">
+            <div class="timer-emoji">🚀</div>
+            <div class="timer-val" id="timerVal">24:00</div>
+            <div class="timer-lbl">Avg. Time to Live</div>
+            <div class="timer-sub">Fastest in the industry</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 5: Secure & Verified -->
+      <div class="fc-card">
+        <div class="fc-icon ic-rose">🛡️</div>
+        <h3>Secure & Verified</h3>
+        <p>Your data and rights are protected with industry-leading measures.</p>
+        <div class="badges">
+          <div class="v-row">
+            <span class="v-icon">🟢</span>
+            <div class="v-info"><div class="v-title">Spotify Verified</div><div class="v-sub">Official artist badge</div></div>
+            <div class="v-check">✓</div>
+          </div>
+          <div class="v-row">
+            <span class="v-icon">🍎</span>
+            <div class="v-info"><div class="v-title">Apple Music Artist</div><div class="v-sub">Verified profile</div></div>
+            <div class="v-check">✓</div>
+          </div>
+          <div class="v-row">
+            <span class="v-icon">🔒</span>
+            <div class="v-info"><div class="v-title">Rights Protected</div><div class="v-sub">ISRC & copyright</div></div>
+            <div class="v-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ── -->
+<section class="sec">
+  <div class="sec-inner">
+    <div class="sec-head reveal" style="text-align:center;margin-bottom:0">
+      <h2 class="big-heading">Simple, transparent <span class="accent">pricing.</span></h2>
+      <p style="color:var(--muted2);font-size:15px;margin-top:12px">No hidden fees. No royalty cuts. Just the tools you need to build your music career.</p>
+    </div>
+    <div class="pricing-grid reveal reveal-d1">
+      <div class="pc hot">
+        <div class="pn">Pro Artist</div>
+        <p class="pt">Perfect for independent artists wanting to go global.</p>
+        <div class="pp"><sup>$</sup>19.99<sub>/year</sub></div>
+        <div class="pdiv"></div>
+        <ul class="pfl">
+          <li><span class="ck">✓</span> Unlimited distribution</li>
+          <li><span class="ck">✓</span> 100% of your royalties</li>
+          <li><span class="ck">✓</span> Spotify & Apple Verified</li>
+          <li><span class="ck">✓</span> Real-time analytics</li>
+          <li><span class="ck">✓</span> YouTube Content ID</li>
+          <li><span class="ck">✓</span> Social media distribution</li>
+          <li><span class="ck">✓</span> Priority Support</li>
+        </ul>
+        <a href="#" class="btn-filled">Get Started</a>
+      </div>
+      <div class="pc">
+        <div class="pn">Label / Enterprise</div>
+        <p class="pt">Scale your music label with advanced management tools.</p>
+        <div class="pp custom">Custom</div>
+        <div class="pdiv"></div>
+        <ul class="pfl">
+          <li><span class="ck">✓</span> Everything in Pro</li>
+          <li><span class="ck">✓</span> Unlimited Artists</li>
+          <li><span class="ck">✓</span> Multi-user access</li>
+          <li><span class="ck">✓</span> Splits & Batch payments</li>
+          <li><span class="ck">✓</span> Custom distribution deals</li>
+          <li><span class="ck">✓</span> Dedicated Account Manager</li>
+          <li><span class="ck">✓</span> White-label options</li>
+        </ul>
+        <a href="#" class="btn-lined">Contact Us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="ft">
+    <div class="fb">
+      <div class="fb-logo">
+        <div class="nav-logo-icon" style="width:26px;height:26px;font-size:12px">♪</div>
+        SwaraDigital
+      </div>
+      <p>The future of music distribution is here. Join the revolution and get your music heard on every major platform worldwide.</p>
+      <div class="nl">
+        <input type="email" placeholder="Enter your email">
+        <button>Subscribe</button>
+      </div>
+    </div>
+    <div class="fc">
+      <h5>Product</h5>
+      <ul><li><a href="#">Features</a></li><li><a href="#">Pricing</a></li><li><a href="#">Distributors</a></li><li><a href="#">Success Stories</a></li></ul>
+    </div>
+    <div class="fc">
+      <h5>Company</h5>
+      <ul><li><a href="#">About Us</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li><li><a href="#">Blog</a></li></ul>
+    </div>
+    <div class="fc">
+      <h5>Legal</h5>
+      <ul><li><a href="#">Terms & Conditions</a></li><li><a href="#">Refund Policy</a></li><li><a href="#">Privacy Policy</a></li></ul>
+    </div>
+    <div class="fc">
+      <h5>Support</h5>
+      <ul><li><a href="#">Help Center</a></li><li><a href="#">Contact</a></li><li><a href="#">Status</a></li></ul>
+    </div>
+  </div>
+  <div class="fb-bot">
+    <p>© 2026 SwaraDigital. All rights reserved.</p>
+    <div class="socials">
+      <a href="#" class="social-a">𝕏</a>
+      <a href="#" class="social-a">📷</a>
+      <a href="#" class="social-a">💬</a>
+      <a href="#" class="social-a">✉️</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── General scroll reveal ──
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// ── Features header reveal ──
+const featHeader = document.getElementById('featHeader');
+const io2 = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); io2.unobserve(e.target); } });
+}, { threshold: 0.1 });
+io2.observe(featHeader);
+
+// ── Feature card staggered reveal ──
+const fcCards = document.querySelectorAll('.fc-card');
+const io3 = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){ e.target.classList.add('visible'); io3.unobserve(e.target); }
+  });
+}, { threshold: 0.1 });
+fcCards.forEach(c => io3.observe(c));
+
+// ── Mouse glow on feature cards ──
+fcCards.forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--cx', (e.clientX - r.left) + 'px');
+    card.style.setProperty('--cy', (e.clientY - r.top)  + 'px');
+  });
+});
+
+// ── Stream counter animation ──
+let counted = false;
+const streamEl = document.getElementById('streamCount');
+const ioCount = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting && !counted){
+      counted = true;
+      const start = Date.now();
+      const dur = 2000, target = 2400000;
+      const tick = () => {
+        const p = Math.min((Date.now()-start)/dur, 1);
+        const ease = 1 - Math.pow(1-p, 3);
+        const val = Math.floor(ease * target);
+        const fmt = val >= 1e6 ? (val/1e6).toFixed(1)+'M' : val >= 1e3 ? (val/1e3).toFixed(0)+'K' : val;
+        streamEl.innerHTML = fmt + ' <span class="aw-badge">↑ 34%</span>';
+        if(p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
+  });
+}, { threshold: 0.5 });
+ioCount.observe(document.querySelector('.fc-card:nth-child(2)'));
+
+// ── Map dots ──
+const mapDots = document.getElementById('mapDots');
+const dotPos = [{l:12,t:38},{l:22,t:28},{l:33,t:45},{l:46,t:24},{l:54,t:58},{l:62,t:32},{l:70,t:50},{l:78,t:36},{l:86,t:22},{l:91,t:62},{l:17,t:68},{l:38,t:72},{l:56,t:75}];
+dotPos.forEach((p, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot-ping';
+  Object.assign(d.style, { left:p.l+'%', top:p.t+'%', width:'7px', height:'7px', animationDelay:(i*0.38)%3+'s' });
+  mapDots.appendChild(d);
+});
+
+// ── Live sparkline animation ──
+let t = 0;
+const sLine = document.getElementById('sLine'), sArea = document.getElementById('sArea');
+const xs = [0,28,56,84,112,140,168,200];
+const ys = [43,36,28,20,26,13,6,1];
+setInterval(() => {
+  t += 0.05;
+  const pts = ys.map((y,i) => y + Math.sin(t + i*0.7)*2.5);
+  const line = xs.map((x,i) => (i===0?'M':'L')+x+','+pts[i]).join(' ');
+  sLine.setAttribute('d', line);
+  sArea.setAttribute('d', line + ' L200,48 L0,48 Z');
+}, 60);
+
+// ── Countdown timer ──
+let secs = 24*60;
+const timerEl = document.getElementById('timerVal');
+setInterval(() => {
+  secs = secs > 0 ? secs-1 : 24*60;
+  timerEl.textContent = String(Math.floor(secs/60)).padStart(2,'0') + ':' + String(secs%60).padStart(2,'0');
+}, 1000);
+
+// ── Platform card hover ──
+document.querySelectorAll('.pcard').forEach(c => {
+  c.addEventListener('mouseenter', () => c.style.transition = 'border-color 0.3s, transform 0.3s, box-shadow 0.3s');
+});
+</script>
+</body>
+</html>
