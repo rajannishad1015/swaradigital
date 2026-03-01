@@ -115,6 +115,7 @@ export default function SignupPage() {
                     type="text" 
                     placeholder="Your Stage Name" 
                     required 
+                    autoComplete="name"
                     className="h-12 sm:h-14 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-0 rounded-none transition-all"
                   />
                 </div>
@@ -129,6 +130,7 @@ export default function SignupPage() {
                     type="email" 
                     placeholder="artist@example.com" 
                     required 
+                    autoComplete="email"
                     className="h-14 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-0 rounded-none transition-all"
                   />
                 </div>
@@ -143,6 +145,7 @@ export default function SignupPage() {
                     type="password" 
                     placeholder="Create a strong password"
                     required 
+                    autoComplete="new-password"
                     className="h-14 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-0 rounded-none transition-all"
                   />
                 </div>
