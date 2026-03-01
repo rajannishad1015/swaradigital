@@ -65,10 +65,19 @@ export default function TermsPage() {
       {/* Nav */}
       <nav style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(7,7,7,0.9)", backdropFilter: "blur(16px)", padding: "18px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: "100%" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-          <div style={{ width: "32px", height: "32px", background: "#C8F135", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#070707" stroke="none"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <div style={{ width: "32px", height: "32px", background: "#C8F135", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 16px rgba(200,241,53,0.35)" }}>
+            <svg width="15" height="15" viewBox="0 0 18 18" fill="none">
+              <rect x="0"  y="7" width="2.5" height="8"  rx="1.2" fill="#070707"/>
+              <rect x="4"  y="4" width="2.5" height="11" rx="1.2" fill="#070707"/>
+              <rect x="8"  y="1" width="2.5" height="14" rx="1.2" fill="#070707"/>
+              <rect x="12" y="5" width="2.5" height="10" rx="1.2" fill="#070707"/>
+              <rect x="16" y="9" width="2.5" height="6"  rx="1.2" fill="#070707"/>
+            </svg>
           </div>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: "17px", color: "#EFEFEF" }}>SwaraDigital</span>
+          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "18px", color: "#EFEFEF", letterSpacing: "0.04em" }}>Swara</span>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: "8px", fontWeight: 600, color: "#C8F135", letterSpacing: "0.18em", textTransform: "uppercase" }}>Digital</span>
+          </div>
         </Link>
         <Link href="/" style={{ fontSize: "13px", color: "#777", textDecoration: "none", display: "flex", alignItems: "center", gap: "6px" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>

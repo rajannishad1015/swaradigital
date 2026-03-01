@@ -41,20 +41,29 @@ export function Navbar() {
         {/* Logo */}
         <Link
           href="/"
-          style={{
-            display: "flex", alignItems: "center", gap: "9px",
-            fontSize: "16px", fontWeight: 800, letterSpacing: "-0.03em",
-            color: "#EFEFEF", textDecoration: "none",
-            fontFamily: "'Syne', sans-serif",
-          }}
+          style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}
         >
+          {/* Icon mark: lime pill with equalizer bars */}
           <div style={{
-            width: "28px", height: "28px", background: "#C8F135",
-            borderRadius: "7px", display: "flex", alignItems: "center",
-            justifyContent: "center", fontSize: "13px", flexShrink: 0,
-            boxShadow: "0 0 16px rgba(200,241,53,0.35)",
-          }}>♪</div>
-          SwaraDigital
+            width: "36px", height: "36px", background: "#C8F135",
+            borderRadius: "10px", display: "flex", alignItems: "center",
+            justifyContent: "center", flexShrink: 0,
+            boxShadow: "0 0 20px rgba(200,241,53,0.4), 0 0 6px rgba(200,241,53,0.2)",
+          }}>
+            {/* 5 equalizer bars */}
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <rect x="0"  y="7" width="2.5" height="8"  rx="1.2" fill="#070707"/>
+              <rect x="4"  y="4" width="2.5" height="11" rx="1.2" fill="#070707"/>
+              <rect x="8"  y="1" width="2.5" height="14" rx="1.2" fill="#070707"/>
+              <rect x="12" y="5" width="2.5" height="10" rx="1.2" fill="#070707"/>
+              <rect x="16" y="9" width="2.5" height="6"  rx="1.2" fill="#070707"/>
+            </svg>
+          </div>
+          {/* Wordmark */}
+          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "20px", color: "#EFEFEF", letterSpacing: "0.04em" }}>Swara</span>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: "9px", fontWeight: 600, color: "#C8F135", letterSpacing: "0.18em", textTransform: "uppercase" }}>Digital</span>
+          </div>
         </Link>
 
         {/* Center links — desktop */}

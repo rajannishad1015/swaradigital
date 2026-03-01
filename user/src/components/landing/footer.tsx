@@ -52,11 +52,20 @@ export function Footer() {
       <div className="footer-grid">
         {/* Brand column */}
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "9px", fontSize: "16px", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "16px", fontFamily: "'Syne', sans-serif", color: "#EFEFEF" }}>
-            <div style={{ width: "26px", height: "26px", background: "#C8F135", borderRadius: "7px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 12px rgba(200,241,53,0.3)" }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="#070707" stroke="none"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+            <div style={{ width: "32px", height: "32px", background: "#C8F135", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 16px rgba(200,241,53,0.35)" }}>
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                <rect x="0"  y="7" width="2.5" height="8"  rx="1.2" fill="#070707"/>
+                <rect x="4"  y="4" width="2.5" height="11" rx="1.2" fill="#070707"/>
+                <rect x="8"  y="1" width="2.5" height="14" rx="1.2" fill="#070707"/>
+                <rect x="12" y="5" width="2.5" height="10" rx="1.2" fill="#070707"/>
+                <rect x="16" y="9" width="2.5" height="6"  rx="1.2" fill="#070707"/>
+              </svg>
             </div>
-            SwaraDigital
+            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+              <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "19px", color: "#EFEFEF", letterSpacing: "0.04em" }}>Swara</span>
+              <span style={{ fontFamily: "'Syne', sans-serif", fontSize: "8px", fontWeight: 600, color: "#C8F135", letterSpacing: "0.18em", textTransform: "uppercase" }}>Digital</span>
+            </div>
           </div>
           <p style={{ fontSize: "13px", lineHeight: 1.8, color: "#777", maxWidth: "270px", marginBottom: "24px", fontFamily: "'Syne', sans-serif" }}>
             The future of music distribution is here. Join 170k+ independent artists and get your music heard everywhere.
