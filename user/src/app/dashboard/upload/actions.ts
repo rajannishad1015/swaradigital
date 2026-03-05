@@ -59,14 +59,57 @@ export async function submitTrack(formData: any) {
             return { success: false, error: 'Invalid release type' }
         }
 
-        // Get Artist ID
+        // Get User Profile with Plan Details
         const { data: profile } = await supabase
             .from('profiles')
-            .select('id')
+            .select('id, artist_name, plan_type, max_artist_profiles')
             .eq('id', user.id)
             .single()
         
         if (!profile) return { success: false, error: 'Profile not found' }
+
+        // Plan-based validation for primary artists
+        const plan = profile.plan_type || 'none';
+        const registeredArtist = (profile.artist_name || '').toLowerCase().trim();
+        
+        const validateArtists = (artists: any[], context: string) => {
+            if (!artists || !Array.isArray(artists)) return null;
+            if (artists.length === 0) return null;
+            
+            if (plan === 'solo' || plan === 'none') {
+                if (artists.length > 1) return `Single Artist plan only allows one primary artist for ${context}.`;
+                if (artists[0].name.toLowerCase().trim() !== registeredArtist) {
+                    return `On a Single Artist plan, you can only use your registered artist profile: ${profile.artist_name}`;
+                }
+            }
+            return null;
+        };
+
+        // 1. Validate Release-level Primary Artists
+        const releaseArtistError = validateArtists(formData.primaryArtists, "the release");
+        if (releaseArtistError) return { success: false, error: releaseArtistError };
+
+        // 2. Validate Track-level Primary Artists and calculate unique count
+        const allUniquePrimary = new Set<string>();
+        (formData.primaryArtists || []).forEach((a: any) => allUniquePrimary.add(a.name.toLowerCase().trim()));
+        
+        const tracksArray = Array.isArray(formData.tracks) ? formData.tracks : [];
+        for (const track of tracksArray) {
+            const trackArtistError = validateArtists(track.primaryArtists, `track "${track.title}"`);
+            if (trackArtistError) return { success: false, error: trackArtistError };
+            
+            if (track.primaryArtists && Array.isArray(track.primaryArtists)) {
+                track.primaryArtists.forEach((a: any) => allUniquePrimary.add(a.name.toLowerCase().trim()));
+            }
+        }
+
+        // 3. Check limit for Multi/Elite plans
+        if (plan !== 'solo' && plan !== 'none') {
+            const limit = profile.max_artist_profiles || (plan === 'multi' ? 5 : 20);
+            if (allUniquePrimary.size > limit) {
+                return { success: false, error: `Your ${plan} plan allows up to ${limit} unique primary artist profiles across the release. Currently using ${allUniquePrimary.size}.` };
+            }
+        }
 
         let albumId: string | null = null;
 

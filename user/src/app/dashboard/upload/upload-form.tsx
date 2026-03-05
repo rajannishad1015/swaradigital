@@ -329,6 +329,41 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
 
   const saveArtistDetails = () => {
       if (!artistDialogName) return 
+
+      const isPrimary = artistDialogMode === 'release' || artistDialogMode === 'track';
+      
+      if (isPrimary) {
+          const plan = userProfile?.plan_type || 'none';
+          const registeredArtist = userProfile?.artist_name || '';
+          
+          if (plan === 'solo' || plan === 'none') {
+              if (artistDialogName.toLowerCase().trim() !== registeredArtist.toLowerCase().trim()) {
+                  toast.error(`On a Single Artist plan, you can only add your registered artist profile: ${registeredArtist}`);
+                  return;
+              }
+              
+              if (artistDialogMode === 'release' && primaryArtists.length >= 1) {
+                  toast.error("Single Artist plan only allows one primary artist.");
+                  return;
+              }
+              if (artistDialogMode === 'track' && currentTrack.primaryArtists.length >= 1) {
+                  toast.error("Single Artist plan only allows one primary artist per track.");
+                  return;
+              }
+          } else {
+              // Multi/Elite plan limits
+              const limit = userProfile?.max_artist_profiles || (plan === 'multi' ? 5 : 20);
+              const currentReleasePrimary = primaryArtists.map(a => a.name.toLowerCase().trim());
+              const currentTracksPrimary = tracks.flatMap(t => t.primaryArtists.map(a => a.name.toLowerCase().trim()));
+              const allUniquePrimary = new Set([...currentReleasePrimary, ...currentTracksPrimary]);
+              
+              if (allUniquePrimary.size >= limit && !allUniquePrimary.has(artistDialogName.toLowerCase().trim())) {
+                  toast.error(`Your plan (${plan}) allows up to ${limit} primary artist profiles.`);
+                  return;
+              }
+          }
+      }
+
       const newArtist = { name: artistDialogName, spotifyId: artistDialogSpotify, appleId: artistDialogApple }
       
       if (artistDialogMode === 'release') {
@@ -1193,7 +1228,14 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-zinc-400">Primary Artist(s) <span className="text-red-500">*</span></Label>
-                                <Button type="button" onClick={() => openArtistDialog('release')} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10"><Plus size={14} className="mr-2" /> Add Primary Artist</Button>
+                                <Button 
+                                    type="button" 
+                                    onClick={() => openArtistDialog('release')} 
+                                    disabled={(userProfile?.plan_type === 'solo' || userProfile?.plan_type === 'none') && primaryArtists.length >= 1}
+                                    className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10"
+                                >
+                                    <Plus size={14} className="mr-2" /> Add Primary Artist
+                                </Button>
                                 {primaryArtists.length > 0 && (
                                     <div className="space-y-1 mt-2">
                                         {primaryArtists.map((a, i) => (
@@ -1547,7 +1589,14 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-zinc-400">Primary Artist(s) <span className="text-red-500">*</span></Label>
-                            <Button type="button" onClick={() => openArtistDialog('track')} className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10"><Plus size={14} className="mr-2" /> Add Primary Artist</Button>
+                            <Button 
+                                type="button" 
+                                onClick={() => openArtistDialog('track')} 
+                                disabled={(userProfile?.plan_type === 'solo' || userProfile?.plan_type === 'none') && currentTrack.primaryArtists.length >= 1}
+                                className="bg-indigo-500 hover:bg-indigo-600 text-white w-full h-10"
+                            >
+                                <Plus size={14} className="mr-2" /> Add Primary Artist
+                            </Button>
                             {currentTrack.primaryArtists.length > 0 && (
                                 <div className="space-y-1 mt-2">
                                     {currentTrack.primaryArtists.map((a: any, i: number) => (
