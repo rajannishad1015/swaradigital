@@ -31,7 +31,7 @@ export default async function DashboardLayout({
         { count: pendingTickets },
         [trackCountRes, payoutCountRes, ticketCountRes]
     ] = await Promise.all([
-        supabase.from('profiles').select('role, id, status, label_id').eq('id', user.id).single(),
+        supabase.from('profiles').select('role, id, status, label_id, plan_type').eq('id', user.id).single(),
         supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id).neq('status', 'resolved').neq('status', 'closed'),
         Promise.all([
             supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
@@ -74,6 +74,7 @@ export default async function DashboardLayout({
         signOut={signOut} 
         pendingTickets={pendingTickets || 0} 
         hasActivity={hasActivity}
+        planType={profile?.plan_type as any}
         className="hidden md:flex"
       />
 

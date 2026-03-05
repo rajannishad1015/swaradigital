@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { submitTrack } from './actions'
+import { checkSubmissionEligibility, createRazorpayOrder, verifyRazorpayPayment } from '../actions'
+import Script from 'next/script'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -821,6 +823,84 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
     const timestamp = Date.now()
 
     try {
+        // Eligibility & Payment Check (Only for final submission)
+        if (status === 'pending') {
+            const eligibility = await checkSubmissionEligibility(initialData?.id || savedDraftId)
+            
+            if (!eligibility.eligible) {
+                toast.error(eligibility.message || "You are not eligible to submit this release.")
+                setLoading(false)
+                return
+            }
+
+            if (eligibility.mustPay) {
+                // To pay, we MUST have a draft saved first so we have an albumId
+                let currentAlbumId = initialData?.id || savedDraftId
+                
+                if (!currentAlbumId) {
+                    // Save as draft first to get an ID
+                    toast.info("Saving draft before payment...")
+                    const draftResult = await handleSubmit(e, 'draft') as any
+                    if (draftResult?.success && draftResult?.trackId) {
+                        currentAlbumId = draftResult.trackId
+                    } else {
+                        // If handleSubmit(e, 'draft') didn't return what we expected, it might have already set states
+                        // But we need to stop here and let the user try again if it failed
+                        setLoading(false)
+                        return
+                    }
+                }
+
+                // Trigger Razorpay
+                try {
+                    const order = await createRazorpayOrder(eligibility.amount!, currentAlbumId)
+                    
+                    const options = {
+                        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                        amount: order.amount,
+                        currency: order.currency,
+                        name: "Swara Digital",
+                        description: `Release Fee: ${title}`,
+                        order_id: order.orderId,
+                        handler: async function (response: any) {
+                            try {
+                                await verifyRazorpayPayment(
+                                    response.razorpay_order_id,
+                                    response.razorpay_payment_id,
+                                    response.razorpay_signature
+                                )
+                                toast.success("Payment successful! Submitting your release...")
+                                // After verification, we resume the submission immediately
+                                handleSubmit(e, 'pending')
+                            } catch (err: any) {
+                                toast.error(err.message || 'Payment verification failed')
+                                setLoading(false)
+                            }
+                        },
+                        prefill: {
+                            name: userProfile?.full_name || "",
+                            email: userProfile?.email || "",
+                        },
+                        theme: {
+                            color: "#6366f1",
+                        },
+                        modal: {
+                            ondismiss: function() {
+                                setLoading(false)
+                            }
+                        }
+                    }
+
+                    const rzp = new (window as any).Razorpay(options)
+                    rzp.open()
+                    return // Stop here, wait for handler
+                } catch (err: any) {
+                    toast.error(err.message || "Failed to initialize payment")
+                    setLoading(false)
+                    return
+                }
+            }
+        }
         // 1. Upload Cover Art if changed
         let coverArtUrl = initialData?.albums?.cover_art_url
         if (coverFile) {
@@ -992,6 +1072,9 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
     } finally {
         setLoading(false)
     }
+    
+    // Return result for nested calls
+    return { success: true, trackId: initialData?.id || savedDraftId }
   }
   return (
     <div className="pb-20">
@@ -1055,8 +1138,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                     <div className="text-center md:text-left">
                         <h3 className="text-white font-bold text-lg">Welcome to your first release!</h3>
                         <p className="text-zinc-400 text-sm max-w-2xl mt-1">
-                            We've simplified the process to get your music on Spotify, Apple Music, and more. 
-                            Fill in your release details below to get started. Don't worry, you can always save as a draft!
+                            We&apos;ve simplified the process to get your music on Spotify, Apple Music, and more. 
+                            Fill in your release details below to get started. Don&apos;t worry, you can always save as a draft!
                         </p>
                     </div>
                 </div>
@@ -1968,6 +2051,12 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
             isOpen={isSuccessDialogOpen} 
             onOpenChange={setIsSuccessDialogOpen} 
             isFirstUpload={isFirstUpload}
+        />
+
+        {/* Load Razorpay SDK */}
+        <Script
+            id="razorpay-checkout-js"
+            src="https://checkout.razorpay.com/v1/checkout.js"
         />
     </div>
   )

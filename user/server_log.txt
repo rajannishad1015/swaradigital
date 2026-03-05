@@ -1,0 +1,18 @@
+
+> user@0.1.0 dev
+> next dev
+
+ΓÜá Port 3000 is in use by process 25484, using available port 3002 instead.
+ΓÜá Found lockfile missing swc dependencies, patching...
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3002
+- Network:       http://169.254.25.233:3002
+- Environments: .env.local
+- Experiments (use with caution):
+  ┬╖ serverActions
+
+Γ£ô Starting...
+ΓÜá Lockfile was successfully patched, please run "npm install" to ensure @next/swc dependencies are downloaded
+Γ¿» Unable to acquire lock at C:\Users\rajan\Downloads\MusicFlow\user\.next\dev\lock, is another instance of next dev running?
+  Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
+[?25h

@@ -2,6 +2,212 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { getRazorpayInstance } from '@/lib/razorpay'
+import crypto from 'crypto'
+
+export async function createRazorpayOrder(amount: number, albumId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  console.log(`Creating Razorpay order for album: ${albumId}, amount: ${amount}`)
+  
+  if (!amount || isNaN(amount)) {
+    console.error('Invalid amount provided to createRazorpayOrder:', amount)
+    throw new Error('Invalid amount')
+  }
+
+  const razorpay = getRazorpayInstance()
+  const options = {
+    amount: Math.round(amount * 100), // amount in smallest currency unit (paise)
+    currency: "INR",
+    receipt: `rcpt_${albumId}`.slice(0, 40),
+    notes: {
+      userId: user.id,
+      albumId: albumId.includes('PLAN_SWITCH') ? null : albumId,
+      type: albumId.includes('PLAN_SWITCH') ? 'plan_switch' : 'release_payment'
+    }
+  }
+
+  try {
+    const order = await razorpay.orders.create(options)
+    return { orderId: order.id, amount: order.amount, currency: order.currency }
+  } catch (error: any) {
+    // Log full error to see root cause in terminal
+    console.error('Razorpay Order Error (full):', JSON.stringify(error, null, 2))
+    const message = error?.error?.description || error?.description || error?.message || 'Failed to create payment order'
+    throw new Error(message)
+  }
+}
+
+export async function createRazorpaySubscription(planName: 'multi_artist' | 'elite_label') {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Unauthorized')
+    
+    // Use plan IDs from environment variables
+    const planId = planName === 'multi_artist' 
+        ? process.env.RAZORPAY_PLAN_MULTI_ARTIST 
+        : process.env.RAZORPAY_PLAN_ELITE_LABEL
+
+    if (!planId) {
+        throw new Error(`Razorpay Plan ID not configured for ${planName}. Please check your .env.local file.`)
+    }
+    
+    const razorpay = getRazorpayInstance()
+    try {
+        const subscription = await razorpay.subscriptions.create({
+            plan_id: planId,
+            customer_notify: 1,
+            total_count: 12, 
+            notes: {
+                userId: user.id,
+                planName: planName
+            }
+        })
+        return { subscriptionId: subscription.id }
+    } catch (error: any) {
+        console.error('Razorpay Subscription Error:', error)
+        const message = error?.description || error?.message || 'Failed to create subscription'
+        throw new Error(message)
+    }
+}
+
+export async function verifyRazorpayPayment(orderId: string, paymentId: string, signature: string) {
+    const keySecret = process.env.RAZORPAY_KEY_SECRET!
+    
+    const generatedSignature = crypto
+        .createHmac('sha256', keySecret)
+        .update(`${orderId}|${paymentId}`)
+        .digest('hex')
+
+    if (generatedSignature !== signature) {
+        throw new Error('Payment verification failed. Signature mismatch.')
+    }
+
+    const supabase = await createClient()
+    
+    // Webhook should ideally handle the status update, but we do it here for immediate UI feedback consistency
+    // However, the release_payments might not exist yet if the order was just created and paid.
+    // The webhook's 'payment.captured' usually carries the notes.
+    
+    return { success: true }
+}
+
+export async function verifyRazorpaySubscription(subscriptionId: string, paymentId: string, signature: string) {
+    const keySecret = process.env.RAZORPAY_KEY_SECRET!
+    
+    const generatedSignature = crypto
+        .createHmac('sha256', keySecret)
+        .update(`${paymentId}|${subscriptionId}`)
+        .digest('hex')
+
+    if (generatedSignature !== signature) {
+        throw new Error('Subscription verification failed. Signature mismatch.')
+    }
+
+    // Since webhook handles the DB updates for subscriptions in production, we do an explicit sync here
+    // for local test environments to immediately unlock the dashboard.
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (user) {
+        const nextYear = new Date()
+        nextYear.setFullYear(nextYear.getFullYear() + 1)
+
+        await supabase.from('profiles').update({ plan_type: 'multi' }).eq('id', user.id)
+        
+        const { data: existing } = await supabase.from('subscriptions')
+            .select('id').eq('subscription_id', subscriptionId).maybeSingle()
+            
+        if (existing) {
+             await supabase.from('subscriptions').update({ 
+                 status: 'active', 
+                 current_period_end: nextYear.toISOString() 
+             }).eq('subscription_id', subscriptionId)
+        } else {
+             await supabase.from('subscriptions').insert({
+                 user_id: user.id,
+                 subscription_id: subscriptionId,
+                 plan_id: process.env.RAZORPAY_PLAN_MULTI_ARTIST,
+                 status: 'active',
+                 current_period_start: new Date().toISOString(),
+                 current_period_end: nextYear.toISOString()
+             })
+        }
+    }
+    
+    return { success: true }
+}
+
+export async function updateProfilePlan(planType: 'none' | 'solo' | 'multi' | 'elite') {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Unauthorized')
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ plan_type: planType })
+        .eq('id', user.id)
+
+    if (error) throw error
+    
+    revalidatePath('/dashboard/billing')
+    return { success: true }
+}
+
+export async function checkSubmissionEligibility(albumId?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan_type, status')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile) throw new Error('Profile not found')
+  if (profile.status !== 'active') throw new Error('Account is not active')
+
+  // If user has a subscription (Multi or Elite)
+  if (profile.plan_type === 'multi' || profile.plan_type === 'elite') {
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('status, current_period_end')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle()
+    
+    if (sub && sub.current_period_end && new Date(sub.current_period_end) > new Date()) {
+      return { eligible: true, mustPay: false, plan: profile.plan_type }
+    }
+    return { eligible: false, mustPay: false, plan: profile.plan_type, message: "Your annual subscription is inactive or expired." }
+  }
+
+  // For Solo plan, check if the specific album has been paid for
+  if (profile.plan_type === 'solo') {
+    if (!albumId) {
+      // If we don't have an albumId yet (initial submission), they MUST pay
+      return { eligible: true, mustPay: true, amount: 99, plan: 'solo' }
+    }
+
+    const { data: payment } = await supabase
+      .from('release_payments')
+      .select('status')
+      .eq('user_id', user.id)
+      .eq('album_id', albumId)
+      .eq('status', 'captured')
+      .maybeSingle()
+
+    if (payment) {
+      return { eligible: true, mustPay: false, plan: 'solo' }
+    }
+    return { eligible: true, mustPay: true, amount: 99, plan: 'solo' }
+  }
+
+  return { eligible: false, mustPay: false, plan: profile.plan_type || 'none', message: "Please select a plan to start releasing music." }
+}
 
 export async function createWithdrawalRequest(amount: number, paymentMode: string, paymentDetails: Record<string, string>) {
   const supabase = await createClient()

@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { checkSubmissionEligibility } from '../actions'
 
 // Simulates audio fingerprinting against external DB
 async function checkAudioFingerprint(fileUrl: string, title: string) {
@@ -34,6 +35,17 @@ export async function submitTrack(formData: any) {
 
         if (!user) {
             return { success: false, error: 'Unauthorized' }
+        }
+
+        // Security: Check eligibility if not saving as draft
+        if (formData.status !== 'draft') {
+            const eligibility = await checkSubmissionEligibility(formData.id)
+            if (!eligibility.eligible) {
+                return { success: false, error: eligibility.message || "You are not eligible to submit this release. Please check your plan." }
+            }
+            if (eligibility.mustPay) {
+                return { success: false, error: "Payment required for this release. Please pay the release fee." }
+            }
         }
 
         // Server-side input validation

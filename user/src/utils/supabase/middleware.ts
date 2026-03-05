@@ -52,8 +52,22 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // 2. Active User Check removed for performance - handled in Layout
-  // This prevents blocking every request with a DB query
+  // 2. Plan Gate: if user is on a dashboard page (but not billing), check they have an active plan
+  if (user && request.nextUrl.pathname.startsWith('/dashboard') && !request.nextUrl.pathname.startsWith('/dashboard/billing')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan_type')
+      .eq('id', user.id)
+      .single()
+
+    const hasPlan = profile?.plan_type && profile.plan_type !== 'none'
+    if (!hasPlan) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard/billing'
+      url.searchParams.set('required', 'true')
+      return NextResponse.redirect(url)
+    }
+  }
 
   return supabaseResponse
 }
