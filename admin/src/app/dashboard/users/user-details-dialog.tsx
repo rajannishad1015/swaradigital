@@ -149,10 +149,11 @@ export default function UserDetailsDialog({ user }: { user: any }) {
         
         <Tabs defaultValue="overview" className="w-full h-full flex flex-col">
             <div className="px-4 md:px-6 pt-4 flex-shrink-0">
-                    <TabsList className="grid w-full grid-cols-4 bg-zinc-900/50 p-1 rounded-xl border border-white/5">
+                    <TabsList className="grid w-full grid-cols-5 bg-zinc-900/50 p-1 rounded-xl border border-white/5">
                     <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[9px] md:text-[10px] tracking-wider">Overview</TabsTrigger>
                     <TabsTrigger value="tracks" onClick={fetchTracks} className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[9px] md:text-[10px] tracking-wider">Tracks</TabsTrigger>
                     <TabsTrigger value="funds" onClick={fetchHistory} className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[9px] md:text-[10px] tracking-wider">Wallet</TabsTrigger>
+                    <TabsTrigger value="plan" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-500 font-bold uppercase text-[9px] md:text-[10px] tracking-wider">Plan</TabsTrigger>
                     <TabsTrigger value="admin" className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-400 text-zinc-500 font-bold uppercase text-[9px] md:text-[10px] tracking-wider">Admin</TabsTrigger>
                 </TabsList>
             </div>
@@ -212,7 +213,7 @@ export default function UserDetailsDialog({ user }: { user: any }) {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider block">Member Since</span>
-                                            <div className="text-[11px] font-bold text-zinc-200 truncate">
+                                            <div className="text-[11px] font-bold text-zinc-200 truncate" suppressHydrationWarning>
                                                 {new Date(user.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                                             </div>
                                         </div>
@@ -482,8 +483,8 @@ export default function UserDetailsDialog({ user }: { user: any }) {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="admin" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-3 min-h-0 overflow-y-auto md:overflow-hidden">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-auto md:h-full">
+                <TabsContent value="admin" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-3 min-h-0 overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-auto">
                         <div className="space-y-4">
                             <div className="space-y-1.5">
                                 <h3 className="font-black text-base flex items-center gap-2 text-red-400 uppercase tracking-tight">
@@ -525,9 +526,6 @@ export default function UserDetailsDialog({ user }: { user: any }) {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Plan Management */}
-                            <PlanManager user={user} />
                         </div>
 
                         <div className="space-y-3">
@@ -537,6 +535,10 @@ export default function UserDetailsDialog({ user }: { user: any }) {
                             <AdminNotesManager userId={user.id} initialNotes={user.admin_notes || ''} />
                         </div>
                     </div>
+                </TabsContent>
+
+                <TabsContent value="plan" className="flex-1 mt-0 focus-visible:outline-none animate-in fade-in slide-in-from-bottom-2 p-4 pb-3 min-h-0 overflow-y-auto w-full md:max-w-2xl mx-auto">
+                    <PlanManager user={user} />
                 </TabsContent>
         </Tabs>
       </DialogContent>
@@ -776,7 +778,7 @@ function PlanManager({ user }: { user: any }) {
     }
 
     return (
-        <div className="space-y-4 pt-4 border-t border-white/5">
+        <div className="space-y-4">
             <div className="space-y-1.5">
                 <h3 className="font-black text-base flex items-center gap-2 text-indigo-400 uppercase tracking-tight">
                     <ShieldAlert className="h-3.5 w-3.5" /> Plan Management

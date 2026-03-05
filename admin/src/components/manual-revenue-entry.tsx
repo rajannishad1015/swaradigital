@@ -4,21 +4,9 @@ import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, Plus, Trash2, Save, FileSpreadsheet, Keyboard } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Keyboard } from "lucide-react";
 import { toast } from "sonner";
 import { processRevenueData } from "@/app/dashboard/revenue/actions";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const entrySchema = z.object({
   isrc: z.string().min(10, "Invalid ISRC"),
@@ -63,10 +51,14 @@ export default function ManualRevenueEntry() {
     name: "entries",
   });
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async () => {
+    // using manual validation/submission to bypass complex shadcn/hook-form wrapper issues
+    const values = form.getValues();
+    const isValid = await form.trigger();
+    if (!isValid) return;
+
     setIsUploading(true);
     try {
-        // Map form values to match expected backend structure
         const rows = values.entries.map(e => ({
             'ISRC': e.isrc,
             'Platform': e.platform,
@@ -79,7 +71,7 @@ export default function ManualRevenueEntry() {
 
         const result = await processRevenueData(rows);
         if (result.success) {
-            toast.success(`Successfully processed ${result.count} records`);
+            toast.success(`Processed ${result.count} records seamlessly.`);
             form.reset({
                 entries: [{ isrc: "", platform: "Spotify", country: "US", revenue: 0, period: new Date().toISOString().slice(0, 7), quantity: 1, currency: "USD" }]
             });
@@ -95,167 +87,125 @@ export default function ManualRevenueEntry() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-zinc-900 border-zinc-800 shadow-xl overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500" />
-        <CardHeader>
-          <CardTitle className="text-xl font-bold flex items-center gap-2 text-white">
-            <Keyboard className="text-emerald-400" />
-            Manual Data Entry
-          </CardTitle>
-          <CardDescription className="text-zinc-400">
-            Manually input revenue data for specific tracks. Useful for adjustments or small reports.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-4">
-                {fields.map((field, index) => (
-                  <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end p-4 rounded-lg bg-zinc-950/50 border border-zinc-800/50 hover:border-zinc-700 transition-colors group">
-                    <div className="md:col-span-3">
-                        <FormField
-                            control={form.control}
-                            name={`entries.${index}.isrc`}
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs text-zinc-500 uppercase tracking-wider font-bold">ISRC Code</FormLabel>
-                                <FormControl>
-                                <Input {...field} placeholder="US..." className="bg-zinc-900 border-zinc-800 focus:border-emerald-500/50" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </div>
-                    <div className="md:col-span-2">
-                        <FormField
-                            control={form.control}
-                            name={`entries.${index}.platform`}
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Platform</FormLabel>
-                                <FormControl>
-                                <Input {...field} placeholder="Spotify" className="bg-zinc-900 border-zinc-800 focus:border-emerald-500/50" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </div>
-                    <div className="md:col-span-1">
-                        <FormField
-                            control={form.control}
-                            name={`entries.${index}.country`}
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Ctry</FormLabel>
-                                <FormControl>
-                                <Input {...field} placeholder="US" className="bg-zinc-900 border-zinc-800 focus:border-emerald-500/50" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </div>
-                    <div className="md:col-span-2">
-                        <FormField
-                            control={form.control}
-                            name={`entries.${index}.period`}
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Period</FormLabel>
-                                <FormControl>
-                                <Input {...field} type="month" className="bg-zinc-900 border-zinc-800 focus:border-emerald-500/50" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </div>
-                    <div className="md:col-span-2">
-                        <FormField
-                            control={form.control}
-                            name={`entries.${index}.revenue`}
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Revenue</FormLabel>
-                                <FormControl>
-                                <div className="relative">
-                                    <span className="absolute left-2 top-2.5 text-zinc-500 text-xs">$</span>
-                                    <Input {...field} type="number" step="0.000001" className="pl-5 bg-zinc-900 border-zinc-800 focus:border-emerald-500/50" />
-                                </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </div>
-                    <div className="md:col-span-1">
-                        <FormField
-                            control={form.control}
-                            name={`entries.${index}.currency`}
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Curr</FormLabel>
-                                <FormControl>
-                                <Input {...field} placeholder="USD" className="bg-zinc-900 border-zinc-800 focus:border-emerald-500/50" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </div>
+    <div className="bg-[#18181b] border border-[#3f3f46]/40 rounded-xl overflow-hidden shadow-2xl pb-4">
+      <div className="h-1.5 w-full bg-[#eaff00]"></div>
+      
+      <div className="p-8">
+        <div className="flex items-center gap-3 mb-8">
+            <Keyboard className="text-[#eaff00] w-7 h-7" strokeWidth={2} />
+            <h2 className="text-xl font-bold text-white tracking-wide">Manual Data Entry</h2>
+        </div>
+        
+        <p className="text-[#a1a1aa] text-sm font-medium mb-8">
+          Input revenue data for specific tracks row by row. Perfect for small corrections or single statements.
+        </p>
 
-                    <div className="md:col-span-1 flex justify-end pb-1">
-                        <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => remove(index)}
-                            disabled={fields.length === 1}
-                            className="text-zinc-500 hover:text-rose-500 hover:bg-rose-500/10"
-                        >
-                            <Trash2 size={16} />
-                        </Button>
-                    </div>
+        <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-6">
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-4 items-end p-5 rounded-lg bg-[#09090b] border border-[#27272a] hover:border-[#3f3f46] transition-colors relative group">
+                  
+                  {/* Row Number Badge */}
+                  <div className="absolute -top-3 -left-3 bg-[#eaff00] text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                      {index + 1}
                   </div>
-                ))}
-              </div>
 
-              <div className="flex justify-between items-center pt-4">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => append({ isrc: "", platform: "Spotify", country: "US", revenue: 0, period: new Date().toISOString().slice(0, 7), quantity: 1, currency: "USD" })}
-                    className="border-dashed border-zinc-700 bg-transparent hover:bg-zinc-800 text-zinc-400 hover:text-white"
-                >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Another Row
-                </Button>
+                  <div className="md:col-span-3 space-y-2">
+                      <label className="text-[#a1a1aa] text-[10px] font-bold tracking-widest uppercase ml-1 block">ISRC Code</label>
+                      <input 
+                          {...form.register(`entries.${index}.isrc`)} 
+                          placeholder="US..." 
+                          className="w-full bg-[#18181b] border border-[#27272a] text-white focus:border-[#eaff00]/50 outline-none px-4 py-2.5 rounded-md text-sm transition-colors"
+                      />
+                      {form.formState.errors.entries?.[index]?.isrc && (
+                          <p className="text-[#ef4444] text-[10px] uppercase font-bold tracking-wider mt-1">{form.formState.errors.entries[index]?.isrc?.message}</p>
+                      )}
+                  </div>
 
-                <Button 
-                    type="submit" 
-                    disabled={isUploading}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 shadow-lg shadow-emerald-500/20"
-                >
-                    {isUploading ? (
-                    <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                    </>
-                    ) : (
-                    <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Records
-                    </>
-                    )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                  <div className="md:col-span-2 space-y-2">
+                      <label className="text-[#a1a1aa] text-[10px] font-bold tracking-widest uppercase ml-1 block">Platform</label>
+                      <input 
+                          {...form.register(`entries.${index}.platform`)} 
+                          placeholder="Spotify" 
+                          className="w-full bg-[#18181b] border border-[#27272a] text-white focus:border-[#eaff00]/50 outline-none px-4 py-2.5 rounded-md text-sm transition-colors"
+                      />
+                  </div>
+
+                  <div className="md:col-span-1 space-y-2">
+                      <label className="text-[#a1a1aa] text-[10px] font-bold tracking-widest uppercase ml-1 block">Ctry</label>
+                      <input 
+                          {...form.register(`entries.${index}.country`)} 
+                          placeholder="US" 
+                          className="w-full bg-[#18181b] border border-[#27272a] text-white focus:border-[#eaff00]/50 outline-none px-4 py-2.5 rounded-md text-sm transition-colors uppercase"
+                      />
+                  </div>
+
+                  <div className="md:col-span-2 space-y-2">
+                      <label className="text-[#a1a1aa] text-[10px] font-bold tracking-widest uppercase ml-1 block">Period</label>
+                      <input 
+                          type="month"
+                          {...form.register(`entries.${index}.period`)} 
+                          className="w-full bg-[#18181b] border border-[#27272a] text-white focus:border-[#eaff00]/50 outline-none px-4 py-2.5 rounded-md text-sm transition-colors [color-scheme:dark]"
+                      />
+                  </div>
+
+                  <div className="md:col-span-2 space-y-2 relative">
+                      <label className="text-[#a1a1aa] text-[10px] font-bold tracking-widest uppercase ml-1 block">Revenue</label>
+                      <div className="relative">
+                          <span className="absolute left-3 top-2.5 text-[#a1a1aa] font-medium text-sm">$</span>
+                          <input 
+                              type="number"
+                              step="0.000001"
+                              {...form.register(`entries.${index}.revenue`)} 
+                              className="w-full bg-[#18181b] border border-[#27272a] text-white focus:border-[#eaff00]/50 outline-none pl-7 pr-3 py-2.5 rounded-md text-sm transition-colors font-mono"
+                          />
+                      </div>
+                  </div>
+
+                  <div className="md:col-span-1 space-y-2">
+                      <label className="text-[#a1a1aa] text-[10px] font-bold tracking-widest uppercase ml-1 block">Curr</label>
+                      <input 
+                          {...form.register(`entries.${index}.currency`)} 
+                          placeholder="USD" 
+                          className="w-full bg-[#18181b] border border-[#27272a] text-white focus:border-[#eaff00]/50 outline-none px-3 py-2.5 rounded-md text-sm transition-colors uppercase text-center"
+                      />
+                  </div>
+
+                  <div className="md:col-span-1 flex justify-end pb-1 pr-1">
+                      <button 
+                          type="button" 
+                          onClick={() => remove(index)}
+                          disabled={fields.length === 1}
+                          className="p-2.5 text-[#52525b] hover:text-[#ef4444] hover:bg-[#ef4444]/10 rounded-md transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                      >
+                          <Trash2 size={16} strokeWidth={2.5} />
+                      </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-6 mt-6 border-t border-[#27272a]">
+              <button
+                  type="button"
+                  onClick={() => append({ isrc: "", platform: "Spotify", country: "US", revenue: 0, period: new Date().toISOString().slice(0, 7), quantity: 1, currency: "USD" })}
+                  className="flex items-center gap-2 text-[#a1a1aa] hover:text-[#eaff00] font-bold text-sm transition-colors bg-[#09090b] border border-[#27272a] hover:border-[#eaff00]/30 px-5 py-3 rounded-md w-full sm:w-auto justify-center uppercase tracking-wide"
+              >
+                  <Plus className="w-4 h-4" strokeWidth={3} />
+                  Add Row
+              </button>
+
+              <button 
+                  type="submit" 
+                  disabled={isUploading}
+                  className="bg-[#242400] hover:bg-[#343400] text-[#eaff00] border border-[#eaff00]/50 font-bold px-8 py-3 rounded-md shadow-sm w-full sm:w-auto flex justify-center items-center gap-2 transition-colors disabled:opacity-50 uppercase tracking-wide text-sm"
+              >
+                  {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" strokeWidth={2.5} />}
+                  {isUploading ? 'Recording...' : 'Write Records'}
+              </button>
+            </div>
+        </form>
+      </div>
     </div>
   );
 }
