@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import { Plus, MessageSquare, AlertCircle, Search, ChevronRight, Ticket, Box } from 'lucide-react'
@@ -175,8 +176,10 @@ export default async function SupportPage({
                 Recent Tickets
             </h2>
             <div className="flex items-center gap-3 w-full sm:w-auto">
-                <SearchInput />
-                <StatusFilter />
+                <Suspense fallback={<div className="h-10 w-48 bg-zinc-900 rounded-lg animate-pulse" />}>
+                    <SearchInput />
+                    <StatusFilter />
+                </Suspense>
             </div>
         </div>
 

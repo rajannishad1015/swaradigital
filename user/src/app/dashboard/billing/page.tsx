@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import {
@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 import Script from 'next/script'
 import { cn } from '@/lib/utils'
 
-export default function BillingPage() {
+function BillingContent() {
     const supabase = createClient()
     const searchParams = useSearchParams()
     const isRequired = searchParams.get('required') === 'true'
@@ -21,12 +21,21 @@ export default function BillingPage() {
     const [actionLoading, setActionLoading] = useState<string | null>(null)
 
     useEffect(() => {
+        const fetchProfile = async (userId: string) => {
+            try {
+                const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+                setProfile(data)
+            } finally {
+                setLoading(false)
+            }
+        }
+
         supabase.auth.getUser().then(({ data: { user } }) => {
             if (user) {
-                supabase.from('profiles').select('*').eq('id', user.id).single()
-                    .then(({ data }) => setProfile(data))
-                    .finally(() => setLoading(false))
-            } else setLoading(false)
+                fetchProfile(user.id)
+            } else {
+                setLoading(false)
+            }
         })
     }, [])
 
@@ -262,5 +271,17 @@ function PlanBtn({ id, planType, loading, onPay, label, highlight }: {
              isActive ? <><Check className="w-3.5 h-3.5" /> Current Plan</> :
              <>{label} <ArrowRight className="w-3.5 h-3.5" /></>}
         </button>
+    )
+}
+
+export default function BillingPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Loader2 className="w-5 h-5 animate-spin text-zinc-700" />
+            </div>
+        }>
+            <BillingContent />
+        </Suspense>
     )
 }

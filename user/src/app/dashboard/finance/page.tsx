@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import ProfileEditorDialog from '../settings/profile-editor-dialog'
@@ -154,7 +155,9 @@ export default async function FinancePage({ searchParams }: {
         </div>
 
         {/* Filters Section */}
-        <FinanceFilters />
+        <Suspense fallback={<div className="h-10 w-full bg-zinc-900 rounded-lg animate-pulse" />}>
+            <FinanceFilters />
+        </Suspense>
 
         {/* Top Cards Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -222,11 +225,13 @@ export default async function FinancePage({ searchParams }: {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                        <TransactionList 
-                            transactions={transactions || []} 
-                            currentPage={page}
-                            totalPages={totalPages}
-                        />
+                        <Suspense fallback={<div className="h-[400px] w-full bg-zinc-900 animate-pulse rounded-b-xl" />}>
+                            <TransactionList 
+                                transactions={transactions || []} 
+                                currentPage={page}
+                                totalPages={totalPages}
+                            />
+                        </Suspense>
                     </CardContent>
                 </Card>
             </TabsContent>
