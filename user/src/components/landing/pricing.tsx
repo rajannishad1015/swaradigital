@@ -6,23 +6,23 @@ import { useState, useRef, useEffect } from "react";
 // ── Data ───────────────────────────────────────────────────────────
 const tiers = [
   {
-    id: "free",
-    tag: "Starter",
-    name: "Free",
-    description: "Try Swara Digital with no commitment.",
-    price: "0",
-    period: "/forever",
+    id: "single",
+    tag: "Basic",
+    name: "Pay Per Release",
+    description: "Perfect for single releases with no recurring fees.",
+    price: "99",
+    period: " /release",
     color: "#777",
     features: [
-      { text: "1 release per year",      ok: true  },
-      { text: "Spotify & Apple Music",    ok: true  },
-      { text: "Basic analytics",          ok: true  },
+      { text: "1 release (Single/EP)",    ok: true  },
+      { text: "150+ Store Network",       ok: true  },
       { text: "100% royalties",           ok: true  },
-      { text: "YouTube Content ID",       ok: false },
-      { text: "Priority Support",         ok: false },
+      { text: "Smart Link & Pre-save",    ok: true  },
+      { text: "YouTube Content ID",       ok: true  },
+      { text: "Standard Support",         ok: true  },
     ],
-    cta: "Start Free",
-    ctaHref: "/signup",
+    cta: "Start Now",
+    ctaHref: "/signup?plan=single",
     highlight: false,
     glow: false,
   },
@@ -30,9 +30,9 @@ const tiers = [
     id: "pro",
     tag: "Most Popular",
     name: "Pro Artist",
-    description: "Everything you need to grow as an independent artist.",
-    price: "19.99",
-    period: "/year",
+    description: "Unlimited releases for a full year of growth.",
+    price: "1499",
+    period: " /annually",
     color: "#C8F135",
     features: [
       { text: "Unlimited releases",            ok: true },
@@ -42,7 +42,7 @@ const tiers = [
       { text: "YouTube Content ID",            ok: true },
       { text: "Priority 24hr Support",         ok: true },
     ],
-    cta: "Get Pro Artist",
+    cta: "Go Pro",
     ctaHref: "/signup?plan=pro",
     highlight: true,
     glow: true,
@@ -58,7 +58,7 @@ const tiers = [
     features: [
       { text: "Everything in Pro",             ok: true },
       { text: "Unlimited artists",             ok: true },
-      { text: "Splits & batch payments",       ok: true },
+      { text: "Social Media Monetization",     ok: true },
       { text: "Multi-user dashboard",          ok: true },
       { text: "Dedicated account manager",     ok: true },
       { text: "White-label options",           ok: true },
@@ -187,7 +187,7 @@ function PricingCard({ tier }: { tier: typeof tiers[0] }) {
         {/* Price */}
         <div style={{ display: "flex", alignItems: "flex-end", gap: "4px", marginBottom: "28px" }}>
           {tier.price !== "Custom" && (
-            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: "22px", fontWeight: 700, color: "#555", alignSelf: "flex-start", marginTop: "10px" }}>$</span>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: "22px", fontWeight: 700, color: "#555", alignSelf: "flex-start", marginTop: "10px" }}>₹</span>
           )}
           <span style={{
             fontFamily: "'Bebas Neue', sans-serif",
