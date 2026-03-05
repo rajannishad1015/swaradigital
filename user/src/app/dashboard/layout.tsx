@@ -88,6 +88,7 @@ export default async function DashboardLayout({
                    signOut={signOut} 
                    pendingTickets={pendingTickets || 0} 
                    hasActivity={hasActivity}
+                   planType={profile?.plan_type as any}
                />
                <div className="hidden sm:block ml-2">
                    <Breadcrumbs />
