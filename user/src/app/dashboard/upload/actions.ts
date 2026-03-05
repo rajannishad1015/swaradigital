@@ -105,10 +105,22 @@ export async function submitTrack(formData: any) {
 
         // 3. Check limit for Multi/Elite plans
         if (plan !== 'solo' && plan !== 'none') {
-            const limit = profile.max_artist_profiles || (plan === 'multi' ? 5 : 20);
+            const planLimit = profile.max_artist_profiles;
+            const defaultLimit = plan === 'multi' ? 5 : (plan === 'elite' ? 100 : 1);
+            const limit = typeof planLimit === 'number' ? planLimit : defaultLimit;
+            
             if (allUniquePrimary.size > limit) {
-                return { success: false, error: `Your ${plan} plan allows up to ${limit} unique primary artist profiles across the release. Currently using ${allUniquePrimary.size}.` };
+                return { success: false, error: `Your ${plan === 'elite' ? 'Label' : 'Multi Artist'} plan allows up to ${limit} unique primary artist profiles. Currently using ${allUniquePrimary.size}.` };
             }
+        }
+
+        // 4. Validate Platforms (Social Media restriction)
+        const selectedPlatforms = formData.selectedPlatforms || [];
+        const premiumPlatforms = ['facebook', 'instagram', 'tiktok'];
+        const hasPremium = selectedPlatforms.some((p: string) => premiumPlatforms.includes(p));
+        
+        if (hasPremium && plan !== 'elite') {
+            return { success: false, error: "Social media monetization (Facebook/Instagram/TikTok) is only available on the Label (Elite) plan." };
         }
 
         let albumId: string | null = null;

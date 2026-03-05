@@ -170,16 +170,17 @@ export async function checkSubmissionEligibility(albumId?: string) {
   if (!profile) throw new Error('Profile not found')
   if (profile.status !== 'active') throw new Error('Account is not active')
 
-  // If user has a subscription (Multi or Elite)
+  // Check for active subscription for Multi/Elite plans
   if (profile.plan_type === 'multi' || profile.plan_type === 'elite') {
-    const { data: sub } = await supabase
+    const { data: subscription } = await supabase
       .from('subscriptions')
-      .select('status, current_period_end')
+      .select('status')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .maybeSingle()
-    
-    if (sub && sub.current_period_end && new Date(sub.current_period_end) > new Date()) {
+
+    // Multi/Elite plans allow UNLIMITED concurrent releases as long as sub is active
+    if (subscription) {
       return { eligible: true, mustPay: false, plan: profile.plan_type }
     }
     return { eligible: false, mustPay: false, plan: profile.plan_type, message: "Your annual subscription is inactive or expired." }

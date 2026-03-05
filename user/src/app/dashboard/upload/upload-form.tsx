@@ -62,6 +62,9 @@ const ALL_PLATFORMS = [
     { id: 'deezer', name: 'Deezer', icon: '' },
     { id: 'jiosaavn', name: 'JioSaavn', icon: '' },
     { id: 'gaana', name: 'Gaana', icon: '' },
+    { id: 'facebook', name: 'Facebook', icon: '', premium: true },
+    { id: 'instagram', name: 'Instagram', icon: '', premium: true },
+    { id: 'tiktok', name: 'TikTok', icon: '', premium: true },
 ]
 
 const GENRE_OPTIONS = [
@@ -352,13 +355,17 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
               }
           } else {
               // Multi/Elite plan limits
-              const limit = userProfile?.max_artist_profiles || (plan === 'multi' ? 5 : 20);
+              const planLimit = userProfile?.max_artist_profiles;
+              const defaultLimit = plan === 'multi' ? 5 : (plan === 'elite' ? 100 : 1);
+              const limit = typeof planLimit === 'number' ? planLimit : defaultLimit;
+              
               const currentReleasePrimary = primaryArtists.map(a => a.name.toLowerCase().trim());
               const currentTracksPrimary = tracks.flatMap(t => t.primaryArtists.map(a => a.name.toLowerCase().trim()));
               const allUniquePrimary = new Set([...currentReleasePrimary, ...currentTracksPrimary]);
               
+              // Only block if we're adding a NEW unique artist that exceeds the limit
               if (allUniquePrimary.size >= limit && !allUniquePrimary.has(artistDialogName.toLowerCase().trim())) {
-                  toast.error(`Your plan (${plan}) allows up to ${limit} primary artist profiles.`);
+                  toast.error(`Your ${plan === 'elite' ? 'Label' : 'Multi Artist'} plan allows up to ${limit} primary artist profiles.`);
                   return;
               }
           }
@@ -511,6 +518,14 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
   }
   
   const togglePlatform = (id: string) => {
+      const platform = ALL_PLATFORMS.find(p => p.id === id);
+      const isElite = userProfile?.plan_type === 'elite';
+      
+      if (platform?.premium && !isElite) {
+          toast.error(`${platform.name} monetization is only available on the Label (Elite) plan.`);
+          return;
+      }
+
       if (selectedPlatforms.includes(id)) {
           setSelectedPlatforms(selectedPlatforms.filter(p => p !== id))
       } else {
@@ -519,10 +534,15 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
   }
   
   const toggleAllPlatforms = () => {
-      if (selectedPlatforms.length === ALL_PLATFORMS.length) {
+      const isElite = userProfile?.plan_type === 'elite';
+      const availablePlatforms = isElite 
+          ? ALL_PLATFORMS 
+          : ALL_PLATFORMS.filter(p => !p.premium);
+
+      if (selectedPlatforms.length === availablePlatforms.length) {
           setSelectedPlatforms([])
       } else {
-          setSelectedPlatforms(ALL_PLATFORMS.map(p => p.id))
+          setSelectedPlatforms(availablePlatforms.map(p => p.id))
       }
   }
 
@@ -1867,14 +1887,19 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                     selectedPlatforms.includes(platform.id) 
                                     ? 'bg-emerald-500/10 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
                                     : 'bg-white/5 border-white/10 hover:border-white/20'
-                                }`}
+                                } ${(platform.premium && userProfile?.plan_type !== 'elite') ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                              >
                                  <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${
                                      selectedPlatforms.includes(platform.id) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-zinc-600'
                                  }`}>
                                      {selectedPlatforms.includes(platform.id) && <Check size={14} />}
                                  </div>
-                                 <span className={`font-bold text-sm ${selectedPlatforms.includes(platform.id) ? 'text-emerald-400' : 'text-zinc-400'}`}>{platform.name}</span>
+                                 <div className="flex flex-col items-center">
+                                     <span className={`font-bold text-sm ${selectedPlatforms.includes(platform.id) ? 'text-emerald-400' : 'text-zinc-400'}`}>{platform.name}</span>
+                                     {platform.premium && userProfile?.plan_type !== 'elite' && (
+                                         <span className="text-[10px] text-amber-500 font-bold uppercase tracking-tighter mt-1">Elite Only</span>
+                                     )}
+                                 </div>
                              </div>
                          ))}
                      </div>
