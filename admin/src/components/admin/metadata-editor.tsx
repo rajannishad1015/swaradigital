@@ -56,6 +56,17 @@ export default function MetadataEditor({ track, initialEdit = false }: MetadataE
     const [isEditing, setIsEditing] = useState(initialEdit)
     const [loading, setLoading] = useState(false)
     const router = useRouter()
+
+    const generateISRC = () => {
+        const year = new Date().getFullYear().toString().slice(-2);
+        const random = Math.floor(10000 + Math.random() * 90000);
+        form.setValue('isrc', `IN-X01-${year}-${random}`);
+    }
+
+    const generateUPC = () => {
+        const random = Math.floor(1000000000 + Math.random() * 9000000000);
+        form.setValue('upc', `890${random}`);
+    }
     
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -323,7 +334,10 @@ export default function MetadataEditor({ track, initialEdit = false }: MetadataE
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormControl>
-                                                <Input {...field} className="bg-zinc-900 border-white/10 h-8 font-mono" placeholder="US..." />
+                                                <div className="flex gap-2">
+                                                    <Input {...field} className="bg-zinc-900 border-white/10 h-8 font-mono flex-1" placeholder="US..." />
+                                                    <Button type="button" size="sm" onClick={generateISRC} className="h-8 bg-zinc-800 hover:bg-zinc-700 text-[10px] font-bold uppercase tracking-wider">Generate</Button>
+                                                </div>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -372,7 +386,10 @@ export default function MetadataEditor({ track, initialEdit = false }: MetadataE
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormControl>
-                                                <Input {...field} className="bg-zinc-900 border-white/10 h-8 font-mono" placeholder="Enter UPC" />
+                                                <div className="flex gap-2">
+                                                    <Input {...field} className="bg-zinc-900 border-white/10 h-8 font-mono flex-1" placeholder="Enter UPC" />
+                                                    <Button type="button" size="sm" onClick={generateUPC} className="h-8 bg-zinc-800 hover:bg-zinc-700 text-[10px] font-bold uppercase tracking-wider">Generate</Button>
+                                                </div>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

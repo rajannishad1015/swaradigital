@@ -45,6 +45,8 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
   const [rejectionReason, setRejectionReason] = useState('')
   const [selectedRelease, setSelectedRelease] = useState<any>(null)
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
+  const [selectedReleaseIds, setSelectedReleaseIds] = useState<Set<string>>(new Set())
+  const [isBulkDecisionDialogOpen, setIsBulkDecisionDialogOpen] = useState(false)
   
   // Audio Player State
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null)
@@ -90,6 +92,43 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
       ...prev,
       [id]: !prev[id]
     }))
+  }
+
+  const toggleSelection = (id: string) => {
+    setSelectedReleaseIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedReleaseIds.size === groupedReleases.length) {
+      setSelectedReleaseIds(new Set())
+    } else {
+      setSelectedReleaseIds(new Set(groupedReleases.map(r => r.id)))
+    }
+  }
+
+  const handleBulkAction = (type: 'approved' | 'rejected') => {
+    setDecisionType(type)
+    setIsBulkDecisionDialogOpen(true)
+  }
+
+  const executeBulkStatusUpdate = async () => {
+    const selectedReleases = groupedReleases.filter(r => selectedReleaseIds.has(r.id))
+    const allTrackIds = selectedReleases.flatMap(r => r.tracks.map((t: any) => t.id))
+    
+    try {
+        await updateTrackStatus(allTrackIds, decisionType, rejectionReason)
+        setIsBulkDecisionDialogOpen(false)
+        setSelectedReleaseIds(new Set())
+        setRejectionReason('')
+        toast.success(`Bulk update successful (${selectedReleaseIds.size} releases)`)
+    } catch (err: any) {
+        toast.error(err.message || `Failed to perform bulk update`)
+    }
   }
 
   const handlePlayPause = (track: any) => {
@@ -259,6 +298,16 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
         <Table>
           <TableHeader>
             <TableRow className="border-white/5 bg-white/[0.02] hover:bg-white/[0.02]">
+              <TableHead className="w-[50px] px-4">
+                <div className="flex items-center">
+                    <input 
+                        type="checkbox" 
+                        className="rounded border-white/10 bg-zinc-900 w-4 h-4 cursor-pointer"
+                        checked={selectedReleaseIds.size === groupedReleases.length && groupedReleases.length > 0}
+                        onChange={toggleSelectAll}
+                    />
+                </div>
+              </TableHead>
               <TableHead className="w-[300px] text-[10px] uppercase font-black tracking-widest text-zinc-500">Release Info</TableHead>
               <TableHead className="hidden lg:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Details</TableHead>
               <TableHead className="hidden lg:table-cell text-[10px] uppercase font-black tracking-widest text-zinc-500">Identifiers</TableHead>
@@ -270,7 +319,16 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
           <TableBody>
             {groupedReleases.map((release) => (
               <React.Fragment key={release.id}>
-                  <TableRow className={`border-white/5 hover:bg-white/[0.02] transition-colors group ${expandedRows[release.id] ? 'bg-white/[0.04]' : ''}`}>
+                  <TableRow className={`border-white/5 hover:bg-white/[0.02] transition-colors group ${expandedRows[release.id] ? 'bg-white/[0.04]' : ''} ${selectedReleaseIds.has(release.id) ? 'bg-indigo-500/5' : ''}`}>
+                    <TableCell className="px-4">
+                        <input 
+                            type="checkbox" 
+                            className="rounded border-white/10 bg-zinc-900 w-4 h-4 cursor-pointer"
+                            checked={selectedReleaseIds.has(release.id)}
+                            onChange={() => toggleSelection(release.id)}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="relative group/cover w-10 h-10 shrink-0">
@@ -641,6 +699,81 @@ export default function ContentList({ initialTracks, status = 'pending' }: { ini
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isBulkDecisionDialogOpen} onOpenChange={setIsBulkDecisionDialogOpen}>
+        <DialogContent className="bg-zinc-950 border-white/10 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <AlertTriangle className={`w-5 h-5 ${decisionType === 'approved' ? 'text-emerald-500' : 'text-red-500'}`} />
+              Bulk {decisionType === 'approved' ? 'Approve' : 'Reject'} ({selectedReleaseIds.size} Releases)
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              This action will apply to all {selectedReleaseIds.size} selected releases and their associated tracks.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-400">
+                Admin Note (Visible to Artists)
+              </label>
+              <Textarea 
+                placeholder={decisionType === 'approved' 
+                  ? "Optional note for the artists..." 
+                  : "Required explanation for the rejection..."}
+                className={`min-h-[120px] bg-zinc-900 border-white/10 ${decisionType === 'approved' ? 'focus:border-emerald-500/50' : 'focus:border-red-500/50'}`}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" className="text-zinc-400 hover:text-white" onClick={() => setIsBulkDecisionDialogOpen(false)}>Cancel</Button>
+            <Button 
+              className={`${decisionType === 'approved' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'} text-white font-bold px-6`}
+              onClick={executeBulkStatusUpdate}
+            >
+              Confirm Bulk {decisionType === 'approved' ? 'Approval' : 'Rejection'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedReleaseIds.size > 0 && (
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-zinc-900 border border-indigo-500/30 shadow-[0_0_30px_rgba(99,102,241,0.2)] px-6 py-4 rounded-2xl flex items-center gap-6 z-[100] animate-in fade-in slide-in-from-bottom-4 backdrop-blur-xl">
+              <div className="flex items-center gap-3 pr-6 border-r border-white/10">
+                  <div className="h-8 w-8 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      {selectedReleaseIds.size}
+                  </div>
+                  <span className="text-white font-bold text-sm tracking-tight text-nowrap">Selected Releases</span>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                  <Button 
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl px-6 h-10 transition-all active:scale-95"
+                    onClick={() => handleBulkAction('approved')}
+                  >
+                      Approve All
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 font-bold rounded-xl px-6 h-10 transition-all active:scale-95"
+                    onClick={() => handleBulkAction('rejected')}
+                  >
+                      Reject All
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="text-zinc-500 hover:text-white"
+                    onClick={() => setSelectedReleaseIds(new Set())}
+                  >
+                      Clear
+                  </Button>
+              </div>
+          </div>
+      )}
     </div>
   )
 }

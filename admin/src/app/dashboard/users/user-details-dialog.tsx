@@ -16,7 +16,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { adjustUserBalance } from "./funds-actions"
-import { getUserTracks, getTransactionHistory, updateUserStatus, updateAdminNotes, impersonateUser, deleteUser } from "./actions"
+import { getUserTracks, getTransactionHistory, updateUserStatus, updateAdminNotes, impersonateUser, deleteUser, updateUserPlan } from "./actions"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -525,6 +525,9 @@ export default function UserDetailsDialog({ user }: { user: any }) {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Plan Management */}
+                            <PlanManager user={user} />
                         </div>
 
                         <div className="space-y-3">
@@ -747,6 +750,69 @@ function AdminNotesManager({ userId, initialNotes }: { userId: string, initialNo
                 {isSaving ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
                 Save Internal Notes
             </Button>
+        </div>
+    )
+}
+
+function PlanManager({ user }: { user: any }) {
+    const [isLoading, setIsLoading] = useState(false)
+    const [currentPlan, setCurrentPlan] = useState(
+        user.is_elite_user ? 'elite' : (user.is_multi_artist ? 'multi' : 'solo')
+    )
+
+    const handlePlanChange = async (plan: 'solo' | 'multi' | 'elite') => {
+        if (!confirm(`Are you sure you want to change this user's plan to ${plan.toUpperCase()}? This will update their artist limits and distribution features.`)) return
+        
+        setIsLoading(true)
+        try {
+            await updateUserPlan(user.id, plan)
+            setCurrentPlan(plan)
+            toast.success(`User plan updated to ${plan.toUpperCase()}`)
+        } catch (err: any) {
+            toast.error(err.message)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    return (
+        <div className="space-y-4 pt-4 border-t border-white/5">
+            <div className="space-y-1.5">
+                <h3 className="font-black text-base flex items-center gap-2 text-indigo-400 uppercase tracking-tight">
+                    <ShieldAlert className="h-3.5 w-3.5" /> Plan Management
+                </h3>
+                <p className="text-[10px] text-zinc-500 font-medium">Manually override user subscription tier.</p>
+            </div>
+
+            <div className="bg-white/5 p-3 rounded-xl border border-white/10 grid grid-cols-3 gap-2">
+                <Button 
+                    variant={currentPlan === 'solo' ? 'default' : 'outline'} 
+                    size="sm" 
+                    disabled={isLoading}
+                    className={`h-9 text-[10px] font-black uppercase tracking-wider transition-all ${currentPlan === 'solo' ? 'bg-indigo-500 hover:bg-indigo-600 shadow-lg shadow-indigo-500/20' : 'border-white/10 hover:bg-white/5'}`}
+                    onClick={() => handlePlanChange('solo')}
+                >
+                    Solo
+                </Button>
+                <Button 
+                    variant={currentPlan === 'multi' ? 'default' : 'outline'} 
+                    size="sm" 
+                    disabled={isLoading}
+                    className={`h-9 text-[10px] font-black uppercase tracking-wider transition-all ${currentPlan === 'multi' ? 'bg-indigo-500 hover:bg-indigo-600 shadow-lg shadow-indigo-500/20' : 'border-white/10 hover:bg-white/5'}`}
+                    onClick={() => handlePlanChange('multi')}
+                >
+                    Multi
+                </Button>
+                <Button 
+                    variant={currentPlan === 'elite' ? 'default' : 'outline'} 
+                    size="sm" 
+                    disabled={isLoading}
+                    className={`h-9 text-[10px] font-black uppercase tracking-wider transition-all ${currentPlan === 'elite' ? 'bg-indigo-500 hover:bg-indigo-600 shadow-lg shadow-indigo-500/20' : 'border-white/10 hover:bg-white/5'}`}
+                    onClick={() => handlePlanChange('elite')}
+                >
+                    Elite
+                </Button>
+            </div>
         </div>
     )
 }

@@ -279,3 +279,49 @@ export async function updateUserRole(userId: string, newRole: string) {
 
   return { success: true }
 }
+
+export async function updateUserPlan(userId: string, planType: 'solo' | 'multi' | 'elite') {
+  const supabase = await createClient()
+
+  // 1. Verify Admin Permissions
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { data: adminProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  
+  if (adminProfile?.role !== 'admin') {
+    throw new Error('Unauthorized: Admin access required')
+  }
+
+  // 2. Prepare update data
+  const updateData = {
+    subscription_plan: planType === 'solo' ? 'Free/Solo' : planType === 'multi' ? 'Multi-Artist' : 'Elite',
+    is_multi_artist: planType === 'multi' || planType === 'elite',
+    is_elite_user: planType === 'elite',
+    max_artist_profiles: planType === 'solo' ? 1 : planType === 'multi' ? 5 : 100,
+    updated_at: new Date().toISOString()
+  }
+
+  // 3. Update profiles table
+  const { error } = await supabase
+    .from('profiles')
+    .update(updateData)
+    .eq('id', userId)
+
+  if (error) throw new Error(error.message)
+
+  // 4. Log the action
+  await supabase.from('admin_activity_logs').insert({
+    admin_id: user.id,
+    action: 'UPDATED_USER_PLAN',
+    target_type: 'USER',
+    target_id: userId,
+    details: { new_plan: planType, ...updateData }
+  })
+
+  return { success: true }
+}
