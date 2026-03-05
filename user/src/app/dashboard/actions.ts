@@ -185,8 +185,28 @@ export async function checkSubmissionEligibility(albumId?: string) {
     return { eligible: false, mustPay: false, plan: profile.plan_type, message: "Your annual subscription is inactive or expired." }
   }
 
-  // For Solo plan, check if the specific album has been paid for
+  // For Solo plan, check if they have a pending release and if they have paid for the current one
   if (profile.plan_type === 'solo') {
+    // 1. Check for any pending releases to prevent concurrent submissions
+    const { data: pendingTrack } = await supabase
+      .from('tracks')
+      .select('id, album_id')
+      .eq('artist_id', user.id)
+      .eq('status', 'pending')
+      .maybeSingle()
+
+    if (pendingTrack) {
+        // Only allow if we are submitting/editing the SAME album that is already pending
+        if (!albumId || albumId !== pendingTrack.album_id) {
+            return { 
+                eligible: false, 
+                mustPay: false, 
+                plan: 'solo', 
+                message: "You already have a pending release. Please wait for it to be approved before uploading another song." 
+            }
+        }
+    }
+
     if (!albumId) {
       // If we don't have an albumId yet (initial submission), they MUST pay
       return { eligible: true, mustPay: true, amount: 99, plan: 'solo' }
@@ -203,6 +223,8 @@ export async function checkSubmissionEligibility(albumId?: string) {
     if (payment) {
       return { eligible: true, mustPay: false, plan: 'solo' }
     }
+    
+    // If we're here, it's an existing release (draft or rejected) that hasn't been paid for yet
     return { eligible: true, mustPay: true, amount: 99, plan: 'solo' }
   }
 
