@@ -8,7 +8,7 @@ const tiers = [
   {
     id: "single",
     tag: "Basic",
-    name: "Solo Rhythm",
+    name: "Single Artist",
     description: "Ideal for individual artists starting their journey.",
     price: "99",
     period: " /release",
@@ -29,7 +29,7 @@ const tiers = [
   {
     id: "pro",
     tag: "Most Popular",
-    name: "Infinite Flow",
+    name: "Multi Artist",
     description: "Unlimited releases for up to 5 artist profiles.",
     price: "1499",
     period: " /annually",
@@ -50,7 +50,7 @@ const tiers = [
   {
     id: "label",
     tag: "Enterprise",
-    name: "Elite Label",
+    name: "Label Plan",
     description: "Scale your label with advanced tools and dedicated support.",
     price: "Custom",
     period: "",
