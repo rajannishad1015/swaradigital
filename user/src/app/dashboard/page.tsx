@@ -54,7 +54,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     }),
     supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
     supabase.from('tickets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
-    trackQuery.order('created_at', { ascending: false })
+    // Performance: Limit to 50 most recent tracks to prevent loading thousands of rows
+    trackQuery.order('created_at', { ascending: false }).limit(50)
   ])
 
   const dashboardData = dashboardRes.data
@@ -68,11 +69,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   // 3. Process Data for UI
   const statusCountsRaw = dashboardData?.statusCounts || []
+  // Performance: Build map in single pass instead of multiple find() calls
+  const statusMap = statusCountsRaw.reduce((acc: Record<string, number>, s: any) => {
+    acc[s.status] = s.count || 0
+    return acc
+  }, {} as Record<string, number>)
+
   const statusCounts = [
-    { status: 'approved', count: statusCountsRaw.find((s: any) => s.status === 'approved')?.count || 0 },
-    { status: 'rejected', count: statusCountsRaw.find((s: any) => s.status === 'rejected')?.count || 0 },
-    { status: 'pending', count: statusCountsRaw.find((s: any) => s.status === 'pending')?.count || 0 },
-    { status: 'draft', count: statusCountsRaw.find((s: any) => s.status === 'draft')?.count || 0 },
+    { status: 'approved', count: statusMap['approved'] || 0 },
+    { status: 'rejected', count: statusMap['rejected'] || 0 },
+    { status: 'pending', count: statusMap['pending'] || 0 },
+    { status: 'draft', count: statusMap['draft'] || 0 },
   ]
 
   const totalReleases = statusCounts.reduce((acc: number, curr: any) => acc + curr.count, 0)

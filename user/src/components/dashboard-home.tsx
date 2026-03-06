@@ -32,16 +32,22 @@ export default function DashboardHome({
     bankDetails: any,
     profile: any
 }) {
-    
+
     // Config for Charts (Cinematic Neon Palette)
-    const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#a855f7']; 
-    
+    const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#a855f7'];
+
+    // Performance: Build status map once instead of multiple find() calls
+    const statusMap = stats.statusCounts?.reduce((acc: Record<string, number>, s: any) => {
+        acc[s.status] = s.count || 0
+        return acc
+    }, {} as Record<string, number>) || {}
+
     // Status Data for Pie Chart (Advanced Cinematic Feel)
     const statusData = [
-        { name: 'Approved', value: stats.statusCounts?.find(s => s.status === 'approved')?.count || 0, color: '#10b981' }, // Emerald Glow
-        { name: 'Rejected', value: stats.statusCounts?.find(s => s.status === 'rejected')?.count || 0, color: '#ef4444' }, // Rose Neon
-        { name: 'In Review', value: stats.statusCounts?.find(s => s.status === 'pending')?.count || 0, color: '#f59e0b' }, // Amber Neon
-        { name: 'Draft', value: stats.statusCounts?.find(s => s.status === 'draft')?.count || 0, color: '#6366f1' },    // Indigo Glow
+        { name: 'Approved', value: statusMap['approved'] || 0, color: '#10b981' }, // Emerald Glow
+        { name: 'Rejected', value: statusMap['rejected'] || 0, color: '#ef4444' }, // Rose Neon
+        { name: 'In Review', value: statusMap['pending'] || 0, color: '#f59e0b' }, // Amber Neon
+        { name: 'Draft', value: statusMap['draft'] || 0, color: '#6366f1' },    // Indigo Glow
     ].filter(item => item.value > 0);
  
     // If empty, show a placeholder
