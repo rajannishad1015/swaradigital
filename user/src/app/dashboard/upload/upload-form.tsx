@@ -1210,27 +1210,42 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                          <div className="space-y-3">
                             <Label className="text-xs uppercase font-black text-zinc-500 tracking-widest ml-1">Release Type <span className="text-red-500">*</span></Label>
                             <div className="flex gap-4 flex-wrap">
-                                {releaseTypes.map((type) => (
-                                    <button
-                                        type="button"
-                                        key={type.id}
-                                        onClick={(e) => { 
-                                            e.preventDefault(); 
-                                            if (type.id === 'single' && tracks.length > 1) {
-                                                toast.error("Cannot switch to Single. Remove extra tracks first.")
-                                                return
-                                            }
-                                            setReleaseType(type.id); 
-                                        }}
-                                        className={`px-4 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all border ${
-                                            releaseType === type.id 
-                                            ? 'bg-indigo-500 text-white border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
-                                            : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/30 hover:bg-white/10'
-                                        }`}
-                                    >
-                                        {type.label}
-                                    </button>
-                                ))}
+                                {releaseTypes.map((type) => {
+                                    const isBasicPlan = userProfile?.plan_type === 'solo' || userProfile?.plan_type === 'none';
+                                    const isPremiumType = type.id !== 'single';
+                                    const isDisabled = isBasicPlan && isPremiumType;
+
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={type.id}
+                                            onClick={(e) => { 
+                                                e.preventDefault(); 
+                                                
+                                                if (isDisabled) {
+                                                    toast.error(`${type.label} releases require a premium plan.`);
+                                                    return;
+                                                }
+
+                                                if (type.id === 'single' && tracks.length > 1) {
+                                                    toast.error("Cannot switch to Single. Remove extra tracks first.")
+                                                    return
+                                                }
+                                                setReleaseType(type.id); 
+                                            }}
+                                            className={`px-4 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all border ${
+                                                isDisabled 
+                                                ? 'bg-zinc-900/50 text-zinc-600 border-white/5 opacity-60 cursor-not-allowed'
+                                                : releaseType === type.id 
+                                                    ? 'bg-indigo-500 text-white border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
+                                                    : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/30 hover:bg-white/10'
+                                            }`}
+                                        >
+                                            {type.label}
+                                            {isDisabled && <span className="ml-1 text-[10px] text-indigo-400/70">(Pro)</span>}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                         
