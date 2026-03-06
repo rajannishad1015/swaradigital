@@ -33,7 +33,7 @@ export default async function SupportPage({
   const status = awaitedParams?.status as string
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, plan_type')
     .eq('id', user.id)
     .single()
 
@@ -125,7 +125,7 @@ export default async function SupportPage({
             <h1 className="text-3xl font-black text-white tracking-tight">Support Center</h1>
             <p className="text-zinc-400 mt-1">Get help and manage your support requests.</p>
           </div>
-          <CreateTicketDialog />
+          <CreateTicketDialog planType={profile?.plan_type || 'none'} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -237,7 +237,7 @@ export default async function SupportPage({
                 <p className="text-zinc-500 text-sm mb-8 max-w-sm mx-auto mt-2">
                     {query || status ? "Adjust your filters to see more results." : "You haven't created any support tickets yet."}
                 </p>
-                {(!query && (!status || status === 'all')) && <CreateTicketDialog />}
+                {(!query && (!status || status === 'all')) && <CreateTicketDialog planType={profile?.plan_type || 'none'} />}
             </div>
             )}
         </div>

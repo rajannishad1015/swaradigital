@@ -21,6 +21,20 @@ export async function createTicket(formData: FormData) {
     throw new Error('All fields are required')
   }
 
+  // Enforce Priority Lock
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan_type')
+    .eq('id', user.id)
+    .single()
+    
+  const planType = profile?.plan_type || 'none'
+  const isBasicPlan = planType === 'none' || planType === 'solo'
+
+  if (isBasicPlan && (priority === 'medium' || priority === 'high')) {
+      throw new Error('Medium and High priority support require a premium plan.')
+  }
+
   // 1. Create Ticket
   const { data: ticket, error: ticketError } = await supabase
     .from('tickets')

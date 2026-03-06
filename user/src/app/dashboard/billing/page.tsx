@@ -89,7 +89,7 @@ function BillingContent() {
     const planType = profile?.plan_type || 'none'
 
     return (
-        <div className="min-h-screen pb-20">
+        <div className="min-h-screen pb-20 bg-[#0A0A10]">
             <Script src="https://checkout.razorpay.com/v1/checkout.js" />
 
             {/* Lock warning */}
@@ -103,16 +103,16 @@ function BillingContent() {
             )}
 
             {/* Hero */}
-            <div className="text-center mb-16 max-w-xl mx-auto">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/5 mb-6">
-                    <Sparkles className="w-3 h-3 text-indigo-400" />
-                    <span className="text-[11px] font-semibold text-indigo-400 uppercase tracking-widest">100% Royalties · 150+ Stores</span>
+            <div className="text-center mb-20 max-w-xl mx-auto pt-12">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#2A2A40] bg-[#0A0A10] mb-8 shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 text-[#93C5FD]" />
+                    <span className="text-[11px] font-bold text-[#93C5FD] uppercase tracking-[0.15em]">100% Royalties · 150+ Stores</span>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white leading-[1.05] mb-4">
+                <h1 className="text-5xl md:text-[64px] font-black tracking-tighter text-white leading-[1.05] mb-6">
                     The right plan for<br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">every artist.</span>
+                    <span className="text-[#B8A1FE]">every artist.</span>
                 </h1>
-                <p className="text-zinc-500 text-base leading-relaxed">
+                <p className="text-[#A0A0B0] text-[17px] font-medium leading-relaxed">
                     No hidden fees. No royalty cuts. Just your music, everywhere.
                 </p>
             </div>

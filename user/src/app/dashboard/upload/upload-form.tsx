@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { UploadCloud, Loader2, Music, Image as ImageIcon, X, Calendar, Disc, Check, ChevronRight, ChevronLeft, Save, Plus, Trash2, AlertTriangle, ExternalLink, ChevronsUpDown, User } from 'lucide-react'
+import { UploadCloud, Loader2, Music, Image as ImageIcon, X, Calendar, Disc, Check, ChevronRight, ChevronLeft, Save, Plus, Trash2, AlertTriangle, ExternalLink, ChevronsUpDown, User, Sparkles } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -2092,11 +2092,18 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         </div>
                         <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
                             <p className="text-sm font-semibold text-white">What you can do:</p>
-                            <ol className="text-sm text-zinc-400 space-y-1.5 list-decimal list-inside">
-                                <li>Save your current release as a <span className="text-white font-medium">Draft</span></li>
-                                <li>Go to <span className="text-indigo-400 font-medium">Tools → Cover Art Studio</span> to resize</li>
-                                <li>Come back and upload the fixed artwork</li>
-                            </ol>
+                            {userProfile?.plan_type === 'multi' || userProfile?.plan_type === 'elite' ? (
+                                <ol className="text-sm text-zinc-400 space-y-1.5 list-decimal list-inside">
+                                    <li>Save your current release as a <span className="text-white font-medium">Draft</span></li>
+                                    <li>Go to <span className="text-indigo-400 font-medium">Tools → Cover Art Studio</span> to resize</li>
+                                    <li>Come back and upload the fixed artwork</li>
+                                </ol>
+                            ) : (
+                                <ol className="text-sm text-zinc-400 space-y-1.5 list-decimal list-inside">
+                                    <li>Resize your artwork manually using a tool like Canva or Photoshop</li>
+                                    <li><span className="text-amber-400 font-medium">Upgrade to a Pro Plan</span> to use our built-in Cover Art Studio and fix this instantly</li>
+                                </ol>
+                            )}
                         </div>
                     </div>
                     <DialogFooter className="flex flex-col sm:flex-row gap-2">
@@ -2107,14 +2114,25 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         >
                             I&apos;ll fix it later
                         </Button>
-                        <Button 
-                            onClick={handleSaveDraftAndRedirect}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white gap-2"
-                        >
-                            <Save className="w-4 h-4" />
-                            Save Draft & Go to Tools
-                            <ExternalLink className="w-4 h-4" />
-                        </Button>
+                        {userProfile?.plan_type === 'multi' || userProfile?.plan_type === 'elite' ? (
+                            <Button 
+                                onClick={handleSaveDraftAndRedirect}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white gap-2"
+                            >
+                                <Save className="w-4 h-4" />
+                                Save Draft & Go to Tools
+                                <ExternalLink className="w-4 h-4" />
+                            </Button>
+                        ) : (
+                            <Button 
+                                onClick={() => router.push('/dashboard/billing')}
+                                className="bg-amber-600 hover:bg-amber-500 text-white gap-2"
+                            >
+                                <Sparkles className="w-4 h-4" />
+                                Upgrade to Pro
+                                <ExternalLink className="w-4 h-4" />
+                            </Button>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

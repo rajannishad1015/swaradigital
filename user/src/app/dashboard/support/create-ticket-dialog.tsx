@@ -23,11 +23,16 @@ import {
 } from "@/components/ui/select"
 import { createTicket } from './actions'
 import { toast } from "sonner"
-import { Plus, Loader2, Ticket } from 'lucide-react'
+import { Loader2, Ticket } from 'lucide-react'
 
-export default function CreateTicketDialog() {
+// Specific premium logo/icon based on user's reference image
+import { Sparkles } from "lucide-react"
+
+export default function CreateTicketDialog({ planType = 'none' }: { planType?: string }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  const isBasicPlan = planType === 'none' || planType === 'solo'
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -49,93 +54,106 @@ export default function CreateTicketDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
-            <Plus size={16} /> New Ticket
+        <Button className="bg-[#151525] border border-[#2A2A40] text-[#8B5CF6] hover:bg-[#1A1A2F] hover:-translate-y-0.5 transition-all shadow-md gap-2 rounded-xl">
+            <Ticket size={16} /> Open Ticket
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-zinc-950 border-white/10 text-white p-0 overflow-hidden gap-0 shadow-2xl">
-        <div className="bg-zinc-900 border-b border-white/5 p-6 relative overflow-hidden group">
-             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"/>
-            <DialogTitle className="text-lg font-black text-white flex items-center gap-2 relative z-10 tracking-tight">
-                <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-                    <Ticket size={16} />
+      {/* Dark Navy Background - #0A0A10 */}
+      <DialogContent className="sm:max-w-[550px] bg-[#0A0A10] border-[#2A2A40] text-white p-0 overflow-hidden gap-0 shadow-2xl rounded-2xl">
+        <div className="bg-[#0A0A10] border-b border-[#2A2A40] p-6 relative overflow-hidden group">
+            {/* Glowing top line from previous modal reference */}
+             <div className="absolute top-0 inset-x-0 h-[3px] bg-[#8B5CF6] shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
+             
+            <DialogTitle className="text-[22px] font-black text-white flex items-center gap-3 relative z-10 tracking-tight">
+                <div className="h-9 w-9 rounded-xl bg-[#151525] flex items-center justify-center text-[#8B5CF6] border border-[#2A2A40]">
+                    <Sparkles size={18} strokeWidth={2.5}/>
                 </div>
                 Open Support Ticket
             </DialogTitle>
-            <DialogDescription className="text-zinc-400 mt-2 relative z-10 text-sm">
+            <DialogDescription className="text-[#A0A0B0] mt-2 relative z-10 text-[15px]">
                 Submit your query and our team will get back to you.
             </DialogDescription>
         </div>
         
-        <form onSubmit={onSubmit} className="space-y-5 p-6 bg-zinc-950">
+        <form onSubmit={onSubmit} className="space-y-5 p-6 bg-[#0A0A10]">
             <div className="space-y-2">
-                <Label htmlFor="subject" className="text-[11px] font-bold uppercase text-zinc-500 tracking-wider">Subject</Label>
+                <Label htmlFor="subject" className="text-[11px] font-bold uppercase text-[#6C6C85] tracking-widest">Subject</Label>
                 <Input 
                     id="subject" 
                     name="subject" 
                     required 
                     placeholder="Brief summary of the issue" 
-                    className="bg-zinc-900/50 border-white/10 text-white placeholder:text-zinc-600 focus:border-indigo-500/50 focus:bg-zinc-900 transition-all font-medium" 
+                    className="bg-[#12121A] border-[#2A2A40] text-white placeholder:text-[#6C6C85] focus:border-[#8B5CF6] focus:bg-[#151525] transition-all font-medium rounded-xl h-11" 
                 />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-2">
-                    <Label htmlFor="category" className="text-[11px] font-bold uppercase text-zinc-500 tracking-wider">Category</Label>
+                    <Label htmlFor="category" className="text-[11px] font-bold uppercase text-[#6C6C85] tracking-widest">Category</Label>
                     <Select name="category" required defaultValue="general">
-                        <SelectTrigger id="category" className="bg-zinc-900/50 border-white/10 text-white focus:ring-offset-0 focus:border-indigo-500/50">
+                        <SelectTrigger id="category" className="bg-[#12121A] border-[#2A2A40] text-white focus:ring-offset-0 focus:border-[#8B5CF6] rounded-xl h-11">
                             <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                            <SelectItem value="general">General Inquiry</SelectItem>
-                            <SelectItem value="technical">Technical Issue</SelectItem>
-                            <SelectItem value="finance">Billing & Finance</SelectItem>
-                            <SelectItem value="copyright">Copyright & Legal</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                        <SelectContent className="bg-[#12121A] border-[#2A2A40] text-white rounded-xl">
+                            <SelectItem value="general" className="focus:bg-[#1A1A2F]">General Inquiry</SelectItem>
+                            <SelectItem value="technical" className="focus:bg-[#1A1A2F]">Technical Issue</SelectItem>
+                            <SelectItem value="finance" className="focus:bg-[#1A1A2F]">Billing & Finance</SelectItem>
+                            <SelectItem value="copyright" className="focus:bg-[#1A1A2F]">Copyright & Legal</SelectItem>
+                            <SelectItem value="other" className="focus:bg-[#1A1A2F]">Other</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="priority" className="text-[11px] font-bold uppercase text-zinc-500 tracking-wider">Priority</Label>
-                     <Select name="priority" required defaultValue="medium">
-                        <SelectTrigger id="priority" className="bg-zinc-900/50 border-white/10 text-white focus:ring-offset-0 focus:border-indigo-500/50">
+                    <Label htmlFor="priority" className="text-[11px] font-bold uppercase text-[#6C6C85] tracking-widest">Priority</Label>
+                     <Select name="priority" required defaultValue="low">
+                        <SelectTrigger id="priority" className="bg-[#12121A] border-[#2A2A40] text-white focus:ring-offset-0 focus:border-[#8B5CF6] rounded-xl h-11">
                             <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                            <SelectItem value="low">Low Priority</SelectItem>
-                            <SelectItem value="medium">Medium Priority</SelectItem>
-                            <SelectItem value="high">High Priority</SelectItem>
+                        <SelectContent className="bg-[#12121A] border-[#2A2A40] text-white rounded-xl">
+                            <SelectItem value="low" className="focus:bg-[#1A1A2F]">Low Priority</SelectItem>
+                            <SelectItem value="medium" disabled={isBasicPlan} className="focus:bg-[#1A1A2F] data-[disabled]:opacity-50">
+                                Medium Priority {isBasicPlan && <span className="ml-1 text-[10px] text-[#A855F7] uppercase font-bold tracking-wider">(Pro)</span>}
+                            </SelectItem>
+                            <SelectItem value="high" disabled={isBasicPlan} className="focus:bg-[#1A1A2F] data-[disabled]:opacity-50">
+                                High Priority {isBasicPlan && <span className="ml-1 text-[10px] text-[#A855F7] uppercase font-bold tracking-wider">(Pro)</span>}
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="message" className="text-[11px] font-bold uppercase text-zinc-500 tracking-wider">Message</Label>
+                <Label htmlFor="message" className="text-[11px] font-bold uppercase text-[#6C6C85] tracking-widest">Message</Label>
                 <Textarea 
                     id="message" 
                     name="message" 
                     required 
                     placeholder="Provide detailed information..." 
-                    className="bg-zinc-900/50 border-white/10 min-h-[120px] text-white placeholder:text-zinc-600 focus:border-indigo-500/50 focus:bg-zinc-900 resize-none transition-all font-medium leading-relaxed" 
+                    className="bg-[#12121A] border-[#2A2A40] min-h-[140px] text-white placeholder:text-[#6C6C85] focus:border-[#8B5CF6] focus:bg-[#151525] resize-none transition-all font-medium leading-relaxed rounded-xl p-4" 
                 />
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="attachment" className="text-[11px] font-bold uppercase text-zinc-500 tracking-wider">Attachment {<span className="text-zinc-600 normal-case tracking-normal font-normal">(Optional)</span>}</Label>
+                <Label htmlFor="attachment" className="text-[11px] font-bold uppercase text-[#6C6C85] tracking-widest flex items-center justify-between">
+                    Attachment <span className="text-[#6C6C85] normal-case tracking-normal font-normal text-[12px]">(Optional)</span>
+                </Label>
                 <div className="relative group">
                     <Input 
                         id="attachment" 
                         name="attachment" 
                         type="file" 
-                        className="bg-zinc-900/50 border-white/10 text-xs text-zinc-400 file:bg-zinc-800 file:text-zinc-300 file:border-0 file:rounded-md file:mr-4 file:px-3 file:py-1 file:text-[10px] file:uppercase file:font-bold file:tracking-wider cursor-pointer hover:file:bg-zinc-700 transition-colors pr-2" 
+                        className="bg-[#12121A] border-[#2A2A40] text-[13px] text-[#A0A0B0] file:bg-[#151525] file:text-[#D1D1E0] file:border file:border-[#2A2A40] file:rounded-lg file:mr-4 file:px-4 file:py-1.5 file:text-[11px] file:uppercase file:font-bold file:tracking-wider cursor-pointer hover:file:bg-[#1A1A2F] transition-colors pr-2 h-[46px] rounded-xl flex items-center" 
                     />
                 </div>
             </div>
 
-            <DialogFooter className="pt-2 border-t border-white/5 mt-4">
-                <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 hover:text-white hover:bg-white/5">Cancel</Button>
-                <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] transition-all">
+            <DialogFooter className="pt-4 mt-6">
+                <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-[#A0A0B0] hover:text-white hover:bg-[#151525] rounded-xl h-11 px-6">Cancel</Button>
+                <Button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="h-11 px-8 rounded-xl font-bold transition-all duration-300 text-white shadow-xl hover:-translate-y-0.5 bg-[#7C3AED] hover:bg-[#6D28D9]"
+                >
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Ticket className="mr-2 h-4 w-4" />}
                     Submit Ticket
                 </Button>
