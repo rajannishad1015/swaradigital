@@ -52,7 +52,8 @@ export default async function FinancePage({ searchParams }: {
   // Setup queries
   let revenueQuery = supabase.from('revenue_logs').select('*, tracks(title)')
   let transQuery = supabase.from('transactions').select('*', { count: 'exact' }).order('created_at', { ascending: false })
-  let payoutQuery = supabase.from('payout_requests').select('*').order('created_at', { ascending: false })
+  // Performance: Limit payout requests to recent 50
+  let payoutQuery = supabase.from('payout_requests').select('*').order('created_at', { ascending: false }).limit(50)
 
   // 1. Time Range Filter
   if (range !== 'all') {
