@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Using system fonts as fallback for build environment compatibility
+// Google Fonts (Geist) will be loaded via CSS if available
+const fontVariables = "font-sans";
+const monoFontVariables = "font-mono";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.swaradigital.com"),
@@ -87,7 +81,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${fontVariables} ${monoFontVariables} antialiased`}
       >
         {children}
         <Toaster richColors closeButton />

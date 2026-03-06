@@ -10,8 +10,6 @@ export async function createRazorpayOrder(amount: number, albumId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  console.log(`Creating Razorpay order for album: ${albumId}, amount: ${amount}`)
-  
   if (!amount || isNaN(amount)) {
     console.error('Invalid amount provided to createRazorpayOrder:', amount)
     throw new Error('Invalid amount')

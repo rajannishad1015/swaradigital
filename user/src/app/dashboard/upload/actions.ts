@@ -65,11 +65,22 @@ export async function submitTrack(formData: any) {
             .select('id, artist_name, plan_type, max_artist_profiles')
             .eq('id', user.id)
             .single()
-        
+
         if (!profile) return { success: false, error: 'Profile not found' }
 
-        // Plan-based validation for primary artists
+        // Plan-based validation for release type
         const plan = profile.plan_type || 'none';
+        if (plan === 'solo' || plan === 'single') {
+            // Solo/Single plan users can only submit Singles
+            if (formData.releaseType !== 'single') {
+                return {
+                    success: false,
+                    error: 'Your plan only allows Single releases. Please upgrade to submit EPs, Albums, or Compilations.'
+                }
+            }
+        }
+
+        // Plan-based validation for primary artists
         const registeredArtist = (profile.artist_name || '').toLowerCase().trim();
         
         const validateArtists = (artists: any[], context: string) => {
