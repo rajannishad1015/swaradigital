@@ -35,6 +35,7 @@ export async function getRequests(type: RequestType) {
 
     const { data, error } = await query
         .order('created_at', { ascending: false })
+        .limit(100)
 
     if (error) {
         console.error('Fetch error:', error)
