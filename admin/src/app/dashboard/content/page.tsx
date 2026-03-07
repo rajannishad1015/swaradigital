@@ -44,6 +44,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
     `)
     .eq('status', status)
     .order('created_at', { ascending: false })
+    .limit(100)
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

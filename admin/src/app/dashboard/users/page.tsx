@@ -26,6 +26,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     .from('profiles')
     .select('*')
     .order('created_at', { ascending: false })
+    .limit(100)
 
   if (query) {
     dbQuery = dbQuery.or(`email.ilike.%${query}%,artist_name.ilike.%${query}%,full_name.ilike.%${query}%`)
@@ -41,16 +42,25 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     return <div>Error loading users</div>
   }
 
-  // Fetch track counts for these profiles
-  const { data: tracks } = await supabase
-    .from('tracks')
-    .select('artist_id')
-    .in('artist_id', profiles?.map(p => p.id) || [])
+  // Fetch track counts for these profiles using aggregation
+  const profileIds = profiles?.map(p => p.id) || []
 
-  const trackCountMap = tracks?.reduce((acc: any, curr: any) => {
-    acc[curr.artist_id] = (acc[curr.artist_id] || 0) + 1
-    return acc
-  }, {})
+  // Build a hash map of track counts using reduce for O(1) lookup
+  const trackCountMap: Record<string, number> = {}
+
+  if (profileIds.length > 0) {
+    const { data: trackCounts } = await supabase
+      .from('tracks')
+      .select('artist_id')
+      .in('artist_id', profileIds)
+
+    if (trackCounts) {
+      trackCounts.reduce((acc, curr) => {
+        acc[curr.artist_id] = (acc[curr.artist_id] || 0) + 1
+        return acc
+      }, trackCountMap)
+    }
+  }
 
   const { data: { user: currentUser } } = await supabase.auth.getUser()
 
