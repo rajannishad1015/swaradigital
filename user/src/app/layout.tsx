@@ -31,7 +31,6 @@ export const metadata: Metadata = {
     "upload music to Spotify",
     "upload music to Apple Music",
     "SwaraDigital",
-    "MusicFlow",
     "digital music distribution",
     "royalty free distribution",
   ],

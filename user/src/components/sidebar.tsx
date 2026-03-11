@@ -74,7 +74,7 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
                         </div>
                         <div>
                             <h1 className="text-base font-bold text-white tracking-tight leading-none">
-                                MusicFlow
+                                SwaraDigital
                             </h1>
                             <p className="text-[9px] text-zinc-500 font-medium uppercase tracking-[0.15em] mt-1.5 font-mono">Artist Portal</p>
                         </div>

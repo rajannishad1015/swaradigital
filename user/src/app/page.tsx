@@ -44,7 +44,7 @@ const organizationSchema = {
     "SwaraDigital is an independent music distribution platform empowering artists across India and the world.",
   contactPoint: {
     "@type": "ContactPoint",
-    email: "support@musicflow.com",
+    email: "support@swaradigital.com",
     contactType: "customer support",
     availableLanguage: ["English", "Hindi"],
   },

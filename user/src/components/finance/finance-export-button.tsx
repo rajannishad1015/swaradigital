@@ -31,7 +31,7 @@ export default function FinanceExportButton({ data }: { data: Transaction[] }) {
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", `musicflow-finance-${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute("download", `swaradigital-finance-${new Date().toISOString().split('T')[0]}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
