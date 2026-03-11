@@ -39,11 +39,12 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
     .from('tickets')
     .select('*, profiles(full_name, artist_name, email), ticket_messages(count)')
     .order('updated_at', { ascending: false })
+    .limit(100)
 
   if (status !== 'all') {
       query = query.eq('status', status)
   }
-  
+
   if (search) {
       query = query.ilike('subject', `%${search}%`)
   }

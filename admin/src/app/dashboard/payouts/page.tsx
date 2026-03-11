@@ -22,6 +22,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Prom
         )
     `)
     .order('created_at', { ascending: false })
+    .limit(100)
 
   if (status !== 'all') {
     dbQuery = dbQuery.eq('status', status)

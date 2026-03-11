@@ -26,12 +26,12 @@ export default async function DashboardPage() {
     { count: openTickets },
     analyticsData
   ] = await Promise.all([
-    supabase.from('tracks').select('*', { count: 'exact', head: true }),
-    supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('status', 'takedown_requested'),
-    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'open'),
+    supabase.from('tracks').select('*', { count: 'exact', head: true }).limit(1),
+    supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('status', 'pending').limit(1),
+    supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('status', 'takedown_requested').limit(1),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).limit(1),
+    supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending').limit(1),
+    supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'open').limit(1),
     getAnalyticsData()
   ])
 
