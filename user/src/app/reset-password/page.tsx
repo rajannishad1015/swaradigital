@@ -35,7 +35,7 @@ export default function ResetPasswordPage() {
                   <Disc className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">MusicFlow</h1>
+                  <h1 className="text-xl font-bold text-gray-900">SwaraDigital</h1>
                   <p className="text-[10px] text-gray-500 uppercase tracking-wider">Account Recovery</p>
                 </div>
               </div>

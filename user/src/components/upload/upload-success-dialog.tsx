@@ -32,7 +32,7 @@ export default function UploadSuccessDialog({ isOpen, onOpenChange, isFirstUploa
                 </DialogTitle>
                 <DialogDescription className="text-zinc-400 text-center">
                     {isFirstUpload 
-                        ? "Congratulations on your first release! You've officially started your journey with MusicFlow."
+                        ? "Congratulations on your first release! You've officially started your journey with SwaraDigital."
                         : "Your release has been successfully submitted for processing."}
                 </DialogDescription>
             </DialogHeader>

@@ -21,7 +21,7 @@ export function SignupSuccessDialog() {
   
   // Initialize state based on the URL params directly to avoid useEffect
   const [open, setOpen] = useState(() => {
-    return !!(message && message.includes('Welcome to MusicFlow'))
+    return !!(message && message.includes('Welcome to SwaraDigital'))
   })
 
   // Get email from search params if possible
@@ -55,7 +55,7 @@ export function SignupSuccessDialog() {
             <CheckCircle2 className="w-10 h-10 text-emerald-600" />
           </div>
           <DialogTitle className="text-2xl font-bold text-gray-900">
-            Welcome to MusicFlow!
+            Welcome to SwaraDigital!
           </DialogTitle>
           <DialogDescription className="text-base text-gray-600">
             Your account has been created successfully.

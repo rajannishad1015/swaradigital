@@ -1,6 +1,6 @@
 import { openDB, IDBPDatabase } from 'idb';
 
-const DB_NAME = 'MusicFlowTools';
+const DB_NAME = 'SwaraDigitalTools';
 const STORE_NAME = 'file-cache';
 const VERSION = 1;
 

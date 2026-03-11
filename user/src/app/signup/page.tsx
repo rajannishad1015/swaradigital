@@ -39,7 +39,7 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-black text-white tracking-[-0.03em] leading-none uppercase">MusicFlow</h1>
+                  <h1 className="text-2xl font-black text-white tracking-[-0.03em] leading-none uppercase">SwaraDigital</h1>
                   <p className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.3em] mt-1.5 opacity-80">Distribution Excellence</p>
                 </div>
               </div>
@@ -87,7 +87,7 @@ export default function SignupPage() {
                   <Disc className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">MusicFlow</h1>
+                  <h1 className="text-xl font-bold text-gray-900">SwaraDigital</h1>
                   <p className="text-[10px] text-gray-500 uppercase tracking-wider">Distribution</p>
                 </div>
               </div>

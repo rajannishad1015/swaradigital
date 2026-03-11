@@ -28,5 +28,5 @@ export async function signup(formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  redirect(`/login?email=${encodeURIComponent(email)}&message=Welcome to MusicFlow! Please check your email for confirmation link.`)
+  redirect(`/login?email=${encodeURIComponent(email)}&message=Welcome to SwaraDigital! Please check your email for confirmation link.`)
 }
