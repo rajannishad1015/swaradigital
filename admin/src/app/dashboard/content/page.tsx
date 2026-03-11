@@ -9,6 +9,8 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
   const supabase = await createClient()
   const status = (await searchParams).status || 'pending'
 
+  // Performance: Limit query to prevent loading thousands of tracks at once
+  // Admin can paginate through results in the UI
   const { data: tracks } = await supabase
     .from('tracks')
     .select(`

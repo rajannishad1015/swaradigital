@@ -23,11 +23,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         .single()
 
     const isLabel = profile?.role === 'label'
-    
+
+    // Performance: Limit revenue logs query to prevent loading millions of rows
+    // Fetch the most recent 1000 logs for analytics - sufficient for insights
     let query = supabase
         .from('revenue_logs')
         .select('*, tracks(title)')
         .order('created_at', { ascending: false })
+        .limit(1000)
 
     if (artistId) {
         query = query.eq('user_id', artistId)

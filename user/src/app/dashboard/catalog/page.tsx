@@ -11,11 +11,13 @@ export default async function CatalogPage() {
     return <div>Please log in</div>
   }
 
+  // Performance: Limit to 100 most recent tracks for catalog view
   const { data: tracks, error } = await supabase
     .from('tracks')
     .select('*, albums(cover_art_url, title, type, upc)')
     .eq('artist_id', user.id)
     .order('created_at', { ascending: false })
+    .limit(100)
 
   if (error) {
     console.error('Error fetching tracks:', error)

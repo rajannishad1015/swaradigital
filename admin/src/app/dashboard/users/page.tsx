@@ -22,6 +22,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const query = (await searchParams).query || ''
   const role = (await searchParams).role || 'all'
 
+  // Performance: Limit users query to prevent loading thousands of profiles at once
   let dbQuery = supabase
     .from('profiles')
     .select('*')

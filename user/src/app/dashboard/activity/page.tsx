@@ -36,10 +36,11 @@ export default async function ActivityPage() {
   }
 
   // Fetch all activity data in parallel
+  // Performance: Limit queries to recent 100 items per category
   const [tracksRes, payoutsRes, ticketsRes] = await Promise.all([
-    trackQuery.order('created_at', { ascending: false }),
-    supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-    ticketQuery.order('created_at', { ascending: false })
+    trackQuery.order('created_at', { ascending: false }).limit(100),
+    supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100),
+    ticketQuery.order('created_at', { ascending: false }).limit(100)
   ])
 
   const tracks = tracksRes.data || []
