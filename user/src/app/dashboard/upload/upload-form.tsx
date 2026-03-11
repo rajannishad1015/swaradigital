@@ -255,7 +255,6 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
   }
 
   const addTrack = () => {
-    // DEBUG: Diagnose user issue
     // Validate track count based on release type
     
     if (releaseType === 'single' && tracks.length >= 1) {

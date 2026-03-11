@@ -68,12 +68,12 @@ export async function submitTrack(formData: any) {
 
         if (!profile) return { success: false, error: 'Profile not found' }
 
-        // Plan-based validation for release types
+        // Plan-based validation for release type
         const plan = profile.plan_type || 'none';
-        if ((plan === 'solo' || plan === 'none') && formData.releaseType !== 'single') {
+        if ((plan === 'solo' || plan === 'single' || plan === 'none') && formData.releaseType !== 'single') {
             return {
                 success: false,
-                error: 'Your plan only allows Single releases. Upgrade to Multi Artist or Label plan to release EPs, Albums, or Compilations.'
+                error: 'Your plan only allows Single releases. Please upgrade to a Multi Artist or Label plan to submit EPs, Albums, or Compilations.'
             };
         }
 
