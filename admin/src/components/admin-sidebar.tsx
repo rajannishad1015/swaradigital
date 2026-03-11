@@ -40,7 +40,7 @@ export default function AdminSidebar({ user, pendingTickets }: AdminSidebarProps
                     <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
                         <span className="font-black text-xs text-white">A</span>
                     </div>
-                    <span className="font-bold text-white tracking-tight">MusicFlow</span>
+                    <span className="font-bold text-white tracking-tight">SwaraDigital</span>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setIsOpen(!isOpen)} className="text-white hover:bg-white/10">
                     {isOpen ? <X /> : <Menu />}
@@ -63,7 +63,7 @@ export default function AdminSidebar({ user, pendingTickets }: AdminSidebarProps
                         <span className="font-black text-xs">A</span>
                     </div>
                     <div>
-                        <h1 className="text-sm font-bold tracking-tight">MusicFlow</h1>
+                        <h1 className="text-sm font-bold tracking-tight">SwaraDigital</h1>
                         <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Admin Portal</p>
                     </div>
                 </div>

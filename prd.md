@@ -24,7 +24,7 @@ Future Roadmap
 
 1. EXECUTIVE SUMMARY
    1.1 Product Name
-   MusicFlow (working title - can be changed)
+   SwaraDigital
    1.2 Product Vision
    A scalable, secure music distribution platform that enables independent artists to upload their music with metadata and cover art, which is then aggregated into CSV format for distribution to major streaming platforms.
    1.3 Target Market
@@ -1199,7 +1199,7 @@ Quick replies/canned responses
 
 Email Support:
 
-support@musicflow.com
+support@swaradigital.com
 Auto-reply with ticket number
 Email to ticket conversion
 
@@ -2625,7 +2625,7 @@ Actions:
 
 Sample CSV Structure:
 csvuser_id,artist_name,email,phone,track_title,album_name,genre_primary,genre_secondary,language,release_date,explicit,duration_seconds,duration_formatted,audio_url,cover_art_url,audio_format,bitrate_kbps,sample_rate_hz,file_size_mb,cover_dimensions,isrc,upc,featured_artists,songwriter,producer,label,publisher,copyright_p,copyright_c,lyrics,upload_date,upload_time,upload_datetime,status,reviewed_by,review_date,approved_date,distribution_status,distributed_date,live_spotify,live_apple_music,live_youtube_music,spotify_url,apple_music_url,youtube_music_url
-1001,"Aman Kumar",aman@email.com,+919876543210,"Dil Ki Baat","Singles","Pop","R&B","Hindi","2024-03-15","No",210,"3:30","https://s3.amazonaws.com/bucket/audio/track001.mp3","https://s3.amazonaws.com/bucket/covers/cover001.jpg","MP3",320,44100,8.5,"3000x3000","INXXX2400001","123456789012","Priya Sharma","Aman Kumar, Rohit Verma","Vikram Singh","Indie Records","Music Publishing Co.","℗ 2024 Aman Kumar","© 2024 Indie Records","[Full lyrics here...]","01-02-2024","14:30:25","2024-02-01T14:30:25Z","Live","admin@musicflow.com","02-02-2024","02-02-2024","Live","05-02-2024","Yes","Yes","No","https://open.spotify.com/track/abc123","https://music.apple.com/track/xyz789",""
+1001,"Aman Kumar",aman@email.com,+919876543210,"Dil Ki Baat","Singles","Pop","R&B","Hindi","2024-03-15","No",210,"3:30","https://s3.amazonaws.com/bucket/audio/track001.mp3","https://s3.amazonaws.com/bucket/covers/cover001.jpg","MP3",320,44100,8.5,"3000x3000","INXXX2400001","123456789012","Priya Sharma","Aman Kumar, Rohit Verma","Vikram Singh","Indie Records","Music Publishing Co.","℗ 2024 Aman Kumar","© 2024 Indie Records","[Full lyrics here...]","01-02-2024","14:30:25","2024-02-01T14:30:25Z","Live","admin@swaradigital.com","02-02-2024","02-02-2024","Live","05-02-2024","Yes","Yes","No","https://open.spotify.com/track/abc123","https://music.apple.com/track/xyz789",""
 CSV Validation:
 
 Pre-export validation:
@@ -3128,7 +3128,7 @@ Last Updated: 01-Feb-2024 15:45
 Status: Open
 Priority: High
 Category: Technical Issue
-Assigned To: admin@musicflow.com
+Assigned To: admin@swaradigital.com
 
 Related Upload:
 
@@ -3730,10 +3730,10 @@ User
 
 - **AWS S3** (recommended)
   - Buckets:
-    - `musicflow-audio-prod`
-    - `musicflow-covers-prod`
-    - `musicflow-csv-prod`
-    - `musicflow-backups-prod`
+    - `swaradigital-audio-prod`
+    - `swaradigital-covers-prod`
+    - `swaradigital-csv-prod`
+    - `swaradigital-backups-prod`
   - Lifecycle policies (auto-delete old files)
   - Versioning enabled
   - Server-side encryption (AES-256)
@@ -4591,8 +4591,8 @@ INSERT INTO settings (key, value, value_type, category, description) VALUES
 ('min_cover_dimensions', '3000', 'number', 'upload', 'Minimum cover art dimensions (square)'),
 ('auto_approve_enabled', 'false', 'boolean', 'upload', 'Automatically approve uploads if all checks pass'),
 ('review_sla_hours', '48', 'number', 'upload', 'Review SLA in hours'),
-('platform_name', 'MusicFlow', 'string', 'general', 'Platform name'),
-('support_email', 'support@musicflow.com', 'string', 'general', 'Support email address');
+('platform_name', 'SwaraDigital', 'string', 'general', 'Platform name'),
+('support_email', 'support@swaradigital.com', 'string', 'general', 'Support email address');
 ```
 
 #### 6.2.14 Activity_Logs Table (User activity tracking)
@@ -4954,7 +4954,7 @@ const cors = require("cors");
 
 app.use(
   cors({
-    origin: ["https://musicflow.com", "https://admin.musicflow.com"],
+    origin: ["https://swaradigital.com", "https://admin.swaradigital.com"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -5543,7 +5543,7 @@ app.use(
 ### 9.1 Cloud Storage Architecture
 
 **Storage Structure:**
-S3 Bucket: musicflow-prod (or similar)
+S3 Bucket: swaradigital-prod (or similar)
 │
 ├── audio/
 │ ├── 2024/
@@ -5625,7 +5625,7 @@ const generateSignedUrl = async (fileName, fileType, contentType) => {
   const key = `audio/2024/02/${userId}_${Date.now()}_${randomString()}.${fileExt}`;
 
   const params = {
-    Bucket: "musicflow-prod",
+    Bucket: "swaradigital-prod",
     Key: key,
     Expires: 300, // 5 minutes
     ContentType: contentType,
@@ -5666,7 +5666,7 @@ const upload = await prisma.upload.create({
   data: {
     user_id,
     track_title,
-    audio_url: `https://s3.amazonaws.com/musicflow-prod/${key}`,
+    audio_url: `https://s3.amazonaws.com/swaradigital-prod/${key}`,
     status: "pending",
     // ... other fields
   },
@@ -5695,7 +5695,7 @@ const upload = await prisma.upload.create({
 
 **Distribution Settings:**
 
-- **Origin:** S3 bucket (musicflow-prod)
+- **Origin:** S3 bucket (swaradigital-prod)
 - **Allowed HTTP Methods:** GET, HEAD, OPTIONS
 - **Cache Behaviors:**
   - Audio files: Cache for 1 day (86400 seconds)
@@ -5707,7 +5707,7 @@ const upload = await prisma.upload.create({
 
 **Custom Domain:**
 
-- CNAME: `cdn.musicflow.com` → CloudFront distribution
+- CNAME: `cdn.swaradigital.com` → CloudFront distribution
 - SSL Certificate: AWS Certificate Manager (free)
 
 **Signed URLs (for private files):**
@@ -5716,7 +5716,7 @@ const upload = await prisma.upload.create({
 const cloudfront = new AWS.CloudFront.Signer(keyPairId, privateKey);
 
 const signedUrl = cloudfront.getSignedUrl({
-  url: "https://cdn.musicflow.com/audio/2024/02/file.mp3",
+  url: "https://cdn.swaradigital.com/audio/2024/02/file.mp3",
   expires: Math.floor(Date.now() / 1000) + 3600, // 1 hour
 });
 ```
@@ -5873,7 +5873,7 @@ Would you like me to continue with the remaining sections (10-19)? Or would you 
     10.1 API Architecture
     RESTful API Design:
 
-Base URL: https://api.musicflow.com/v1
+Base URL: https://api.swaradigital.com/v1
 Authentication: JWT Bearer token
 Content-Type: application/json
 API Versioning: /v1, /v2 (future)
@@ -6370,7 +6370,7 @@ Track pre-save count
 Smart Links:
 
 Generate universal link (one link → all platforms)
-Example: musicflow.to/artist/track-name
+Example: swaradigital.to/artist/track-name
 Analytics on clicks
 
 Social Media Assets:

@@ -27,7 +27,7 @@ export default function LoginPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20" />
                 <ShieldCheck className="w-8 h-8 text-indigo-400 relative z-10" />
             </div>
-            <h1 className="text-3xl font-black text-white tracking-tight text-center mb-2">MusicFlow Admin</h1>
+            <h1 className="text-3xl font-black text-white tracking-tight text-center mb-2">SwaraDigital Admin</h1>
             <p className="text-sm text-zinc-400 font-medium text-center">
               Secure portal for platform administration
             </p>
@@ -42,7 +42,7 @@ export default function LoginPage() {
                       id="email" 
                       name="email" 
                       type="email" 
-                      placeholder="admin@musicflow.com" 
+                      placeholder="admin@swaradigital.com" 
                       required 
                       className="pl-4 pr-10 bg-black/40 border-white/10 text-white placeholder:text-zinc-600 focus-visible:ring-indigo-500/50 h-12 rounded-xl transition-all font-mono text-sm"
                     />
@@ -80,7 +80,7 @@ export default function LoginPage() {
         
         {/* Footer info */}
         <p className="text-center text-xs text-zinc-600 font-mono mt-8 uppercase tracking-widest">
-            MusicFlow Internal Systems &copy; {new Date().getFullYear()}
+            SwaraDigital Internal Systems &copy; {new Date().getFullYear()}
         </p>
       </div>
     </div>

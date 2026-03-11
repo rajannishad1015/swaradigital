@@ -55,7 +55,7 @@ export default async function DashboardPage() {
                <h1 className="text-4xl font-black text-white tracking-tighter uppercase">Command Center</h1>
             </div>
             <p className="text-zinc-400 font-mono text-xs tracking-widest uppercase">
-               MusicFlow Administrative Operations
+               SwaraDigital Administrative Operations
             </p>
          </div>
          
