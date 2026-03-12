@@ -308,6 +308,16 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
   // Success Dialog State
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false)
 
+  // Payment / Eligibility State
+  const [eligibilityInfo, setEligibilityInfo] = useState<{
+    eligible: boolean;
+    mustPay: boolean;
+    amount?: number;
+    plan?: string;
+    message?: string;
+  } | null>(null)
+  const [paymentChecking, setPaymentChecking] = useState(false)
+
   // Artist Dialog State
   const [isArtistDialogOpen, setIsArtistDialogOpen] = useState(false)
   const [artistDialogMode, setArtistDialogMode] = useState<'release' | 'track' | 'release-featuring' | 'track-featuring'>('release')
@@ -410,7 +420,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
 
   const clearDraft = () => {
     if(confirm("Are you sure you want to discard this draft? All unsaved progress will be lost.")) {
-        localStorage.removeItem('upload_draft')
+        const draftKey = `upload_draft_${userProfile?.id || 'default'}`
+        localStorage.removeItem(draftKey)
         setDraftLoaded(false)
         setSavedDraftId(null)
         window.location.reload()
@@ -421,7 +432,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
   useEffect(() => {
     if (initialData) return // Skip for edit mode - data comes from server
     try {
-      const saved = localStorage.getItem('upload_draft')
+      const draftKey = `upload_draft_${userProfile?.id || 'default'}`
+      const saved = localStorage.getItem(draftKey)
       if (!saved) return
       const draft = JSON.parse(saved)
       if (!draft || !draft.title) return
@@ -459,10 +471,16 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
       }
 
       setDraftLoaded(true)
-      toast.info('Draft restored! Please re-upload any audio files.', { duration: 5000 })
+      // Only show toast once per session to avoid repeated popups
+      const toastKey = `draft_toast_shown_${userProfile?.id || 'default'}`
+      if (!sessionStorage.getItem(toastKey)) {
+        toast.info('Draft restored! Please re-upload any audio files.', { duration: 5000 })
+        sessionStorage.setItem(toastKey, '1')
+      }
     } catch {
       // Ignore corrupted draft data
-      localStorage.removeItem('upload_draft')
+      const draftKey = `upload_draft_${userProfile?.id || 'default'}`
+      localStorage.removeItem(draftKey)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -833,10 +851,24 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
       return true
   }
 
-  const nextStep = () => {
+  const nextStep = async () => {
       if (validateStep(currentStep)) {
-          setCurrentStep(prev => Math.min(prev + 1, 4))
+          const nextStepNum = Math.min(currentStep + 1, 4)
+          setCurrentStep(nextStepNum)
           window.scrollTo(0, 0)
+          // Pre-check payment eligibility when entering the review step
+          if (nextStepNum === 4) {
+              setPaymentChecking(true)
+              try {
+                  const currentDraftId = initialData?.id || savedDraftId || undefined
+                  const info = await checkSubmissionEligibility(currentDraftId)
+                  setEligibilityInfo(info)
+              } catch {
+                  // Non-fatal: eligibility will be re-checked on submit
+              } finally {
+                  setPaymentChecking(false)
+              }
+          }
       }
   }
   
@@ -845,7 +877,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
       window.scrollTo(0, 0)
   }
 
-  const handleSubmit = async (e: React.FormEvent | React.MouseEvent, status: 'pending' | 'draft' = 'pending') => {
+  const handleSubmit = async (e: React.FormEvent | React.MouseEvent, status: 'pending' | 'draft' = 'pending', overrideAlbumId?: string) => {
     e.preventDefault()
 
     // Save metadata to localStorage immediately when saving draft (before any async ops)
@@ -865,7 +897,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
             audioFile: null, // Exclude File object
           }))
         }
-        localStorage.setItem('upload_draft', JSON.stringify(draftData))
+        const draftKey = `upload_draft_${userProfile?.id || 'default'}`
+        localStorage.setItem(draftKey, JSON.stringify(draftData))
         setDraftLoaded(true)
       } catch {
         // localStorage may be full or unavailable - non-fatal
@@ -879,7 +912,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
     try {
         // Eligibility & Payment Check (Only for final submission)
         if (status === 'pending') {
-            const eligibility = await checkSubmissionEligibility(initialData?.id || savedDraftId)
+            const currentDraftId = overrideAlbumId || initialData?.id || savedDraftId
+            const eligibility = await checkSubmissionEligibility(currentDraftId)
             
             if (!eligibility.eligible) {
                 toast.error(eligibility.message || "You are not eligible to submit this release.")
@@ -892,14 +926,40 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                 let currentAlbumId = initialData?.id || savedDraftId
                 
                 if (!currentAlbumId) {
-                    // Save as draft first to get an ID
-                    toast.info("Saving draft before payment...")
-                    const draftResult = await handleSubmit(e, 'draft') as any
-                    if (draftResult?.success && draftResult?.trackId) {
-                        currentAlbumId = draftResult.trackId
-                    } else {
-                        // If handleSubmit(e, 'draft') didn't return what we expected, it might have already set states
-                        // But we need to stop here and let the user try again if it failed
+                    // Upload files + save as draft first to get an albumId for the payment receipt
+                    toast.info("Saving your release before payment...")
+                    try {
+                        const supabaseTmp = createClient()
+                        const tsTmp = Date.now()
+                        let coverArtUrlTmp = initialData?.albums?.cover_art_url
+                        if (coverFile) {
+                            const cp = `covers/${tsTmp}_${coverFile.name}`
+                            const { error: ce } = await supabaseTmp.storage.from('cover-art').upload(cp, coverFile)
+                            if (!ce) { const { data: cd } = supabaseTmp.storage.from('cover-art').getPublicUrl(cp); coverArtUrlTmp = cd.publicUrl }
+                        }
+                        const draftTracks = await Promise.all(tracks.map(async (track, idx) => {
+                            let audioUrl = track.audioUrl
+                            if (track.audioFile) {
+                                const ap = `tracks/${tsTmp}_${idx}_${track.audioFile.name}`
+                                const { error: ae } = await supabaseTmp.storage.from('music-files').upload(ap, track.audioFile)
+                                if (!ae) { const { data: ad } = supabaseTmp.storage.from('music-files').getPublicUrl(ap); audioUrl = ad.publicUrl }
+                            }
+                            return { id: track.id, title: track.title, audioUrl, duration: track.duration, lyrics: track.lyrics, primaryArtists: track.primaryArtists, featuringArtists: track.featuringArtists, genre: track.genre, subGenre: track.subGenre, lyricists: track.lyricists, composers: track.composers, producers: track.producers, publisher: track.publisher, productionYear: track.productionYear, pLine: track.pLine, isrc: track.hasISRC === 'yes' ? track.isrc : '', priceTier: track.priceTier, isInstrumental: track.isInstrumental, explicit: track.explicitType === 'yes', explicitType: track.explicitType, trackVersion: track.trackVersion, versionSubtitle: track.versionSubtitle, callerTuneTiming: track.callerTuneTiming, distributeVideo: track.distributeVideo, titleLanguage: track.titleLanguage, lyricsLanguage: track.lyricsLanguage, audioAnalysis: track.audioAnalysis }
+                        }))
+                        const draftResult = await submitTrack({ id: undefined, title, releaseType, labelName, primaryArtists, featuringArtists, releaseDate, originalReleaseDate, pLine: `℗ ${pLineYear} ${pLineText}`, cLine: `© ${cLineYear} ${cLineText}`, courtesyLine, description, language, genre, subGenre, coverArtUrl: coverArtUrlTmp, selectedPlatforms, upc, status: 'draft', tracks: draftTracks })
+                        if (draftResult?.success && draftResult?.trackId) {
+                            currentAlbumId = draftResult.trackId
+                            setSavedDraftId(draftResult.trackId)
+                            if ((draftResult.allTracks?.length ?? 0) > 0) {
+                                setTracks(prev => prev.map((t, i) => { const srv = draftResult.allTracks?.[i]; return srv?.id ? { ...t, id: srv.id } : t }))
+                            }
+                        } else {
+                            toast.error("Failed to save your release before payment. Please try again.")
+                            setLoading(false)
+                            return
+                        }
+                    } catch (draftErr: any) {
+                        toast.error(draftErr.message || "Failed to save release before payment.")
                         setLoading(false)
                         return
                     }
@@ -921,13 +981,25 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                 await verifyRazorpayPayment(
                                     response.razorpay_order_id,
                                     response.razorpay_payment_id,
-                                    response.razorpay_signature
+                                    response.razorpay_signature,
+                                    currentAlbumId
                                 )
                                 toast.success("Payment successful! Submitting your release...")
-                                // After verification, we resume the submission immediately
-                                handleSubmit(e, 'pending')
+                                // Update local eligibility so UI reflects payment done
+                                setEligibilityInfo(prev => prev ? { ...prev, mustPay: false } : null)
+                                // After verification, resume submission with the explicit album ID
+                                handleSubmit(e, 'pending', currentAlbumId)
                             } catch (err: any) {
                                 toast.error(err.message || 'Payment verification failed')
+                                // Clean up the auto-saved draft since payment verification failed
+                                if (currentAlbumId && !initialData?.id) {
+                                    const cleanupClient = createClient()
+                                    cleanupClient.from('tracks').delete().eq('album_id', currentAlbumId).then(() => {
+                                        cleanupClient.from('albums').delete().eq('id', currentAlbumId).then(() => {
+                                            setSavedDraftId(null)
+                                        })
+                                    })
+                                }
                                 setLoading(false)
                             }
                         },
@@ -940,6 +1012,18 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         },
                         modal: {
                             ondismiss: function() {
+                                // Payment was cancelled/closed — do NOT submit, delete the draft
+                                toast.error("Payment cancelled. Your release was NOT submitted.", { duration: 5000 })
+                                // Clean up the auto-saved draft since payment was not completed
+                                if (currentAlbumId && !initialData?.id) {
+                                    // Delete the draft that was auto-created for payment
+                                    const cleanupClient = createClient()
+                                    cleanupClient.from('tracks').delete().eq('album_id', currentAlbumId).then(() => {
+                                        cleanupClient.from('albums').delete().eq('id', currentAlbumId).then(() => {
+                                            setSavedDraftId(null)
+                                        })
+                                    })
+                                }
                                 setLoading(false)
                             }
                         }
@@ -1020,7 +1104,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
         }))
 
         const formData = {
-            id: initialData?.id || savedDraftId, // Use server draft ID on repeat saves to avoid creating a new album
+            id: overrideAlbumId || initialData?.id || savedDraftId, // Use explicit server draft ID on repeat saves if provided
             title,
             releaseType,
             labelName,
@@ -1100,7 +1184,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                                 audioFile: null,
                             }))
                         }
-                        localStorage.setItem('upload_draft', JSON.stringify(updatedDraftData))
+                        const draftKey = `upload_draft_${userProfile?.id || 'default'}`
+                        localStorage.setItem(draftKey, JSON.stringify(updatedDraftData))
                     } catch (e) {
                         console.warn("Could not update localStorage draft with IDs", e);
                     }
@@ -1111,7 +1196,8 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                 setLoading(false)
                 return
             }
-            localStorage.removeItem('upload_draft')
+            const draftKey = `upload_draft_${userProfile?.id || 'default'}`
+            localStorage.removeItem(draftKey)
             toast.success(initialData ? "Release updated successfully!" : "Release submitted successfully!")
             
             if (!initialData) {
@@ -1981,6 +2067,41 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                           </div>
                       </div>
                      
+                     {/* Payment Required Notice for ₹99 per release */}
+                     {paymentChecking && (
+                         <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-lg text-zinc-400 text-sm animate-pulse">
+                             <Loader2 size={16} className="animate-spin text-indigo-400" />
+                             <p>Checking your submission eligibility...</p>
+                         </div>
+                     )}
+                     {!paymentChecking && eligibilityInfo?.mustPay && (
+                         <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-6 space-y-4">
+                             <div className="flex items-start gap-4">
+                                 <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                     <span className="text-amber-400 text-lg font-black">₹</span>
+                                 </div>
+                                 <div className="flex-1">
+                                     <h4 className="text-amber-300 font-black text-base uppercase tracking-wider mb-1">Payment Required to Submit</h4>
+                                     <p className="text-zinc-400 text-sm leading-relaxed">
+                                         Each release requires a one-time fee of <span className="text-amber-300 font-black text-base">₹{eligibilityInfo.amount ?? 99}</span>.
+                                         Click the submit button below — the payment window will open. Your release will only be submitted after successful payment.
+                                     </p>
+                                 </div>
+                             </div>
+                             <div className="flex flex-wrap gap-3 text-xs text-zinc-500 pt-2 border-t border-white/5">
+                                 <span className="flex items-center gap-1.5"><Check size={12} className="text-emerald-500" /> One-time fee per release</span>
+                                 <span className="flex items-center gap-1.5"><Check size={12} className="text-emerald-500" /> Secure payment via Razorpay</span>
+                                 <span className="flex items-center gap-1.5"><Check size={12} className="text-emerald-500" /> No submission if payment fails</span>
+                             </div>
+                         </div>
+                     )}
+                     {!paymentChecking && eligibilityInfo && !eligibilityInfo.eligible && (
+                         <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                             <AlertTriangle size={18} className="shrink-0" />
+                             <p>{eligibilityInfo.message || 'You are not eligible to submit this release.'}</p>
+                         </div>
+                     )}
+
                      <div className="flex items-center gap-2 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-500 text-sm">
                          <div className="w-auto"><Check size={20} /></div>
                          <p>By submitting, you confirm that you have full rights to distribute this content.</p>
@@ -2027,11 +2148,15 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         <Button 
                             type="button"
                             onClick={(e) => handleSubmit(e, 'pending')} 
-                            disabled={loading}
-                            className="w-full md:w-auto bg-emerald-500 text-white hover:bg-emerald-400 font-black uppercase tracking-[0.2em] h-12 px-10 rounded-md shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(52,211,153,0.5)] transition-all text-sm"
+                            disabled={loading || paymentChecking || (eligibilityInfo?.eligible === false)}
+                            className={`w-full md:w-auto text-white font-black uppercase tracking-[0.2em] h-12 px-10 rounded-md transition-all text-sm ${
+                                eligibilityInfo?.mustPay
+                                    ? 'bg-amber-600 hover:bg-amber-500 shadow-[0_0_20px_rgba(217,119,6,0.3)] hover:shadow-[0_0_40px_rgba(245,158,11,0.5)]'
+                                    : 'bg-emerald-500 hover:bg-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(52,211,153,0.5)]'
+                            }`}
                         >
-                            {loading ? <Loader2 className="animate-spin mr-2" /> : <UploadCloud className="mr-2" size={18} />}
-                            Confirm Submission
+                            {loading ? <Loader2 className="animate-spin mr-2" /> : eligibilityInfo?.mustPay ? <span className="mr-2 font-black">₹</span> : <UploadCloud className="mr-2" size={18} />}
+                            {eligibilityInfo?.mustPay ? `Pay ₹${eligibilityInfo.amount ?? 99} & Submit` : 'Confirm Submission'}
                         </Button>
                     )}
                 </div>

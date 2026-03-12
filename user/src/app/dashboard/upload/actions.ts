@@ -18,13 +18,12 @@ async function checkAudioFingerprint(fileUrl: string, title: string) {
     };
 }
 
-// Simulates automated transcoding (e.g. via FFmpeg or Supabase Edge Functions)
+// Simulates automated transcoding
 async function simulateTranscode(fileUrl: string) {
-    // In reality, this would trigger an async job.
-    // We return placeholders for the standard and preview MP3 versions.
+    // Return standard URL as the uploaded file URL and preview as either original or null so it doesn't break.
     return {
-        standardUrl: fileUrl.replace(/\.(wav|flac|aif)$/i, '.mp3'), // Mocked transformation
-        previewUrl: fileUrl.replace(/\.(wav|flac|aif|mp3)$/i, '_preview.mp3')
+        standardUrl: fileUrl, 
+        previewUrl: null
     };
 }
 
@@ -70,7 +69,7 @@ export async function submitTrack(formData: any) {
 
         // Plan-based validation for release type
         const plan = profile.plan_type || 'none';
-        if ((plan === 'solo' || plan === 'single' || plan === 'none') && formData.releaseType !== 'single') {
+        if ((plan === 'solo' || plan === 'none') && formData.releaseType !== 'single') {
             return {
                 success: false,
                 error: 'Your plan only allows Single releases. Please upgrade to a Multi Artist or Label plan to submit EPs, Albums, or Compilations.'
@@ -122,14 +121,7 @@ export async function submitTrack(formData: any) {
             }
         }
 
-        // 4. Validate Platforms (Social Media restriction)
-        const selectedPlatforms = formData.selectedPlatforms || [];
-        const premiumPlatforms = ['facebook', 'instagram', 'tiktok'];
-        const hasPremium = selectedPlatforms.some((p: string) => premiumPlatforms.includes(p));
-        
-        if (hasPremium && plan !== 'elite') {
-            return { success: false, error: "Social media monetization (Facebook/Instagram/TikTok) is only available on the Label (Elite) plan." };
-        }
+        // 4. Removed Social Media restriction logic as requested
 
         let albumId: string | null = null;
 
@@ -175,6 +167,21 @@ export async function submitTrack(formData: any) {
                 .eq('artist_id', user.id)
 
             if (albumUpdateError) throw new Error(`Album update failed: ${albumUpdateError.message}`)
+
+            // Consume floating credit if user just submitted this draft for release on the 'solo' or 'none' plan
+            if ((profile.plan_type === 'solo' || profile.plan_type === 'none' || !profile.plan_type) && formData.status !== 'draft') {
+                const { data: floatingCredit } = await supabase
+                    .from('release_payments')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .is('album_id', null)
+                    .eq('status', 'captured')
+                    .maybeSingle()
+
+                if (floatingCredit) {
+                    await supabase.from('release_payments').update({ album_id: albumId }).eq('id', floatingCredit.id)
+                }
+            }
 
             // Now Process Tracks
             // We'll update existing tracks, insert new ones, and remove deleted ones
@@ -289,6 +296,21 @@ export async function submitTrack(formData: any) {
 
             if (albumError) throw new Error(albumError.message)
             albumId = album.id
+
+            // Consume floating credit if user bought the solo plan from billing page
+            if ((profile.plan_type === 'solo' || profile.plan_type === 'none' || !profile.plan_type) && formData.status !== 'draft') {
+                const { data: floatingCredit } = await supabase
+                    .from('release_payments')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .is('album_id', null)
+                    .eq('status', 'captured')
+                    .maybeSingle()
+
+                if (floatingCredit) {
+                    await supabase.from('release_payments').update({ album_id: albumId }).eq('id', floatingCredit.id)
+                }
+            }
 
             // 3. Create Tracks (Multi-track support)
             const tracksToInsert = [];

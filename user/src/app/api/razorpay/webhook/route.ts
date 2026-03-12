@@ -45,15 +45,18 @@ export async function POST(req: Request) {
               status: 'captured'
             }, { onConflict: 'razorpay_payment_id' });
 
-          if (payError) throw payError;
-        } else if (type === 'plan_switch') {
-          // Update profile plan type directly
-          const { error: profError } = await supabase
-            .from('profiles')
-            .update({ plan_type: 'solo' })
-            .eq('id', userId);
+          if (payError) {
+            console.error('Webhook: Failed to record release payment:', {
+              paymentId: payment.id,
+              orderId: payment.order_id,
+              userId,
+              albumId,
+              error: payError
+            });
+            throw payError;
+          }
 
-          if (profError) throw profError;
+          console.log('Webhook: Release payment recorded successfully:', payment.id);
         }
         break;
       }
@@ -78,8 +81,8 @@ export async function POST(req: Request) {
         if (subError) throw subError;
 
         // Update profile plan type
-        const planType = planName === 'multi_artist' ? 'multi' : 'elite';
-        const maxProfiles = planName === 'multi_artist' ? 5 : 100;
+        const planType = (planName === 'multi_monthly' || planName === 'multi_yearly') ? 'multi' : 'elite'
+        const maxProfiles = planType === 'multi' ? 1 : 100
 
         const { error: profError } = await supabase
           .from('profiles')
@@ -95,15 +98,19 @@ export async function POST(req: Request) {
         const subscription = event.payload.subscription.entity;
         const { userId } = subscription.notes;
 
-        await supabase
+        const { error: subError } = await supabase
           .from('subscriptions')
           .update({ status: 'expired' })
           .eq('razorpay_subscription_id', subscription.id);
 
-        await supabase
+        if (subError) throw subError;
+
+        const { error: profError } = await supabase
           .from('profiles')
           .update({ plan_type: 'none', max_artist_profiles: 1 })
           .eq('id', userId);
+
+        if (profError) throw profError;
         break;
       }
     }

@@ -16,7 +16,7 @@ interface PlanGateModalProps {
 const planDetails = {
     multi: {
         name: 'Multi Artist Plan',
-        price: '₹1,499/year',
+        price: '₹499/month',
         // Specific reference image colors for 'Multi'
         accentColor: '#8B5CF6',      // Top border, badge text, button glow
         highlightColor: '#A855F7',   // "Analytics" text (vibrant purple)
@@ -24,7 +24,7 @@ const planDetails = {
         hoverButtonColor: '#6D28D9', // Hover button background
         borderColor: '#2A2A40',      // Inner box border
         perks: [
-            'Unlimited releases per year',
+            'Unlimited releases',
             'Up to 5 artist profiles',
             'Priority support',
             'Advanced analytics',
