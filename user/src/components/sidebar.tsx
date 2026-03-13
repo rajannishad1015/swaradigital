@@ -32,6 +32,7 @@ interface SidebarProps {
     hasActivity: boolean
     className?: string
     planType?: PlanType
+    activePlanName?: string
 }
 
 // Which plans count as multi/elite
@@ -39,7 +40,7 @@ function hasPremiumAccess(plan?: PlanType) {
     return plan === 'multi' || plan === 'elite'
 }
 
-export default function Sidebar({ user, signOut, pendingTickets, hasActivity, className, planType }: SidebarProps) {
+export default function Sidebar({ user, signOut, pendingTickets, hasActivity, className, planType, activePlanName }: SidebarProps) {
     const pathname = usePathname()
     const [modalOpen, setModalOpen] = useState(false)
     const [modalFeature, setModalFeature] = useState('')
@@ -166,7 +167,7 @@ export default function Sidebar({ user, signOut, pendingTickets, hasActivity, cl
                          </div>
                          <div className="overflow-hidden flex-1">
                             <p className="text-xs font-semibold text-zinc-100 truncate group-hover/profile:text-indigo-400 transition-colors">{user.user_metadata?.full_name || 'Verified Artist'}</p>
-                            <p className="text-[10px] text-zinc-500 font-medium truncate tracking-tight">Edit Profile</p>
+                            <p className="text-[10px] text-zinc-500 font-medium truncate tracking-tight">{activePlanName || 'Edit Profile'}</p>
                          </div>
                     </Link>
                     

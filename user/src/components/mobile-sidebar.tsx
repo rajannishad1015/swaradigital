@@ -7,7 +7,7 @@ import Sidebar from "@/components/sidebar"
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 
-export default function MobileSidebar({ user, signOut, pendingTickets, hasActivity, planType }: { user: any, signOut: () => Promise<void>, pendingTickets: number, hasActivity: boolean, planType: any }) {
+export default function MobileSidebar({ user, signOut, pendingTickets, hasActivity, planType, activePlanName }: { user: any, signOut: () => Promise<void>, pendingTickets: number, hasActivity: boolean, planType: any, activePlanName?: string }) {
     const [open, setOpen] = useState(false)
     const pathname = usePathname()
 
@@ -47,6 +47,7 @@ export default function MobileSidebar({ user, signOut, pendingTickets, hasActivi
                         pendingTickets={pendingTickets} 
                         hasActivity={hasActivity}
                         planType={planType}
+                        activePlanName={activePlanName}
                         className="w-full border-r-0 h-auto flex-1 min-h-0"
                     />
                 </div>

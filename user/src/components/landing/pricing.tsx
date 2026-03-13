@@ -8,10 +8,10 @@ const tiers = [
   {
     id: "single",
     tag: "Basic",
-    name: "Single Artist",
+    name: "Single Release",
     description: "Ideal for individual artists starting their journey.",
-    price: "99",
-    period: " /release",
+    price: "₹99",
+    period: "/ release",
     color: "#777",
     features: [
       { text: "1 Artist Profile",         ok: true  },
@@ -29,7 +29,7 @@ const tiers = [
   {
     id: "monthly",
     tag: "Flexible",
-    name: "Monthly",
+    name: "Pro Monthly",
     description: "Unlimited releases every month. Cancel anytime.",
     price: "499",
     period: " /month",
@@ -50,7 +50,7 @@ const tiers = [
   {
     id: "yearly",
     tag: "Best Value",
-    name: "Yearly",
+    name: "Pro Yearly",
     description: "Save ₹4,489 vs monthly. Everything unlimited, all year.",
     price: "1499",
     period: " /year",

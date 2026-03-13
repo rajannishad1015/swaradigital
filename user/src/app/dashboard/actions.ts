@@ -186,8 +186,6 @@ export async function verifyRazorpaySubscription(subscriptionId: string, payment
         throw new Error('Subscription verification failed. Signature mismatch.')
     }
 
-    // Since webhook handles the DB updates for subscriptions in production, we do an explicit sync here
-    // for local test environments to immediately unlock the dashboard.
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -196,29 +194,87 @@ export async function verifyRazorpaySubscription(subscriptionId: string, payment
         if (planName === 'multi_monthly') {
             periodEnd.setMonth(periodEnd.getMonth() + 1)
         } else {
+            // yearly or elite → 1 year
             periodEnd.setFullYear(periodEnd.getFullYear() + 1)
         }
 
         const planType = (planName === 'multi_monthly' || planName === 'multi_yearly') ? 'multi' : 'elite'
-        const maxProfiles = planType === 'multi' ? 1 : 100
+        const maxProfiles = planType === 'multi' ? 5 : 100
 
-        await supabase.from('profiles').update({ plan_type: planType, max_artist_profiles: maxProfiles }).eq('id', user.id)
+        const adminClient = createAdminClient()
 
-        // We use UPSERT since the webhook might have beaten us to it, or it might not have arrived yet.
-        await supabase.from('subscriptions').upsert({
-             user_id: user.id,
-             razorpay_subscription_id: subscriptionId,
-             plan_name: planName,
-             status: 'active',
-             current_period_end: periodEnd.toISOString(),
-             updated_at: new Date().toISOString()
+        // Update profile plan type
+        const { error: profileError } = await adminClient
+            .from('profiles')
+            .update({ plan_type: planType, max_artist_profiles: maxProfiles })
+            .eq('id', user.id)
+        if (profileError) console.error("Error updating profile plan type:", profileError)
+
+        // Phase 1: Try upsert by razorpay_subscription_id (handles webhook race condition)
+        const { error: subError1 } = await adminClient.from('subscriptions').upsert({
+            user_id: user.id,
+            razorpay_subscription_id: subscriptionId,
+            plan_name: planName,
+            status: 'active',
+            current_period_end: periodEnd.toISOString(),
+            updated_at: new Date().toISOString()
         }, { onConflict: 'razorpay_subscription_id' })
+
+        if (subError1) {
+            console.error("Phase 1 subscription upsert failed, trying Phase 2 user_id upsert:", subError1)
+
+            // Phase 2: Fallback — upsert by user_id (ensures row always exists)
+            const { error: subError2 } = await adminClient.from('subscriptions').upsert({
+                user_id: user.id,
+                razorpay_subscription_id: subscriptionId,
+                plan_name: planName,
+                status: 'active',
+                current_period_end: periodEnd.toISOString(),
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' })
+
+            if (subError2) {
+                // Phase 3: Hard insert as last resort
+                console.error("Phase 2 subscription upsert also failed, attempting hard insert:", subError2)
+                const { error: subError3 } = await adminClient.from('subscriptions').insert({
+                    user_id: user.id,
+                    razorpay_subscription_id: subscriptionId,
+                    plan_name: planName,
+                    status: 'active',
+                    current_period_end: periodEnd.toISOString(),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                })
+                if (subError3) {
+                    console.error("All subscription upsert/insert phases failed:", subError3)
+                    return { success: false, error: 'Failed to record subscription. Please contact support.', details: subError3 }
+                }
+            }
+        }
+
+        console.log(`Subscription recorded successfully for user ${user.id}, plan: ${planName}, expiry: ${periodEnd.toISOString()}`)
     }
 
     return { success: true }
 }
 
 
+export async function getUserActivePlan() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const adminClient = createAdminClient()
+    const { data: sub } = await adminClient
+        .from('subscriptions')
+        .select('plan_name')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    return sub?.plan_name || null
+}
 
 
 export async function checkSubmissionEligibility(albumIdInput?: string) {
@@ -226,24 +282,24 @@ export async function checkSubmissionEligibility(albumIdInput?: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  let albumId = albumIdInput;
-  if (albumId && albumId !== '00000000-0000-0000-0000-000000000000') {
-      const { data: track } = await supabase.from('tracks').select('album_id').eq('id', albumId).maybeSingle();
-      if (track) albumId = track.album_id;
-  }
+  // Run profile fetch and album_id lookup in parallel
+  const albumLookupId = (albumIdInput && albumIdInput !== '00000000-0000-0000-0000-000000000000') ? albumIdInput : null
+  const [{ data: profile }, albumTrack] = await Promise.all([
+    supabase.from('profiles').select('plan_type, status').eq('id', user.id).single(),
+    albumLookupId
+      ? supabase.from('tracks').select('album_id').eq('id', albumLookupId).maybeSingle()
+      : Promise.resolve({ data: null })
+  ])
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan_type, status')
-    .eq('id', user.id)
-    .single()
+  let albumId = albumTrack?.data?.album_id || albumIdInput;
 
   if (!profile) throw new Error('Profile not found')
   if (profile.status !== 'active') throw new Error('Account is not active')
 
   // Check for active subscription for Multi/Elite plans
   if (profile.plan_type === 'multi' || profile.plan_type === 'elite') {
-    const { data: subscription } = await supabase
+    const adminClient = createAdminClient()
+    const { data: subscription } = await adminClient
       .from('subscriptions')
       .select('status')
       .eq('user_id', user.id)

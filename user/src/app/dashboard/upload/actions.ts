@@ -84,9 +84,9 @@ export async function submitTrack(formData: any) {
             if (artists.length === 0) return null;
             
             if (plan === 'solo' || plan === 'none') {
-                if (artists.length > 1) return `Single Artist plan only allows one primary artist for ${context}.`;
+                if (artists.length > 1) return `Single Release plan only allows one primary artist for ${context}.`;
                 if (artists[0].name.toLowerCase().trim() !== registeredArtist) {
-                    return `On a Single Artist plan, you can only use your registered artist profile: ${profile.artist_name}`;
+                    return `On a Single Release plan, you can only use your registered artist profile: ${profile.artist_name}`;
                 }
             }
             return null;

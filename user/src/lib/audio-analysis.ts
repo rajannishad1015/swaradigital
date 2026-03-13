@@ -65,18 +65,18 @@ export class AudioAnalyzer {
             if (silenceDuration > maxSilenceDuration) maxSilenceDuration = silenceDuration;
         }
 
-        const rms = Math.sqrt(rmsSum / rawData.length);
-        const volumeDb = 20 * Math.log10(rms);
-        const peakDb = 20 * Math.log10(maxPeak);
+        const rms = Math.sqrt(rmsSum / (rawData.length || 1));
+        const volumeDb = rms > 0 ? 20 * Math.log10(rms) : -100;
+        const peakDb = maxPeak > 0 ? 20 * Math.log10(maxPeak) : -100;
 
         return {
             duration,
             sampleRate,
             numberOfChannels,
-            peakLevel: parseFloat(peakDb.toFixed(2)),
+            peakLevel: isNaN(peakDb) ? -100 : parseFloat(peakDb.toFixed(2)),
             clippingDetected: maxPeak >= clippingThreshold,
             silenceDetected: maxSilenceDuration > 5, // Flag if silence > 5s exists
-            averageVolume: parseFloat(volumeDb.toFixed(2))
+            averageVolume: isNaN(volumeDb) ? -100 : parseFloat(volumeDb.toFixed(2))
         };
     }
 }

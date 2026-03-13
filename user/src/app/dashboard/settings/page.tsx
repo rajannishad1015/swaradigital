@@ -1,10 +1,12 @@
 import { createClient } from '@/utils/supabase/server'
+export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
-import { User, Mail, Phone, MapPin, Lock, Edit2, CreditCard, Instagram, Twitter, Youtube, Globe, Music2 } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Lock, Edit2, CreditCard, Instagram, Twitter, Youtube, Globe, Music2, Crown } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import ProfileEditorDialog from './profile-editor-dialog'
 import ChangePasswordDialog from './change-password-dialog'
+import { createAdminClient } from '@/utils/supabase/admin'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -17,6 +19,27 @@ export default async function SettingsPage() {
     .select('*')
     .eq('id', user.id)
     .single()
+
+  let activePlanName = 'Free Tier'
+  if (profile?.plan_type === 'solo') {
+      activePlanName = 'Pay-per-Release'
+  } else if (profile?.plan_type === 'multi' || profile?.plan_type === 'elite') {
+      const adminClient = createAdminClient()
+      const { data: sub } = await adminClient
+          .from('subscriptions')
+          .select('plan_name')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      const fetchPlanName = sub?.plan_name || null
+        
+      if (fetchPlanName === 'multi_yearly' || fetchPlanName === 'multi_artist') activePlanName = 'Pro Yearly'
+      else if (fetchPlanName === 'multi_monthly') activePlanName = 'Pro Monthly'
+      else if (fetchPlanName === 'elite_label') activePlanName = 'Elite Label'
+      else if (profile?.plan_type === 'multi') activePlanName = 'Pro Monthly' // Fallback
+      else activePlanName = 'Elite Label'
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -53,6 +76,10 @@ export default async function SettingsPage() {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.1)]">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                     <span className="text-xs uppercase tracking-wider font-bold">Verified Artist</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 backdrop-blur-md shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+                    <Crown size={12} className="text-indigo-500" />
+                    <span className="text-[10px] uppercase tracking-wider font-bold">{activePlanName}</span>
                 </div>
             </div>
           </div>

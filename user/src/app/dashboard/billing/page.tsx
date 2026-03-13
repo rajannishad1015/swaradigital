@@ -5,7 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import {
     createRazorpayOrder, createRazorpaySubscription,
-    verifyRazorpaySubscription, verifyRazorpayPayment
+    verifyRazorpaySubscription, verifyRazorpayPayment,
+    getUserActivePlan
 } from '../actions'
 import { Check, Loader2, Lock, Sparkles, ArrowRight, Music, Zap, Crown } from 'lucide-react'
 import { toast } from 'sonner'
@@ -28,13 +29,8 @@ function BillingContent() {
             const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
             setProfile(prof)
             if (prof?.plan_type === 'multi' || prof?.plan_type === 'elite') {
-                // Try active first, then fall back to any non-expired subscription
-                const { data: sub } = await supabase
-                    .from('subscriptions').select('plan_name, status').eq('user_id', user.id)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle()
-                if (sub) setActivePlanName(sub.plan_name)
+                const planName = await getUserActivePlan()
+                if (planName) setActivePlanName(planName)
             }
             setLoading(false)
         })
@@ -127,7 +123,7 @@ function BillingContent() {
                         <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center mb-4 mt-[42px]">
                             <Music className="w-5 h-5 text-zinc-400" />
                         </div>
-                        <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Single Artist</p>
+                        <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">Single Release</p>
                         <div className="flex items-baseline gap-1 mb-1">
                             <span className="text-3xl font-black text-white">₹99</span>
                             <span className="text-zinc-600 text-sm">/ release</span>
@@ -180,7 +176,7 @@ function BillingContent() {
                         <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center mb-4">
                             <Zap className="w-5 h-5 text-violet-400" />
                         </div>
-                        <p className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-1">Monthly</p>
+                        <p className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-1">Pro Monthly</p>
                         <div className="flex items-baseline gap-1 mb-1">
                             <span className="text-3xl font-black text-white">₹499</span>
                             <span className="text-violet-400/60 text-sm">/ month</span>
@@ -220,7 +216,7 @@ function BillingContent() {
                         <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-4">
                             <Crown className="w-5 h-5 text-indigo-400" />
                         </div>
-                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Yearly</p>
+                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">Pro Yearly</p>
                         <div className="flex items-baseline gap-1 mb-0.5">
                             <span className="text-3xl font-black text-white">₹1,499</span>
                             <span className="text-indigo-400/60 text-sm">/ year</span>

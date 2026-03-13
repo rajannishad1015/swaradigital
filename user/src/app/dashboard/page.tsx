@@ -152,7 +152,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </div>
 
             <DashboardHome 
-                user={user} 
+                user={{
+                    id: user.id,
+                    email: user.email,
+                    user_metadata: { full_name: user.user_metadata?.full_name }
+                }}
                 tracks={tracks || []} 
                 stats={stats} 
                 bankDetails={{

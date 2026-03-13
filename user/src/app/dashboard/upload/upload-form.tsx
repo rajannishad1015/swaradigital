@@ -130,6 +130,7 @@ interface UploadFormProps {
 export default function UploadForm({ initialData, isFirstUpload, userProfile }: UploadFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [verificationStage, setVerificationStage] = useState<'idle' | 'verifying' | 'uploading' | 'finalizing' | 'success'>('idle')
   const [draftLoaded, setDraftLoaded] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   // Tracks the server-side ID of a previously saved draft (prevents duplicate album creation on re-save)
@@ -350,16 +351,16 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
           
           if (plan === 'solo' || plan === 'none') {
               if (artistDialogName.toLowerCase().trim() !== registeredArtist.toLowerCase().trim()) {
-                  toast.error(`On a Single Artist plan, you can only add your registered artist profile: ${registeredArtist}`);
+                  toast.error(`On a Single Release plan, you can only add your registered artist profile: ${registeredArtist}`);
                   return;
               }
               
               if (artistDialogMode === 'release' && primaryArtists.length >= 1) {
-                  toast.error("Single Artist plan only allows one primary artist.");
+                  toast.error("Single Release plan only allows one primary artist.");
                   return;
               }
               if (artistDialogMode === 'track' && currentTrack.primaryArtists.length >= 1) {
-                  toast.error("Single Artist plan only allows one primary artist per track.");
+                  toast.error("Single Release plan only allows one primary artist per track.");
                   return;
               }
           } else {
@@ -926,27 +927,35 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                 let currentAlbumId = initialData?.id || savedDraftId
                 
                 if (!currentAlbumId) {
-                    // Upload files + save as draft first to get an albumId for the payment receipt
-                    toast.info("Saving your release before payment...")
                     try {
-                        const supabaseTmp = createClient()
-                        const tsTmp = Date.now()
-                        let coverArtUrlTmp = initialData?.albums?.cover_art_url
-                        if (coverFile) {
-                            const cp = `covers/${tsTmp}_${coverFile.name}`
-                            const { error: ce } = await supabaseTmp.storage.from('cover-art').upload(cp, coverFile)
-                            if (!ce) { const { data: cd } = supabaseTmp.storage.from('cover-art').getPublicUrl(cp); coverArtUrlTmp = cd.publicUrl }
-                        }
-                        const draftTracks = await Promise.all(tracks.map(async (track, idx) => {
-                            let audioUrl = track.audioUrl
-                            if (track.audioFile) {
-                                const ap = `tracks/${tsTmp}_${idx}_${track.audioFile.name}`
-                                const { error: ae } = await supabaseTmp.storage.from('music-files').upload(ap, track.audioFile)
-                                if (!ae) { const { data: ad } = supabaseTmp.storage.from('music-files').getPublicUrl(ap); audioUrl = ad.publicUrl }
-                            }
-                            return { id: track.id, title: track.title, audioUrl, duration: track.duration, lyrics: track.lyrics, primaryArtists: track.primaryArtists, featuringArtists: track.featuringArtists, genre: track.genre, subGenre: track.subGenre, lyricists: track.lyricists, composers: track.composers, producers: track.producers, publisher: track.publisher, productionYear: track.productionYear, pLine: track.pLine, isrc: track.hasISRC === 'yes' ? track.isrc : '', priceTier: track.priceTier, isInstrumental: track.isInstrumental, explicit: track.explicitType === 'yes', explicitType: track.explicitType, trackVersion: track.trackVersion, versionSubtitle: track.versionSubtitle, callerTuneTiming: track.callerTuneTiming, distributeVideo: track.distributeVideo, titleLanguage: track.titleLanguage, lyricsLanguage: track.lyricsLanguage, audioAnalysis: track.audioAnalysis }
-                        }))
-                        const draftResult = await submitTrack({ id: undefined, title, releaseType, labelName, primaryArtists, featuringArtists, releaseDate, originalReleaseDate, pLine: `℗ ${pLineYear} ${pLineText}`, cLine: `© ${cLineYear} ${cLineText}`, courtesyLine, description, language, genre, subGenre, coverArtUrl: coverArtUrlTmp, selectedPlatforms, upc, status: 'draft', tracks: draftTracks })
+                        // Quick metadata-only save to get an ID for payment
+                        const draftResult = await submitTrack({ 
+                            id: undefined, 
+                            title, 
+                            releaseType, 
+                            labelName, 
+                            primaryArtists, 
+                            featuringArtists, 
+                            releaseDate, 
+                            originalReleaseDate, 
+                            pLine: `℗ ${pLineYear} ${pLineText}`, 
+                            cLine: `© ${cLineYear} ${cLineText}`, 
+                            courtesyLine, 
+                            description, 
+                            language, 
+                            genre, 
+                            subGenre, 
+                            coverArtUrl: initialData?.albums?.cover_art_url, // No new upload here
+                            selectedPlatforms, 
+                            upc, 
+                            status: 'draft', 
+                            tracks: tracks.map(t => ({ 
+                                ...t, 
+                                audioUrl: t.audioUrl, // No new audio upload here
+                                audioFile: null, // Ensure we don't pass files
+                                isrc: t.hasISRC === 'yes' ? t.isrc : '',
+                            })) 
+                        })
                         if (draftResult?.success && draftResult?.trackId) {
                             currentAlbumId = draftResult.trackId
                             setSavedDraftId(draftResult.trackId)
@@ -978,18 +987,24 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         order_id: order.orderId,
                         handler: async function (response: any) {
                             try {
+                                setVerificationStage('verifying')
                                 await verifyRazorpayPayment(
                                     response.razorpay_order_id,
                                     response.razorpay_payment_id,
                                     response.razorpay_signature,
                                     currentAlbumId
                                 )
-                                toast.success("Payment successful! Submitting your release...")
+                                
                                 // Update local eligibility so UI reflects payment done
                                 setEligibilityInfo(prev => prev ? { ...prev, mustPay: false } : null)
+                                
+                                // Transition to uploading
+                                setVerificationStage('uploading')
+                                
                                 // After verification, resume submission with the explicit album ID
-                                handleSubmit(e, 'pending', currentAlbumId)
+                                await handleSubmit(e, 'pending', currentAlbumId)
                             } catch (err: any) {
+                                setVerificationStage('idle')
                                 toast.error(err.message || 'Payment verification failed')
                                 // Clean up the auto-saved draft since payment verification failed
                                 if (currentAlbumId && !initialData?.id) {
@@ -1012,6 +1027,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                         },
                         modal: {
                             ondismiss: function() {
+                                setVerificationStage('idle')
                                 // Payment was cancelled/closed — do NOT submit, delete the draft
                                 toast.error("Payment cancelled. Your release was NOT submitted.", { duration: 5000 })
                                 // Clean up the auto-saved draft since payment was not completed
@@ -1033,12 +1049,19 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                     rzp.open()
                     return // Stop here, wait for handler
                 } catch (err: any) {
+                    setVerificationStage('idle')
                     toast.error(err.message || "Failed to initialize payment")
                     setLoading(false)
                     return
                 }
             }
         }
+        
+        // If we reach here, we are either uploading (after payment) or submitting (no payment needed)
+        if (status === 'pending') {
+            if (verificationStage === 'idle') setVerificationStage('uploading')
+        }
+
         // 1. Upload Cover Art if changed
         let coverArtUrl = initialData?.albums?.cover_art_url
         if (coverFile) {
@@ -1126,9 +1149,12 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
             tracks: processedTracks
         }
 
+        if (status === 'pending') setVerificationStage('finalizing')
+
         const result = await submitTrack(formData)
         
         if (!result.success) {
+            setVerificationStage('idle')
             console.warn("Submission failed:", result.error)
             toast.error(result.error || "Failed to submit release", {
                 duration: 8000,
@@ -1139,11 +1165,12 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
         }
 
         if (result.success) {
-            if (status === 'draft') {
-                // Update track IDs with real IDs from server for stable synchronization
-                if (result.trackId) {
-                    setSavedDraftId(result.trackId)
-                }
+                setVerificationStage('idle')
+                if (status === 'draft') {
+                    // Update track IDs with real IDs from server for stable synchronization
+                    if (result.trackId) {
+                        setSavedDraftId(result.trackId)
+                    }
                 
                 // Sync all track IDs if returned (Multi-track support)
                 if (result.allTracks && result.allTracks.length > 0) {
@@ -1201,12 +1228,22 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
             toast.success(initialData ? "Release updated successfully!" : "Release submitted successfully!")
             
             if (!initialData) {
-                setIsSuccessDialogOpen(true)
+                setVerificationStage('success')
+                // Smaller delay for success icon
+                setTimeout(() => {
+                    setVerificationStage('idle')
+                    setIsSuccessDialogOpen(true)
+                }, 800)
             } else {
-                router.push('/dashboard/catalog')
+                setVerificationStage('success')
+                setTimeout(() => {
+                    setVerificationStage('idle')
+                    router.push('/dashboard/catalog')
+                }, 800)
             }
         }
     } catch (error: unknown) {
+        setVerificationStage('idle')
         const errorMessage = error instanceof Error ? error.message : "Failed to submit release";
         toast.error(errorMessage)
     } finally {
@@ -2280,9 +2317,59 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
 
         <UploadSuccessDialog 
             isOpen={isSuccessDialogOpen} 
-            onOpenChange={setIsSuccessDialogOpen} 
+            onOpenChange={(open) => {
+                setIsSuccessDialogOpen(open)
+                if (!open) setVerificationStage('idle')
+            }} 
             isFirstUpload={isFirstUpload}
         />
+
+        {/* Verification Loading Overlay */}
+        {verificationStage !== 'idle' && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center bg-zinc-950/60 backdrop-blur-sm animate-in fade-in duration-300">
+                <div className="max-w-sm w-full mx-4 p-8 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl text-center space-y-6 animate-in zoom-in-95 duration-300">
+                    <div className="relative mx-auto w-20 h-20">
+                        {verificationStage !== 'success' && (
+                            <div className="absolute inset-0 rounded-full border-4 border-white/5 border-t-indigo-500 animate-spin" />
+                        )}
+                        <div className={`absolute inset-0 rounded-full flex items-center justify-center ${verificationStage === 'success' ? 'bg-emerald-500/10' : 'bg-indigo-500/10'}`}>
+                            {verificationStage === 'verifying' && <AlertTriangle className="text-indigo-400 animate-pulse" size={28} />}
+                            {verificationStage === 'uploading' && <UploadCloud className="text-indigo-400 animate-bounce" size={28} />}
+                            {verificationStage === 'finalizing' && <Loader2 className="text-indigo-400 animate-spin" size={28} />}
+                            {verificationStage === 'success' && <Check className="text-emerald-500" size={32} />}
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <h3 className="text-lg font-black uppercase tracking-widest text-white">
+                            {verificationStage === 'verifying' && "Verifying"}
+                            {verificationStage === 'uploading' && "Uploading"}
+                            {verificationStage === 'finalizing' && "Finalizing"}
+                            {verificationStage === 'success' && "Success!"}
+                        </h3>
+                        <p className="text-zinc-500 text-[11px] font-bold uppercase tracking-wider">
+                            {verificationStage === 'verifying' && "Checking signature..."}
+                            {verificationStage === 'uploading' && "Storing assets securely..."}
+                            {verificationStage === 'finalizing' && "Updating database..."}
+                            {verificationStage === 'success' && (initialData ? "Redirecting..." : "Finalizing UI...")}
+                        </p>
+                    </div>
+
+                    {/* Progress Bar Emulation */}
+                    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                            className={`h-full transition-all duration-700 ease-out ${verificationStage === 'success' ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                            style={{ 
+                                width: 
+                                    verificationStage === 'verifying' ? '30%' : 
+                                    verificationStage === 'uploading' ? '65%' : 
+                                    verificationStage === 'finalizing' ? '90%' : '100%' 
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Load Razorpay SDK */}
         <Script
