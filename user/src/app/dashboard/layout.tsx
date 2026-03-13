@@ -28,8 +28,6 @@ export default async function DashboardLayout({
         redirect('/login')
     }
 
-    const adminClient = createAdminClient()
-
     let profile: { id: string; role: string; status: string; label_id: string | null; plan_type: string | null } | null = null
     let pendingTickets: number | null = 0
     let trackCount: number | null = 0
@@ -53,7 +51,15 @@ export default async function DashboardLayout({
                 supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
                 supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
             ]),
-            adminClient.from('subscriptions').select('plan_name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+            (async () => {
+                try {
+                    const adminClient = createAdminClient()
+                    return await adminClient.from('subscriptions').select('plan_name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+                } catch (e) {
+                    console.error('Admin Client Init Error:', e)
+                    return { data: null, error: e }
+                }
+            })()
         ])
 
         profile = profileRes.data
