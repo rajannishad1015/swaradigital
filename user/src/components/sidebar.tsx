@@ -23,7 +23,7 @@ import {
 import { Button } from './ui/button'
 import PlanGateModal from './plan-gate-modal'
 
-type PlanType = 'none' | 'solo' | 'multi' | 'elite'
+export type PlanType = 'none' | 'solo' | 'multi' | 'elite'
 
 interface SidebarProps {
     user: any

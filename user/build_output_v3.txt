@@ -1,0 +1,30 @@
+
+> user@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  ┬╖ serverActions
+
+ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 17.9s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/dashboard/finance/revenue-analytics.tsx:233:37
+Type error: Type '(value: number | string) => [string, "Revenue"]' is not assignable to type 'Formatter<string | number, "Revenue"> & ((value: string | number, name: "Revenue", item: Payload<string | number, "Revenue">, index: number, payload: Payload<...>[]) => ReactNode | [...])'.
+  Type '(value: number | string) => [string, "Revenue"]' is not assignable to type 'Formatter<string | number, "Revenue">'.
+    Types of parameters 'value' and 'value' are incompatible.
+      Type 'string | number | undefined' is not assignable to type 'string | number'.
+        Type 'undefined' is not assignable to type 'string | number'.
+
+  231 |                                     }}
+  232 |                                     itemStyle={{ fontWeight: '900', fontSize: '14px', color: '#34d399' }}
+> 233 |                                     formatter={(value: number | string) => [`$${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
+      |                                     ^
+  234 |                                 />
+  235 |                                 <defs>
+  236 |                                     <linearGradient id="barTrackGrad" x1="0" y1="0" x2="1" y2="0">
+Next.js build worker exited with code: 1 and signal: null

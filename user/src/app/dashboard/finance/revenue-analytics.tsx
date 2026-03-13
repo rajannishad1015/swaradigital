@@ -29,9 +29,9 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
 
     useEffect(() => {
         setIsMounted(true);
-    }, []);
+    }, []); // eslint-disable-line react/no-did-mount-set-state
 
-    const onPieEnter = (_: any, index: number) => {
+    const onPieEnter = (_: unknown, index: number) => {
         setActiveIndex(index);
     };
 
@@ -88,7 +88,15 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                                     <Pie
                                         {...{
                                             activeIndex: activeIndex ?? undefined,
-                                            activeShape: (props: any) => {
+                                            activeShape: (props: {
+                                                cx: number;
+                                                cy: number;
+                                                innerRadius: number;
+                                                outerRadius: number;
+                                                startAngle: number;
+                                                endAngle: number;
+                                                fill: string;
+                                            }) => {
                                                 const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
                                                 return (
                                                     <g>
@@ -128,7 +136,7 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                                             onMouseLeave: onPieLeave,
                                             animationBegin: 0,
                                             animationDuration: 1000
-                                        } as any}
+                                        } as React.ComponentProps<typeof Pie>}
                                     >
                                         {data.platformData.map((entry, index) => (
                                             <Cell 
@@ -222,7 +230,7 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                                         color: '#fff' 
                                     }}
                                     itemStyle={{ fontWeight: '900', fontSize: '14px', color: '#34d399' }}
-                                    formatter={(value: any) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
+                                    formatter={(value: number | string | undefined) => [`$${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
                                 />
                                 <defs>
                                     <linearGradient id="barTrackGrad" x1="0" y1="0" x2="1" y2="0">
@@ -310,7 +318,7 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                                 }}
                                 itemStyle={{ fontWeight: '900', fontSize: '14px', color: '#818cf8' }}
                                 labelStyle={{ color: '#71717a', fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.15em', marginBottom: '6px' }}
-                                formatter={(value: any) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
+                                formatter={(value: number | string | undefined) => [`$${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
                                 cursor={{ stroke: 'rgba(99, 102, 241, 0.2)', strokeWidth: 2 }}
                             />
                             <Area 
@@ -388,7 +396,7 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                                     color: '#fff' 
                                 }}
                                 itemStyle={{ fontWeight: '900', fontSize: '14px', color: '#fb7185' }}
-                                formatter={(value: any) => [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
+                                formatter={(value: number | string | undefined) => [`$${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
                             />
                             <Bar 
                                 dataKey="value" 

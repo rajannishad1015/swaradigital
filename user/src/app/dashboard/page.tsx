@@ -45,10 +45,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   }
 
   // 2. Fetch All Dashboard Data in Parallel
-  let dashboardData: Record<string, any> | null = null
-  let payouts: Record<string, any>[] = []
-  let tickets: Record<string, any>[] = []
-  let tracks: Record<string, any>[] = []
+  let dashboardData: { 
+    statusCounts: { status: string; count: number }[];
+    topGenres: { genre: string; count: number }[];
+    recentTracks: { id: string; title: string; status: string; created_at: string }[];
+  } | null = null
+  let payouts: { id: string; amount: number; status: string; created_at: string }[] = []
+  let tickets: { id: string; subject: string; status: string; created_at: string }[] = []
+  let tracks: any[] = [] // Tracks can have many fields, keeping any for now but wrapped in specific array
 
   try {
     const [dashboardRes, payoutsRes, ticketsRes, tracksRes] = await Promise.all([
@@ -81,7 +85,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // 3. Process Data for UI
   const statusCountsRaw = dashboardData?.statusCounts || []
   // Performance: Build map in single pass instead of multiple find() calls
-  const statusMap = statusCountsRaw.reduce((acc: Record<string, number>, s: Record<string, any>) => {
+  const statusMap = statusCountsRaw.reduce((acc: Record<string, number>, s: { status: string; count: number }) => {
     acc[s.status] = s.count || 0
     return acc
   }, {} as Record<string, number>)
@@ -93,11 +97,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     { status: 'draft', count: statusMap['draft'] || 0 },
   ]
 
-  const totalReleases = statusCounts.reduce((acc: number, curr: Record<string, any>) => acc + curr.count, 0)
+  const totalReleases = statusCounts.reduce((acc: number, curr: { count: number }) => acc + curr.count, 0)
   const approvedCount = statusCounts[0].count
 
   // Genre Counts
-  const genres = dashboardData?.topGenres?.map((g: Record<string, any>) => ({
+  const genres = dashboardData?.topGenres?.map((g: { genre: string; count: number }) => ({
     genre: g.genre,
     count: g.count
   })) || []
@@ -109,7 +113,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // Recent Activity Generation
   const recentTracks = dashboardData?.recentTracks || []
   const activities = [
-      ...recentTracks.map((t: Record<string, any>) => ({ 
+      ...recentTracks.map((t: { id: string, title: string, status: string, created_at: string }) => ({ 
         id: `t-${t.id}`, type: 'upload' as const, title: `Release: ${t.title}`, status: t.status, date: t.created_at 
       })),
       ...(payouts?.slice(0, 5).map(p => ({ 
@@ -120,7 +124,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       })) || [])
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
 
-  const ticketCount = dashboardData?.statusCounts?.find((s: Record<string, any>) => s.status === 'open' || s.status === 'in_progress')?.count || 0
+  const ticketCountValue = dashboardData?.statusCounts?.find((s: { status: string; count: number }) => s.status === 'open' || s.status === 'in_progress')?.count || 0
 
   const totalRevenue = (profile?.balance || 0) + (isLabel && !artistId ? managedArtists.reduce((acc, curr) => acc + (curr.balance || 0), 0) : 0)
 
@@ -128,7 +132,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       total: totalReleases,
       approved: approvedCount,
       revenue: totalRevenue,
-      tickets: ticketCount,
+      tickets: ticketCountValue,
       statusCounts,
       genres,
       activities,

@@ -1,0 +1,26 @@
+
+> user@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  ┬╖ serverActions
+
+ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 23.5s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/dashboard/faq/page.tsx:114:27
+Type error: Type 'number' is not assignable to type 'never'.
+
+  112 |             <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+  113 |                 <div className="p-3 bg-zinc-900 rounded-full text-indigo-400">
+> 114 |                     <Icon size={24} />
+      |                           ^
+  115 |                 </div>
+  116 |                 <div>
+  117 |                     <h3 className="font-bold text-white">{title}</h3>
+Next.js build worker exited with code: 1 and signal: null

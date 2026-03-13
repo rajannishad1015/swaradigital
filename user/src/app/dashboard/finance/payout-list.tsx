@@ -10,7 +10,15 @@ import {
 } from "@/components/ui/table"
 import { Clock, AlertCircle, CheckCircle2, History } from 'lucide-react'
 
-export default function PayoutList({ payouts }: { payouts: any[] }) {
+interface PayoutRequest {
+  id: string;
+  created_at: string;
+  amount: number;
+  status: 'approved' | 'pending' | 'rejected';
+  admin_notes?: string;
+}
+
+export default function PayoutList({ payouts }: { payouts: PayoutRequest[] }) {
   if (!payouts || payouts.length === 0) {
     return (
         <div className="flex flex-col items-center justify-center py-16 text-zinc-500 bg-white/[0.02] rounded-xl border border-white/5 border-dashed">
@@ -64,7 +72,7 @@ export default function PayoutList({ payouts }: { payouts: any[] }) {
                             </TableCell>
                             <TableCell className="text-right">
                                 {req.status === 'rejected' && req.admin_notes ? (
-                                    <span className="text-xs text-red-400 italic">"{req.admin_notes}"</span>
+                                    <span className="text-xs text-red-400 italic">&quot;{req.admin_notes}&quot;</span>
                                 ) : (
                                     <span className="text-xs text-zinc-600">-</span>
                                 )}
@@ -110,7 +118,7 @@ export default function PayoutList({ payouts }: { payouts: any[] }) {
                         <div className="mt-3 pt-3 border-t border-white/5">
                             <p className="text-xs text-red-400 italic">
                                 <span className="font-bold uppercase tracking-wider text-[10px] text-red-500/70 mr-2">Admin Note:</span>
-                                "{req.admin_notes}"
+                                &quot;{req.admin_notes}&quot;
                             </p>
                         </div>
                     )}

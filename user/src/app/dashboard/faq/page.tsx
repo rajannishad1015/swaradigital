@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { HelpCircle, ChevronDown, CheckCircle, Upload, DollarSign, AlertTriangle, FileText } from 'lucide-react'
+import { HelpCircle, ChevronDown, CheckCircle, Upload, DollarSign, AlertTriangle, FileText, type LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -70,7 +70,7 @@ export default function FAQPage() {
                         We recommend uploading at least 2 weeks in advance for a planned release.
                     </FAQItem>
                     <FAQItem question="Can I take down my music later?">
-                        Yes. You can request a takedown from the "My Uploads" page. Takedowns typically take 1-2 weeks to reflect across all platforms.
+                        Yes. You can request a takedown from the &quot;My Uploads&quot; page. Takedowns typically take 1-2 weeks to reflect across all platforms.
                     </FAQItem>
                 </Section>
 
@@ -92,7 +92,7 @@ export default function FAQPage() {
                 <div className="mx-auto w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400">
                     <FileText size={24} />
                 </div>
-                <h3 className="text-xl font-bold text-white">Can't find the answer?</h3>
+                <h3 className="text-xl font-bold text-white">Can&apos;t find the answer?</h3>
                 <p className="text-zinc-400 max-w-lg mx-auto">
                     Our support team is here to help. Create a ticket and we'll get back to you as soon as possible.
                 </p>
@@ -106,7 +106,7 @@ export default function FAQPage() {
     )
 }
 
-function CategoryCard({ icon: Icon, title, description }: { icon: any, title: string, description: string }) {
+function CategoryCard({ icon: Icon, title, description }: { icon: LucideIcon, title: string, description: string }) {
     return (
         <Card className="bg-white/5 border-white/5 hover:bg-white/10 transition-colors cursor-default">
             <CardContent className="p-6 flex flex-col items-center text-center gap-3">
@@ -122,7 +122,7 @@ function CategoryCard({ icon: Icon, title, description }: { icon: any, title: st
     )
 }
 
-function Section({ title, icon: Icon, children }: { title: string, icon: any, children: React.ReactNode }) {
+function Section({ title, icon: Icon, children }: { title: string, icon: LucideIcon, children: React.ReactNode }) {
     return (
         <div className="space-y-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2">

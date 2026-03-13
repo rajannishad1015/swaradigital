@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import Sidebar from '@/components/sidebar'
+import Sidebar, { PlanType } from '@/components/sidebar'
 import MobileSidebar from '@/components/mobile-sidebar'
 import NotificationCenter from '@/components/notification-center'
 import ArtistSwitcher from '@/components/artist-switcher'
@@ -30,12 +30,12 @@ export default async function DashboardLayout({
 
     const adminClient = createAdminClient()
 
-    let profile: Record<string, any> | null = null
+    let profile: { id: string; role: string; status: string; label_id: string | null; plan_type: string | null } | null = null
     let pendingTickets: number | null = 0
     let trackCount: number | null = 0
     let payoutCount: number | null = 0
     let ticketCount: number | null = 0
-    let sub: Record<string, any> | null = null
+    let sub: { plan_name: string } | null = null
 
     try {
         // Fetch profile, pending tickets, activity counts, AND subscription all in parallel
@@ -77,7 +77,7 @@ export default async function DashboardLayout({
     }
 
     const isLabel = profile?.role === 'label'
-    let artists: Record<string, any>[] = []
+    let artists: { id: string; artist_name: string }[] = []
     if (isLabel) {
         try {
             const { data } = await supabase
@@ -125,7 +125,7 @@ export default async function DashboardLayout({
         signOut={signOut} 
         pendingTickets={pendingTickets || 0} 
         hasActivity={hasActivity}
-        planType={profile?.plan_type as string | undefined}
+        planType={profile?.plan_type as PlanType}
         activePlanName={activePlanName}
         className="hidden md:flex"
       />
@@ -140,7 +140,7 @@ export default async function DashboardLayout({
                    signOut={signOut} 
                    pendingTickets={pendingTickets || 0} 
                    hasActivity={hasActivity}
-                   planType={profile?.plan_type as string | undefined}
+                   planType={profile?.plan_type as PlanType}
                    activePlanName={activePlanName}
                />
                <div className="hidden sm:block ml-2">

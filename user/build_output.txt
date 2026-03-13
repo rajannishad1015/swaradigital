@@ -1,0 +1,27 @@
+
+> user@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  ┬╖ serverActions
+
+ΓÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 18.5s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/dashboard/layout.tsx:128:9
+Type error: Type 'string | undefined' is not assignable to type 'PlanType | undefined'.
+  Type 'string' is not assignable to type 'PlanType | undefined'.
+
+  126 |         pendingTickets={pendingTickets || 0} 
+  127 |         hasActivity={hasActivity}
+> 128 |         planType={profile?.plan_type as string | undefined}
+      |         ^
+  129 |         activePlanName={activePlanName}
+  130 |         className="hidden md:flex"
+  131 |       />
+Next.js build worker exited with code: 1 and signal: null
