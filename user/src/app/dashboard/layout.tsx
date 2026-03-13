@@ -30,22 +30,46 @@ export default async function DashboardLayout({
 
     const adminClient = createAdminClient()
 
-    // Fetch profile, pending tickets, activity counts, AND subscription all in parallel
-    const [
-        { data: profile },
-        { count: pendingTickets },
-        [trackCountRes, payoutCountRes, ticketCountRes],
-        { data: sub }
-    ] = await Promise.all([
-        supabase.from('profiles').select('role, id, status, label_id, plan_type').eq('id', user.id).single(),
-        supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id).neq('status', 'resolved').neq('status', 'closed'),
-        Promise.all([
-            supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
-            supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-            supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
-        ]),
-        adminClient.from('subscriptions').select('plan_name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
-    ])
+    let profile: Record<string, any> | null = null
+    let pendingTickets: number | null = 0
+    let trackCount: number | null = 0
+    let payoutCount: number | null = 0
+    let ticketCount: number | null = 0
+    let sub: Record<string, any> | null = null
+
+    try {
+        // Fetch profile, pending tickets, activity counts, AND subscription all in parallel
+        // Using Promise.allSettled could be safer, but Promise.all with a single try-catch is also effective if we provide fallbacks
+        const [
+            profileRes,
+            pendingTicketsRes,
+            [trackCountRes, payoutCountRes, ticketCountRes],
+            subRes
+        ] = await Promise.all([
+            supabase.from('profiles').select('role, id, status, label_id, plan_type').eq('id', user.id).single(),
+            supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id).neq('status', 'resolved').neq('status', 'closed'),
+            Promise.all([
+                supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('artist_id', user.id),
+                supabase.from('payout_requests').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+                supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+            ]),
+            adminClient.from('subscriptions').select('plan_name').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+        ])
+
+        profile = profileRes.data
+        pendingTickets = pendingTicketsRes.count
+        trackCount = trackCountRes.count
+        payoutCount = payoutCountRes.count
+        ticketCount = ticketCountRes.count
+        sub = subRes.data
+
+        if (profileRes.error) console.error('DashboardLayout Profile Error:', profileRes.error)
+        if (subRes.error) console.error('DashboardLayout Subscription Error:', subRes.error)
+        
+    } catch (err) {
+        console.error('Critical DashboardLayout Data Fetch Error:', err)
+        // Values remain at their null/default states, preventing a total crash
+    }
 
     if (profile?.status === 'banned' || profile?.status === 'suspended') {
         await supabase.auth.signOut()
@@ -53,18 +77,19 @@ export default async function DashboardLayout({
     }
 
     const isLabel = profile?.role === 'label'
-    let artists: any[] = []
+    let artists: Record<string, any>[] = []
     if (isLabel) {
-        const { data } = await supabase
-            .from('profiles')
-            .select('id, artist_name')
-            .eq('label_id', user.id)
-        artists = data || []
+        try {
+            const { data } = await supabase
+                .from('profiles')
+                .select('id, artist_name')
+                .eq('label_id', user.id)
+            artists = data || []
+        } catch (err) {
+            console.error('DashboardLayout Artists Fetch Error:', err)
+        }
     }
 
-    const trackCount = trackCountRes.count
-    const payoutCount = payoutCountRes.count
-    const ticketCount = ticketCountRes.count
     const hasActivity = (trackCount || 0) > 0 || (payoutCount || 0) > 0 || (ticketCount || 0) > 0
     let activePlanName = 'Free Tier'
     
@@ -100,7 +125,7 @@ export default async function DashboardLayout({
         signOut={signOut} 
         pendingTickets={pendingTickets || 0} 
         hasActivity={hasActivity}
-        planType={profile?.plan_type as any}
+        planType={profile?.plan_type as string | undefined}
         activePlanName={activePlanName}
         className="hidden md:flex"
       />
@@ -115,7 +140,7 @@ export default async function DashboardLayout({
                    signOut={signOut} 
                    pendingTickets={pendingTickets || 0} 
                    hasActivity={hasActivity}
-                   planType={profile?.plan_type as any}
+                   planType={profile?.plan_type as string | undefined}
                    activePlanName={activePlanName}
                />
                <div className="hidden sm:block ml-2">

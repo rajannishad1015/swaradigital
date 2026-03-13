@@ -1,11 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
 import { UploadCloud } from 'lucide-react'
-import TrackList from './track-list'
-import RevenueCard from '@/components/revenue-card'
 import DashboardHome from '@/components/dashboard-home'
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ artistId?: string }> }) {
@@ -48,29 +45,43 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   }
 
   // 2. Fetch All Dashboard Data in Parallel
-  const [dashboardRes, payoutsRes, ticketsRes, tracksRes] = await Promise.all([
-    supabase.rpc('get_user_dashboard_data_v2', {
-        p_user_id: artistId || user.id
-    }),
-    supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
-    supabase.from('tickets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
-    // Performance: Limit to 50 most recent tracks to prevent loading thousands of rows
-    trackQuery.order('created_at', { ascending: false }).limit(50)
-  ])
+  let dashboardData: Record<string, any> | null = null
+  let payouts: Record<string, any>[] = []
+  let tickets: Record<string, any>[] = []
+  let tracks: Record<string, any>[] = []
 
-  const dashboardData = dashboardRes.data
-  if (dashboardRes.error) {
-    console.error('Error fetching dashboard data via RPC:', dashboardRes.error)
+  try {
+    const [dashboardRes, payoutsRes, ticketsRes, tracksRes] = await Promise.all([
+      supabase.rpc('get_user_dashboard_data_v2', {
+          p_user_id: artistId || user.id
+      }),
+      supabase.from('payout_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+      supabase.from('tickets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+      // Performance: Limit to 50 most recent tracks to prevent loading thousands of rows
+      trackQuery.order('created_at', { ascending: false }).limit(50)
+    ])
+
+    dashboardData = dashboardRes.data
+    if (dashboardRes.error) {
+      console.error('Error fetching dashboard data via RPC:', dashboardRes.error)
+    }
+
+    payouts = payoutsRes.data || []
+    tickets = ticketsRes.data || []
+    tracks = tracksRes.data || []
+
+    if (payoutsRes.error) console.error('DashboardPage Payouts Error:', payoutsRes.error)
+    if (ticketsRes.error) console.error('DashboardPage Tickets Error:', ticketsRes.error)
+    if (tracksRes.error) console.error('DashboardPage Tracks Error:', tracksRes.error)
+
+  } catch (err) {
+    console.error('Critical DashboardPage Data Fetch Error:', err)
   }
-
-  const payouts = payoutsRes.data
-  const tickets = ticketsRes.data
-  const tracks = tracksRes.data
 
   // 3. Process Data for UI
   const statusCountsRaw = dashboardData?.statusCounts || []
   // Performance: Build map in single pass instead of multiple find() calls
-  const statusMap = statusCountsRaw.reduce((acc: Record<string, number>, s: any) => {
+  const statusMap = statusCountsRaw.reduce((acc: Record<string, number>, s: Record<string, any>) => {
     acc[s.status] = s.count || 0
     return acc
   }, {} as Record<string, number>)
@@ -82,11 +93,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     { status: 'draft', count: statusMap['draft'] || 0 },
   ]
 
-  const totalReleases = statusCounts.reduce((acc: number, curr: any) => acc + curr.count, 0)
+  const totalReleases = statusCounts.reduce((acc: number, curr: Record<string, any>) => acc + curr.count, 0)
   const approvedCount = statusCounts[0].count
 
   // Genre Counts
-  const genres = dashboardData?.topGenres?.map((g: any) => ({
+  const genres = dashboardData?.topGenres?.map((g: Record<string, any>) => ({
     genre: g.genre,
     count: g.count
   })) || []
@@ -98,7 +109,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // Recent Activity Generation
   const recentTracks = dashboardData?.recentTracks || []
   const activities = [
-      ...recentTracks.map((t: any) => ({ 
+      ...recentTracks.map((t: Record<string, any>) => ({ 
         id: `t-${t.id}`, type: 'upload' as const, title: `Release: ${t.title}`, status: t.status, date: t.created_at 
       })),
       ...(payouts?.slice(0, 5).map(p => ({ 
@@ -109,7 +120,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       })) || [])
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
 
-  const ticketCount = dashboardData?.statusCounts?.find((s: any) => s.status === 'open' || s.status === 'in_progress')?.count || 0
+  const ticketCount = dashboardData?.statusCounts?.find((s: Record<string, any>) => s.status === 'open' || s.status === 'in_progress')?.count || 0
 
   const totalRevenue = (profile?.balance || 0) + (isLabel && !artistId ? managedArtists.reduce((acc, curr) => acc + (curr.balance || 0), 0) : 0)
 
