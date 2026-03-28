@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import Link from 'next/link'
-import { MessageSquare, AlertCircle, Search, Filter } from 'lucide-react'
+import { MessageSquare, AlertCircle, Search, Filter, User } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -34,6 +34,45 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
   const { status: statusParam, q: searchParam } = await searchParams
   const status = statusParam || 'all'
   const search = searchParam || ''
+
+  // -- AUTO CLEANUP ROUTINE: Delete resolved/closed tickets older than 7 days --
+  try {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      
+      const { data: oldTickets } = await supabase
+          .from('tickets')
+          .select('id')
+          .in('status', ['resolved', 'closed'])
+          .lte('updated_at', sevenDaysAgo.toISOString())
+          .limit(50) // Chunk the cleanup so the page doesn't hang if there are thousands
+
+      if (oldTickets && oldTickets.length > 0) {
+          const idsToDelete = oldTickets.map(t => t.id)
+          
+          // 1. Find and delete associated storage attachments
+          const { data: msgs } = await supabase
+              .from('ticket_messages')
+              .select('attachment_url')
+              .in('ticket_id', idsToDelete)
+              .not('attachment_url', 'is', null)
+              
+          if (msgs && msgs.length > 0) {
+              const filePaths = msgs.map(m => m.attachment_url.split('/').pop()).filter(Boolean) as string[]
+              if (filePaths.length > 0) {
+                  await supabase.storage.from('support-attachments').remove(filePaths)
+              }
+          }
+          
+          // 2. Delete messages and tickets (safe cascading fallback)
+          await supabase.from('ticket_messages').delete().in('ticket_id', idsToDelete)
+          await supabase.from('tickets').delete().in('id', idsToDelete)
+          console.log(`🧹 Auto-Cleanup: Deleted ${idsToDelete.length} old support tickets.`)
+      }
+  } catch (cleanupError) {
+      console.error('Support page auto-cleanup failed:', cleanupError)
+  }
+  // -- END CLEANUP ROUTINE --
 
   let query = supabase
     .from('tickets')
@@ -109,76 +148,124 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
             </div>
        </div>
  
-       <div className="bg-zinc-900/30 border border-white/5 rounded-xl overflow-hidden backdrop-blur-sm">
-         <Table>
-             <TableHeader className="bg-white/5 border-b border-white/5">
-                 <TableRow className="hover:bg-transparent border-white/5">
-                     <TableHead className="hidden md:table-cell w-[100px] text-zinc-400 font-bold uppercase tracking-wider text-[10px]">ID</TableHead>
-                     <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Subject</TableHead>
-                     <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">User</TableHead>
-                     <TableHead className="hidden md:table-cell text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Priority</TableHead>
-                     <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Status</TableHead>
-                     <TableHead className="hidden lg:table-cell text-right text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Last Updated</TableHead>
-                     <TableHead className="w-[50px]"></TableHead>
-                 </TableRow>
-             </TableHeader>
-             <TableBody>
-                 {tickets && tickets.length > 0 ? (
-                     tickets.map((ticket) => (
-                         <TableRow key={ticket.id} className="hover:bg-white/5 border-white/5 cursor-pointer group transition-colors">
-                             <TableCell className="hidden md:table-cell font-mono text-xs text-zinc-500 group-hover:text-zinc-300">
-                                 <Link href={`/dashboard/support/${ticket.id}`} className="hover:underline">
-                                     #{ticket.id.slice(0, 8)}
-                                 </Link>
-                             </TableCell>
-                             <TableCell>
-                                 <Link href={`/dashboard/support/${ticket.id}`} className="block">
-                                     <div className="font-bold text-zinc-200 group-hover:text-white transition-colors">{ticket.subject}</div>
-                                     <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{ticket.category}</div>
-                                 </Link>
-                             </TableCell>
-                             <TableCell>
-                                 <div className="text-sm text-zinc-300 font-medium">{ticket.profiles?.artist_name || 'Unknown'}</div>
-                                 <div className="text-xs text-zinc-600">{ticket.profiles?.email}</div>
-                             </TableCell>
-                             <TableCell className="hidden md:table-cell">
-                                 <Badge variant="outline" className={`capitalize border shadow-[0_0_10px_rgba(0,0,0,0.2)] ${getPriorityColor(ticket.priority)}`}>
-                                     {ticket.priority}
-                                 </Badge>
-                             </TableCell>
-                             <TableCell>
-                                 <Badge variant="outline" className={`capitalize border shadow-[0_0_10px_rgba(0,0,0,0.2)] ${getStatusColor(ticket.status)}`}>
-                                     {ticket.status.replace('_', ' ')}
-                                 </Badge>
-                             </TableCell>
-                             <TableCell className="hidden lg:table-cell text-right text-xs text-zinc-500 font-mono">
-                                 {new Date(ticket.updated_at).toLocaleDateString()}
-                             </TableCell>
-                              <TableCell className="text-right">
-                                <Link href={`/dashboard/support/${ticket.id}`}>
-                                    <Button variant="ghost" size="icon" className="text-zinc-600 hover:text-white hover:bg-white/10">
-                                        <MessageSquare size={16} />
-                                    </Button>
-                                </Link>
+       <div className="space-y-4">
+           {/* Desktop Table */}
+           <div className="hidden md:block bg-zinc-900/30 border border-white/5 rounded-xl overflow-hidden backdrop-blur-sm">
+             <Table>
+                 <TableHeader className="bg-white/5 border-b border-white/5">
+                     <TableRow className="hover:bg-transparent border-white/5">
+                         <TableHead className="w-[100px] text-zinc-400 font-bold uppercase tracking-wider text-[10px]">ID</TableHead>
+                         <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Subject</TableHead>
+                         <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">User</TableHead>
+                         <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Priority</TableHead>
+                         <TableHead className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Status</TableHead>
+                         <TableHead className="text-right text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Last Updated</TableHead>
+                         <TableHead className="w-[50px]"></TableHead>
+                     </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                     {tickets && tickets.length > 0 ? (
+                         tickets.map((ticket) => (
+                             <TableRow key={ticket.id} className="hover:bg-white/5 border-white/5 cursor-pointer group transition-colors">
+                                 <TableCell className="font-mono text-xs text-zinc-500 group-hover:text-zinc-300">
+                                     <Link href={`/dashboard/support/${ticket.id}`} className="hover:underline">
+                                         #{ticket.id.slice(0, 8)}
+                                     </Link>
+                                 </TableCell>
+                                 <TableCell>
+                                     <Link href={`/dashboard/support/${ticket.id}`} className="block">
+                                         <div className="font-bold text-zinc-200 group-hover:text-white transition-colors">{ticket.subject}</div>
+                                         <div className="text-[10px] text-zinc-500 uppercase tracking-wider">{ticket.category}</div>
+                                     </Link>
+                                 </TableCell>
+                                 <TableCell>
+                                     <div className="text-sm text-zinc-300 font-medium">{ticket.profiles?.artist_name || 'Unknown'}</div>
+                                     <div className="text-xs text-zinc-600">{ticket.profiles?.email}</div>
+                                 </TableCell>
+                                 <TableCell>
+                                     <Badge variant="outline" className={`capitalize border shadow-[0_0_10px_rgba(0,0,0,0.2)] ${getPriorityColor(ticket.priority)}`}>
+                                         {ticket.priority}
+                                     </Badge>
+                                 </TableCell>
+                                 <TableCell>
+                                     <Badge variant="outline" className={`capitalize border shadow-[0_0_10px_rgba(0,0,0,0.2)] ${getStatusColor(ticket.status)}`}>
+                                         {ticket.status.replace('_', ' ')}
+                                     </Badge>
+                                 </TableCell>
+                                 <TableCell className="text-right text-xs text-zinc-500 font-mono">
+                                     {new Date(ticket.updated_at).toLocaleDateString()}
+                                 </TableCell>
+                                  <TableCell className="text-right">
+                                    <Link href={`/dashboard/support/${ticket.id}`}>
+                                        <Button variant="ghost" size="icon" className="text-zinc-600 hover:text-white hover:bg-white/10">
+                                            <MessageSquare size={16} />
+                                        </Button>
+                                    </Link>
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    ) : (
+                        <TableRow className="hover:bg-transparent">
+                            <TableCell colSpan={7} className="text-center py-20">
+                                <div className="flex flex-col items-center justify-center">
+                                    <div className="h-16 w-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4 border border-white/5">
+                                        <AlertCircle className="text-zinc-700" size={24} />
+                                    </div>
+                                    <p className="text-zinc-400 font-medium">No tickets found</p>
+                                    <p className="text-zinc-600 text-sm">Adjust your filters or check back later.</p>
+                                </div>
                             </TableCell>
                         </TableRow>
-                    ))
-                ) : (
-                    <TableRow className="hover:bg-transparent">
-                        <TableCell colSpan={7} className="text-center py-20">
-                            <div className="flex flex-col items-center justify-center">
-                                <div className="h-16 w-16 bg-zinc-900 rounded-full flex items-center justify-center mb-4 border border-white/5">
-                                    <AlertCircle className="text-zinc-700" size={24} />
-                                </div>
-                                <p className="text-zinc-400 font-medium">No tickets found</p>
-                                <p className="text-zinc-600 text-sm">Adjust your filters or check back later.</p>
-                            </div>
-                        </TableCell>
-                    </TableRow>
-                )}
-            </TableBody>
-        </Table>
-      </div>
+                    )}
+                </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+              {tickets && tickets.length > 0 ? (
+                  tickets.map((ticket) => (
+                      <Link key={ticket.id} href={`/dashboard/support/${ticket.id}`} className="block">
+                          <div className="bg-zinc-900/30 backdrop-blur-md border border-white/5 rounded-xl p-4 active:scale-[0.99] transition-transform">
+                              <div className="flex justify-between items-start mb-3">
+                                  <div className="flex flex-col">
+                                      <span className="font-bold text-white text-base leading-tight">{ticket.subject}</span>
+                                      <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{ticket.category}</span>
+                                  </div>
+                                  <Badge variant="outline" className={`capitalize border shrink-0 ${getStatusColor(ticket.status)}`}>
+                                      {ticket.status.replace('_', ' ')}
+                                  </Badge>
+                              </div>
+                              <div className="flex items-center gap-3 pt-3 border-t border-white/5">
+                                  <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                                      <User size={14} className="text-zinc-400" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-bold text-zinc-300 truncate">{ticket.profiles?.artist_name || 'Unknown'}</div>
+                                      <div className="text-[10px] text-zinc-500 font-mono truncate">{ticket.profiles?.email}</div>
+                                  </div>
+                              </div>
+                              <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
+                                  <Badge variant="outline" className={`capitalize border text-[9px] px-1.5 h-4 ${getPriorityColor(ticket.priority)}`}>
+                                      {ticket.priority} Priority
+                                  </Badge>
+                                  <span className="text-[10px] text-zinc-500 font-mono">
+                                      {new Date(ticket.updated_at).toLocaleDateString()}
+                                  </span>
+                              </div>
+                          </div>
+                      </Link>
+                  ))
+              ) : (
+                  <div className="flex flex-col items-center justify-center p-8 bg-zinc-900/30 border border-white/5 rounded-xl">
+                      <div className="h-12 w-12 bg-zinc-900 rounded-full flex items-center justify-center mb-3 border border-white/5">
+                          <AlertCircle className="text-zinc-700" size={20} />
+                      </div>
+                      <p className="text-zinc-400 font-medium text-sm">No tickets found</p>
+                  </div>
+              )}
+          </div>
+       </div>
     </div>
   )
 }

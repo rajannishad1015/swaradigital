@@ -74,8 +74,8 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                     </CardHeader>
                     
                     <CardContent className="h-[400px] flex flex-col pt-6">
-                        <div className="flex-1 relative min-h-[240px]">
-                            <ResponsiveContainer width="100%" height="100%">
+                        <div className="relative" style={{ height: 240 }}>
+                            <ResponsiveContainer width="100%" height={240} minWidth={0}>
                                 <PieChart>
                                     <defs>
                                         {GRADIENTS.map((grad, i) => (
@@ -204,7 +204,7 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                         <CardDescription className="text-zinc-500 text-[10px] mt-1 uppercase tracking-wider font-medium">Cumulative Revenue</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[400px] p-6 relative">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={340} minWidth={0}>
                             <BarChart data={data.trackData} layout="vertical" margin={{ left: 0, right: 40, top: 10, bottom: 10 }} barSize={28}>
                                 <XAxis type="number" hide />
                                 <YAxis 
@@ -267,7 +267,7 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                     </div>
                 </CardHeader>
                 <CardContent className="h-[300px] p-0 pt-6">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={280} minWidth={0}>
                         <AreaChart data={data.monthlyData} margin={{ top: 20, right: 30, left: 10, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -352,7 +352,7 @@ export default function RevenueAnalytics({ data }: RevenueAnalyticsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="h-[250px] p-6">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={190} minWidth={0}>
                         <BarChart data={data.countryData} barSize={32} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                              <defs>
                                 <linearGradient id="countryBarGrad" x1="0" y1="0" x2="0" y2="1">

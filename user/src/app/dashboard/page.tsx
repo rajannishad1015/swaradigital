@@ -112,17 +112,22 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   // Recent Activity Generation
   const recentTracks = dashboardData?.recentTracks || []
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
   const activities = [
       ...recentTracks.map((t: { id: string, title: string, status: string, created_at: string }) => ({ 
         id: `t-${t.id}`, type: 'upload' as const, title: `Release: ${t.title}`, status: t.status, date: t.created_at 
       })),
       ...(payouts?.slice(0, 5).map(p => ({ 
-        id: `p-${p.id}`, type: 'payout' as const, title: `Payout: $${p.amount}`, status: p.status, date: p.created_at 
+        id: `p-${p.id}`, type: 'payout' as const, title: `Payout: ₹${p.amount}`, status: p.status, date: p.created_at 
       })) || []),
       ...(tickets?.slice(0, 5).map(t => ({ 
         id: `s-${t.id}`, type: 'ticket' as const, title: `Ticket: ${t.subject}`, status: t.status, date: t.created_at 
       })) || [])
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
+  ]
+  .filter(a => new Date(a.date) >= sevenDaysAgo)
+  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
 
   const ticketCountValue = dashboardData?.statusCounts?.find((s: { status: string; count: number }) => s.status === 'open' || s.status === 'in_progress')?.count || 0
 

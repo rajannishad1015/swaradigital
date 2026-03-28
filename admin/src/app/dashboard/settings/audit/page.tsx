@@ -44,7 +44,7 @@ export default async function AuditLogPage() {
                         <Activity size={14} /> Recent Activity
                     </CardTitle>
                     <Badge variant="outline" className="bg-zinc-500/10 text-zinc-400 border-zinc-500/20 font-mono text-[10px]">
-                        Last 100 Actions
+                        Last 7 Days
                     </Badge>
                 </div>
             </CardHeader>

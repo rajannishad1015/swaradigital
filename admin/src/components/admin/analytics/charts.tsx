@@ -44,7 +44,7 @@ export default function AnalyticsCharts({ data }: AnalyticsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="h-[320px] pt-4">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={280} minWidth={0}>
                         <AreaChart data={data.uploadTrends}>
                             <defs>
                                 <linearGradient id="colorUploads" x1="0" y1="0" x2="0" y2="1">
@@ -113,7 +113,7 @@ export default function AnalyticsCharts({ data }: AnalyticsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="h-[280px] pt-4">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={240} minWidth={0}>
                         <BarChart data={data.userGrowth}>
                             <defs>
                                 <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
@@ -174,7 +174,7 @@ export default function AnalyticsCharts({ data }: AnalyticsProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="h-[280px] pt-4 flex flex-col items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={240} minWidth={0}>
                         <PieChart>
                             <defs>
                                {PIE_GRADIENTS.map((g) => (

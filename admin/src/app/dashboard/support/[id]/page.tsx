@@ -109,10 +109,43 @@ export default async function AdminTicketPage({ params }: { params: Promise<{ id
             </div>
        </div>
 
-       <div className="flex-1 flex gap-6 overflow-hidden">
+       <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
+            {/* User Info Sidebar - Show at top on mobile */}
+            <div className="w-full lg:w-80 shrink-0 space-y-6 lg:order-last">
+                 <Card className="bg-zinc-900/40 backdrop-blur-md border-white/5 shadow-xl text-white">
+                     <CardHeader className="pb-3 border-b border-white/5">
+                         <CardTitle className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">User Intelligence</CardTitle>
+                     </CardHeader>
+                     <CardContent className="pt-6 space-y-6">
+                         <div className="flex items-center gap-4">
+                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center shadow-inner">
+                                 <User className="text-zinc-300" size={20} />
+                             </div>
+                             <div>
+                                 <div className="font-bold text-white text-lg tracking-tight leading-none mb-1">{ticket.profiles?.artist_name}</div>
+                                 <div className="text-xs text-zinc-500 font-medium">{ticket.profiles?.full_name}</div>
+                             </div>
+                         </div>
+                         <div className="space-y-3 text-sm">
+                              <div className="flex justify-between py-2 border-b border-white/5">
+                                 <span className="text-zinc-500 font-medium">Email</span>
+                                 <span className="font-bold text-zinc-300 truncate max-w-[150px]">{ticket.profiles?.email}</span>
+                              </div>
+                              <div className="flex justify-between py-2 border-b border-white/5">
+                                 <span className="text-zinc-500 font-medium">User ID</span>
+                                 <span className="font-mono text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded">{ticket.profiles?.id.slice(0,8)}</span>
+                              </div>
+                         </div>
+                         <Link href={`/dashboard/users/${ticket.profiles?.id}`} className="block">
+                             <Button variant="outline" className="w-full bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10 hover:text-white hover:border-white/20 transition-all">View Full Profile</Button>
+                         </Link>
+                     </CardContent>
+                 </Card>
+            </div>
+
             {/* Chat Area */}
-            <div className="flex-1 bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-xl overflow-hidden flex flex-col shadow-2xl">
-                <div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex-1 bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-xl overflow-hidden flex flex-col shadow-2xl min-h-[500px]">
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto">
                     <ChatInterface 
                         initialMessages={messages || []} 
                         ticketId={ticket.id} 
@@ -152,44 +185,11 @@ export default async function AdminTicketPage({ params }: { params: Promise<{ id
                                 className="pr-24 bg-zinc-900/80 border-white/10 min-h-[80px] text-white placeholder:text-zinc-600 focus:bg-zinc-900 focus:border-indigo-500/50 resize-none"
                             />
                             <Button type="submit" size="sm" className="absolute right-3 bottom-3 bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20">
-                                <Send size={14} className="mr-2" /> Send
+                                <Send size={14} className="mr-2 hidden sm:block" /> Send
                             </Button>
                         </div>
                     </form>
                 </div>
-           </div>
-
-           {/* User Info Sidebar */}
-           <div className="w-80 shrink-0 space-y-6">
-                <Card className="bg-zinc-900/40 backdrop-blur-md border-white/5 shadow-xl text-white">
-                    <CardHeader className="pb-3 border-b border-white/5">
-                        <CardTitle className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">User Intelligence</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6 space-y-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center shadow-inner">
-                                <User className="text-zinc-300" size={20} />
-                            </div>
-                            <div>
-                                <div className="font-bold text-white text-lg tracking-tight leading-none mb-1">{ticket.profiles?.artist_name}</div>
-                                <div className="text-xs text-zinc-500 font-medium">{ticket.profiles?.full_name}</div>
-                            </div>
-                        </div>
-                        <div className="space-y-3 text-sm">
-                             <div className="flex justify-between py-2 border-b border-white/5">
-                                <span className="text-zinc-500 font-medium">Email</span>
-                                <span className="font-bold text-zinc-300 truncate max-w-[150px]">{ticket.profiles?.email}</span>
-                             </div>
-                             <div className="flex justify-between py-2 border-b border-white/5">
-                                <span className="text-zinc-500 font-medium">User ID</span>
-                                <span className="font-mono text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded">{ticket.profiles?.id.slice(0,8)}</span>
-                             </div>
-                        </div>
-                        <Link href={`/dashboard/users/${ticket.profiles?.id}`} className="block">
-                            <Button variant="outline" className="w-full bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10 hover:text-white hover:border-white/20 transition-all">View Full Profile</Button>
-                        </Link>
-                    </CardContent>
-                </Card>
            </div>
        </div>
     </div>

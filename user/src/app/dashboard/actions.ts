@@ -342,6 +342,26 @@ export async function createWithdrawalRequest(amount: number, paymentMode: strin
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
+  // Security: Prevent Payout Request Spam (Max 1 per 24 hours & block concurrent pending requests)
+  const { data: existingRequests } = await supabase
+    .from('payout_requests')
+    .select('id, status, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (existingRequests && existingRequests.length > 0) {
+      if (existingRequests[0].status === 'pending') {
+          throw new Error("You already have a pending payout request. Please wait for it to be processed.")
+      }
+      
+      const lastRequestDate = new Date(existingRequests[0].created_at).getTime()
+      const hoursSinceLastRequest = (Date.now() - lastRequestDate) / (1000 * 60 * 60)
+      if (hoursSinceLastRequest < 24) {
+          throw new Error("You can only request one payout every 24 hours.")
+      }
+  }
+
   if (!Number.isFinite(amount) || amount < 10) {
       throw new Error("Minimum withdrawal amount is ₹10")
   }

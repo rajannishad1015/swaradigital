@@ -47,6 +47,22 @@ export async function submitTrack(formData: any) {
             }
         }
 
+        // Security: Prevent Upload Spam (Max 10 releases per 24 hours)
+        if (!formData.id) { // Only check on NEW releases, not edits
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+            const { count, error: rateLimitError } = await supabase
+                .from('albums')
+                .select('*', { count: 'exact', head: true })
+                .eq('artist_id', user.id)
+                .gte('created_at', twentyFourHoursAgo)
+            
+            if (rateLimitError) {
+                console.error("Rate limit check failed:", rateLimitError)
+            } else if (count !== null && count >= 10) {
+                return { success: false, error: "Daily upload limit reached. You can only create 10 releases per 24 hours to prevent spam." }
+            }
+        }
+
         // Server-side input validation
         if (!formData.title || typeof formData.title !== 'string' || formData.title.trim().length === 0) {
             return { success: false, error: 'Release title is required' }

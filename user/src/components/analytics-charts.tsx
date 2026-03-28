@@ -117,7 +117,7 @@ export function AnalyticsCharts({
             </div>
           ) : (
           <div className="relative h-[320px] mt-2">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={320} minWidth={0}>
               <PieChart>
                 {/* Decorative Outer Ring */}
                 <Pie
@@ -247,7 +247,7 @@ export function AnalyticsCharts({
             </div>
           ) : (
           <div className="h-[300px] w-full mt-2 min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+            <ResponsiveContainer width="100%" height={300} minWidth={0}>
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={(genreData?.length || 0) > 2 ? genreData : [...(genreData || []), { genre: '', count: 0 }, { genre: '', count: 0 }]}>
                 <PolarGrid gridType="polygon" stroke="rgba(99,102,241,0.2)" strokeWidth={1} />
                 <PolarAngleAxis 

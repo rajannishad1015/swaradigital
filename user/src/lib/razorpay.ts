@@ -1,16 +1,17 @@
-import RazorpayLib from "razorpay";
+import Razorpay from "razorpay";
 
-export function getRazorpayInstance() {
-  const key_id = process.env.RAZORPAY_KEY_ID;
-  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+let razorpayInstance: Razorpay | null = null;
 
-  if (!key_id || !key_secret) {
-    throw new Error(
-      "Razorpay API keys are missing. Check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env.local"
-    );
+export function getRazorpayInstance(): Razorpay {
+  if (!razorpayInstance) {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+       console.warn("⚠️ RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is missing from environment variables.");
+    }
+    
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID || "mock_key_id",
+      key_secret: process.env.RAZORPAY_KEY_SECRET || "mock_key_secret",
+    });
   }
-
-  // razorpay v2.x is CommonJS — handle both named and default export
-  const Ctor = (RazorpayLib as any).default ?? RazorpayLib;
-  return new Ctor({ key_id, key_secret }) as RazorpayLib;
+  return razorpayInstance;
 }
