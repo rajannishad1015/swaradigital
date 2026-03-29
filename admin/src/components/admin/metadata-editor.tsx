@@ -321,7 +321,7 @@ export default function MetadataEditor({ track, initialEdit = false }: MetadataE
                                 />
                             ) : (
                                  <Badge variant="outline" className={`h-5 ${track.is_explicit ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'}`}>
-                                    {track.is_explicit ? 'Yes' : 'No'}
+                                    {track.is_explicit ? 'Yes' : 'No'} {track.explicit_type && track.explicit_type !== 'no' && track.explicit_type !== 'clean' ? `(${track.explicit_type})` : ''}
                                 </Badge>
                             )}
                         </GridItem>
@@ -353,6 +353,10 @@ export default function MetadataEditor({ track, initialEdit = false }: MetadataE
                                 {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
                             </span>
                         </GridItem>
+                        
+                        <GridItem label="Instrumental">
+                             <span className="text-sm text-zinc-200 font-medium">{track.is_instrumental === 'yes' ? 'Yes' : 'No'}</span>
+                        </GridItem>
                     </Section>
 
                      {/* Keep other sections read-only for now, can extend similarly */}
@@ -368,6 +372,9 @@ export default function MetadataEditor({ track, initialEdit = false }: MetadataE
                         </GridItem>
                         <GridItem label="Channels">
                             <span className="text-sm text-zinc-200 font-medium">{track.channels ? (track.channels === 2 ? 'Stereo' : 'Mono') : '-'}</span>
+                        </GridItem>
+                        <GridItem label="Production Year">
+                            <span className="text-sm text-zinc-200 font-medium font-mono">{track.production_year || '-'}</span>
                         </GridItem>
                         <GridItem label="File Size">
                             <span className="text-sm text-zinc-200 font-medium font-mono">{track.file_size ? `${(track.file_size / (1024*1024)).toFixed(2)} MB` : '-'}</span>
@@ -401,6 +408,9 @@ export default function MetadataEditor({ track, initialEdit = false }: MetadataE
                         </GridItem>
                         <GridItem label="Release Date">
                             <span className="text-sm text-zinc-200 font-medium">{track.albums?.release_date ? format(new Date(track.albums.release_date), 'PPP') : 'N/A'}</span>
+                        </GridItem>
+                        <GridItem label="Original Release">
+                            <span className="text-sm text-zinc-200 font-medium">{track.albums?.original_release_date ? format(new Date(track.albums.original_release_date), 'PPP') : '-'}</span>
                         </GridItem>
                         <GridItem label="Type">
                              <span className="text-sm text-zinc-200 font-medium">{track.albums?.type}</span>

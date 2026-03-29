@@ -394,7 +394,7 @@ export async function submitTrack(formData: any) {
                     fingerprint_id: fingerprintId,
                     is_flagged: isMatched,
                     status: isMatched ? 'flagged' : (formData.status || 'pending'),
-                    file_size: 0 
+                    file_size: track.fileSize || 0 
                 });
             }
 

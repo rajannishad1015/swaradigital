@@ -161,6 +161,7 @@ export default async function TrackReviewPage({ params }: { params: Promise<{ id
                                        <Section title="Copyright & Identifiers" icon={Globe}>
                                            <GridItem label="P Line" value={track.track_p_line || track.albums?.p_line} />
                                            <GridItem label="C Line" value={track.albums?.c_line} />
+                                           <GridItem label="Courtesy Line" value={track.albums?.courtesy_line} />
                                            <GridItem label="Label" value={track.albums?.label_name} />
                                            <GridItem label="Publisher" value={track.publisher} />
                                            <GridItem label="ISRC" value={track.isrc} fontMono />
@@ -170,6 +171,7 @@ export default async function TrackReviewPage({ params }: { params: Promise<{ id
                                       <Section title="Distribution" icon={DollarSign}>
                                           <GridItem label="Price Tier" value={track.price_tier} />
                                           <GridItem label="Callertune Timing" value={track.caller_tune_timing || '-'} />
+                                          <GridItem label="Distribute Video" value={track.distribute_video ? 'Yes' : 'No'} />
                                           <GridItem label="Platforms" value={track.albums?.target_platforms?.join(", ") || 'All'} fullWidth />
                                       </Section>
                                  </TabsContent>

@@ -28,6 +28,7 @@ interface TrackItem {
     audioFile: File | null;
     audioUrl?: string;
     duration: number;
+    fileSize: number;
     audioAnalysis: any;
     trackVersion: string;
     versionSubtitle: string;
@@ -193,6 +194,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
             title: t.title,
             audioUrl: t.file_url,
             duration: t.duration || 0,
+            fileSize: t.file_size || 0,
             audioAnalysis: t.audio_analysis || null,
             trackVersion: t.version_type || 'original',
             versionSubtitle: t.version_subtitle || '',
@@ -222,6 +224,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
         title: initialData?.title || '',
         audioFile: null,
         duration: 0,
+        fileSize: 0,
         audioAnalysis: null,
         trackVersion: 'original',
         versionSubtitle: '',
@@ -268,6 +271,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
         title: `Untitled Track ${tracks.length + 1}`,
         audioFile: null,
         duration: 0,
+        fileSize: 0,
         audioAnalysis: null,
         trackVersion: 'original',
         versionSubtitle: '',
@@ -662,6 +666,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                ...t,
                audioFile: file,
                duration: Math.round(duration),
+               fileSize: file.size,
                audioAnalysis: {
                    bitrate,
                    sampleRate,
@@ -1091,6 +1096,7 @@ export default function UploadForm({ initialData, isFirstUpload, userProfile }: 
                 title: track.title,
                 audioUrl,
                 duration: track.duration,
+                fileSize: track.fileSize || 0,
                 lyrics: track.lyrics,
                 
                 // Metadata
